@@ -1,0 +1,404 @@
+openapi: 3.0.0
+info:
+  title: API - Sistema de Gestión Universitaria
+  description: Endpoints para el proyecto integrador. Filtrado por curso_id y soporte para Soft Delete.
+  version: 1.2.0
+servers:
+  - url: http://localhost:5000/api
+    description: Servidor de Desarrollo (Flask)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ================= AUTH & LOGS =================
+  /auth/login:
+    post:
+      summary: Iniciar sesión
+      tags: [Auth]
+      security: [] 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dni: { type: integer }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login exitoso devuelve token
+
+  /auth/signup:
+    post:
+      summary: Registrar un nuevo usuario
+      tags: [Auth]
+      security: [] 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre: { type: string }
+                apellido: { type: string }
+                
+                email: { type: string }
+                password: { type: string }
+                rol: { type: string, example: "profesor" } #esto tiene que ser un select  | ayudante de catedra = alumno con permisos especiales
+      responses:
+        '201':
+          description: Usuario registrado
+
+  /auth/tipos_usuario:
+    get:
+      summary: Obtener todos los tipos de usuario (alumno, docente, ayudante de catedra) para el select del register
+      tags: [Auth]
+      security: []
+      responses:
+        '200':
+          description: Lista de tipos de usuario 
+
+  /logs:
+    get:
+      summary: Obtener registro de actividad
+      tags: [Logs]
+      parameters:
+        - name: usuario_id
+          in: query
+          schema: { type: integer }
+          description: Filtrar por ID de usuario
+        - name: accion
+          in: query
+          schema: { type: string }
+          description: Filtrar por tipo de acción (POST, DELETE, etc)
+        - name: fecha_desde
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Lista de logs filtrada
+
+  # ================= ABM ALUMNOS =================
+  /alumnos:
+    get:
+      summary: Listar todos los alumnos
+      tags: [Alumnos]
+      parameters:
+        - name: materia_id
+          in: query
+          schema: { type: integer }
+          description: Filtrar alumnos pertenecientes a una materia específica
+        - name: curso_id
+          in: query
+          schema: { type: integer }
+          description: Filtrar alumnos pertenecientes a un curso específico
+        - name: estado
+          in: query
+          schema: { type: string, enum: [activos, baja, todos] }
+          description: Filtrar por estado de cursada (baja representa abandono)
+      responses:
+        '200':
+          description: Lista de alumnos
+    post:
+      summary: Crear un nuevo alumno manualmente
+      tags: [Alumnos]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                usuario_id: { type: integer }
+                curso_id: { type: integer }
+      responses:
+        '201':
+          description: Alumno creado
+
+  /alumnos/{id}:
+    put:
+      summary: Actualizar datos de un alumno
+      tags: [Alumnos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre: { type: string }
+                apellido: { type: string }
+                email: { type: string }
+      responses:
+        '200':
+          description: Alumno actualizado
+    delete:
+      summary: Dar de baja un alumno (no lo elimina de la DB)
+      description: Cambia el atributo interno a 'abandonó' sin eliminar la fila de MySQL.
+      tags: [Alumnos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Alumno dado de baja exitosamente en el sistema
+
+  /alumnos/csv:
+    post:
+      summary: Importar alumnos masivamente desde archivo CSV (quiza se puede ahorrar esta ruta y tener un solo post /alumnos)
+      tags: [Alumnos]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                archivo: { type: string, format: binary }
+                curso_id: { type: integer, description: "Curso al que se van a incorporar" }
+      responses:
+        '200':
+          description: CSV procesado e importado con éxito
+
+  # ================= ABM EVALUACIONES =================
+  /evaluaciones:
+    get:
+      summary: Listar evaluaciones (Notas)
+      tags: [Evaluaciones]
+      parameters:
+        - name: curso_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: tipo_id
+          in: query
+          schema: { type: integer }
+          description: Filtrar por ID de tipo de evaluación (Parcial, TP, etc.)
+        - name: alumno_id
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Listado de notas obtenido
+
+  /evaluaciones/tipos:
+    get:
+      summary: Listar tipos de evaluación disponibles
+      description: Utilizado por el frontend para poblar selectores de formularios.
+      tags: [Evaluaciones]
+      responses:
+        '200':
+          description: Tipos de evaluación obtenidos
+
+  /evaluaciones/notas:
+    post:
+      summary: Cargar nota a un alumno
+      tags: [Evaluaciones]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                alumno_id: { type: integer }
+                tipo_evaluacion_id: { type: integer }
+                curso_id: { type: integer }
+                nota: { type: number }
+                fecha: { type: string, format: date }
+      responses:
+        '201':
+          description: Nota cargada correctamente
+
+  # ================= ABM EQUIPOS =================
+  /equipos:
+    get:
+      summary: Listar equipos
+      tags: [Equipos]
+      parameters:
+        - name: curso_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: alumno_id
+          in: query
+          schema: { type: integer }
+        - name: evaluacion_id
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Lista de equipos del curso
+    post:
+      summary: Crear equipo asociado a un TP y asignar integrantes
+      tags: [Equipos]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre: { type: string }
+                curso_id: { type: integer }
+                tp_id: { type: integer, description: "ID de la evaluación tipo TP vinculada" }
+                alumno_ids: 
+                  type: array
+                  items: { type: integer }
+      responses:
+        '201':
+          description: Equipo e integrantes configurados con éxito
+
+  # ================= ASISTENCIA Y QR =================
+  /asistencia/generar-qr:
+    post:
+      summary: Generar parámetro para código dinámico o enviar por email
+      tags: [Asistencia]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clase_id: { type: integer }
+                fecha: { type: string, format: date } # creo que no es necesario porque estaria en registro 'clase'
+      responses:
+        '200':
+          description: Token de asistencia generado con éxito
+
+  /asistencia/registrar:
+    post:
+      summary: Registrar asistencia en el sistema
+      tags: [Asistencia]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                qr_token: { type: string, description: "Token dinámico o estático recuperado" }
+                curso_id: { type: integer } # esto no seria necesario, el qr token podria tener la clase_id encripdata y que la pueda pasar directamente
+                alumno_id: { type: integer }
+      responses:
+        '200':
+          description: Presente registrado en la base de datos
+
+  # ================= REPORTES (PDF) =================
+  /reportes/alumnos:
+    get:
+      summary: Descargar PDF con listado de alumnos de un curso
+      tags: [Reportes]
+      parameters:
+        - name: materia_id
+          in: query
+          schema: { type: integer }
+        - name: curso_id
+          in: query
+          schema: { type: integer }
+        - name: tipo_id
+          in: query
+          description: (profesor, alumno, ayudante de catedra, etc)
+          schema: { type: integer }
+        - name: estado
+          in: query
+          schema: { type: string, enum: [activos, baja] }
+      responses:
+        '200':
+          description: Documento binario PDF listo para descarga
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /reportes/estadisticas:
+    get:
+      summary: Descargar PDF con estadísticas de aprobación de un curso
+      description: Es obligatorio enviar 'curso_id' o 'materia_id'. Si se envían ambos, predomina 'curso_id'.
+      tags: [Reportes]
+      parameters:
+        - name: curso_id
+          in: query
+          schema: { type: integer }
+        - name: materia_id
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Estadísticas en PDF generadas
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /reportes/equipos:
+    get:
+      summary: Descargar PDF con listado de equipos de un curso
+      description: Es obligatorio enviar 'curso_id' o 'evaluacion_id'. Si se envían ambos, predomina 'evaluacion_id'.
+      tags: [Reportes]
+      parameters:
+        - name: curso_id
+          in: query
+          schema: { type: integer }
+        - name: evaluacion_id
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Estructura de equipos en PDF generada
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  # ================= MATERIALES =================
+  /materiales:
+    get:
+      summary: Ver material didáctico público de un curso
+      tags: [Materiales]
+      security: [] 
+      parameters:
+        - name: curso_id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Listado de recursos públicos obtenido
+    post:
+      summary: Subir nuevo archivo de material de estudio
+      tags: [Materiales]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                titulo: { type: string }
+                curso_id: { type: integer }
+                archivo: { type: string, format: binary }
+      responses:
+        '201':
+          description: Archivo cargado y asociado al curso
