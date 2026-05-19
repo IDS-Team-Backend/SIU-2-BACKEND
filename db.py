@@ -1,25 +1,31 @@
 import mysql.connector
 import os
+from dotenv import load_dotenv
 
-global PASSWORD
-PASSWORD = "fiuba" # Asegurate que sea tu password de MySQL
+load_dotenv()
 
-def get_connection(database_name="siu2_db"):
+DB_HOST = os.getenv("DB_HOST")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+DB_PORT = os.getenv("DB_PORT", 3306)
+
+def get_connection(database_name=DB_NAME):
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password=PASSWORD,
-        database=database_name
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=database_name,
+        port=DB_PORT
     )
 
 def get_server_connection():
-    # Conexión al servidor sin base de datos específica (para el CREATE DATABASE)
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password=PASSWORD
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        port=DB_PORT
     )
-
 
 def execute_query(query, params=None, modifica_db=False, un_solo_valor=False):
     """

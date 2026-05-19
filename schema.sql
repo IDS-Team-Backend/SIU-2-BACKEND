@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
-    dni BIGINT NOT NULL UNIQUE,
+    padron BIGINT NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     tipo_usuario_id INT NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
