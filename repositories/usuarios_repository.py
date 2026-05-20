@@ -150,3 +150,26 @@ def reemplazar_usuario(id,nombre,apellido,email,padron,tipo_usuario_id,activo):
     )
 
     return filas > 0
+
+def get_user_types(): 
+    query = "SELECT id, nombre FROM tipos_usuario"
+
+    result = db.execute_query(query)
+
+    return result
+
+def get_user_by_dni(dni):
+    query = "SELECT * FROM usuarios WHERE dni = %s"
+    params = (dni,)
+
+    result = db.execute_query(query, params)
+
+    return result[0] if result else None
+
+def get_user_by_email(email):
+    query = "SELECT * FROM usuarios WHERE email = %s"
+    params = (email,)
+
+    result = db.execute_query(query, params)
+
+    return result[0] if result else None
