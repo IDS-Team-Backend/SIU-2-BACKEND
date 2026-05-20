@@ -3,6 +3,7 @@ from flask import Flask
 from routes.asistencia_router import asistencia_bp
 from routes.auth_router import auth_bp
 from routes.usuarios_router import usuarios_bp
+from routes.email_router import email_bp
 from routes.equipos_router import equipos_bp
 from routes.evaluaciones_router import evaluaciones_bp
 from routes.logs_router import logs_bp
@@ -17,6 +18,7 @@ app = Flask(__name__)
 error_handlers.start(app)
 
 app.register_blueprint(auth_bp, url_prefix="/auth")
+app.register_blueprint(email_bp, url_prefix="/email")
 app.register_blueprint(logs_bp, url_prefix="/logs")
 app.register_blueprint(usuarios_bp, url_prefix="/usuarios")
 app.register_blueprint(evaluaciones_bp, url_prefix="/evaluaciones")
