@@ -11,3 +11,12 @@ pip install -r requirements.txt
 
 # Correr app
 flask run
+
+# Base de Datos
+Crear archivo .env a partir del ejemplo y configurar los datos
+
+# Crear la estructura de tablas (Database & Tables)
+python init_db.py
+
+# Poblar la base de datos con el fixture inicial
+python seed.py
