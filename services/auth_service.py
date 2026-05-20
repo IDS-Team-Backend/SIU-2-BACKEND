@@ -68,7 +68,7 @@ def crear_usuario(nombre: str, apellido: str, dni: int, email: str, password: st
     if db.get_user_by_email(email):
         raise ValidationError("El email ya se encuentra registrado")
 
-    new_user = db.crear_usuario(nombre, apellido, dni, email, password, rol_id)
+    new_user = db.crear_usuario(nombre, apellido, email, dni, password, rol_id)
 
     token = TokenHandler.create_token(new_user)
 

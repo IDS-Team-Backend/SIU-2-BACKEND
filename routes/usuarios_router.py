@@ -4,7 +4,7 @@ from utils.error_handlers import created_response, ValidationError
 
 usuarios_bp = Blueprint("usuarios", __name__)
 
-usuario_params = ["nombre", "apellido", "padron", "email", "tipo_usuario_id"]
+usuario_params = ["nombre", "apellido", "dni", "email", "rol_id"]
 
 @usuarios_bp.get("/health")
 def health_check():
@@ -15,11 +15,11 @@ def health_check():
 def obtener_usuarios():
     nombre = request.args.get("nombre")
     apellido = request.args.get("apellido")
-    padron = request.args.get("padron")
+    dni = request.args.get("dni")
     email = request.args.get("email")
-    tipo_usuario_id = request.args.get("tipo_usuario_id")
+    rol_id = request.args.get("rol_id")
 
-    usuarios, total = logic.obtener_usuarios(nombre, apellido, email, padron, tipo_usuario_id)
+    usuarios, total = logic.obtener_usuarios(nombre, apellido, email, dni, rol_id)
 
     if not usuarios:
         return "", 204

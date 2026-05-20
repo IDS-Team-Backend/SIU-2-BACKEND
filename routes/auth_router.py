@@ -17,7 +17,6 @@ def login():
 
     respuesta = make_response(jsonify({
         "mensaje": "Sesión iniciada correctamente",
-        "token": token
     }))
 
     respuesta.set_cookie(
@@ -46,7 +45,6 @@ def signup():
 
     respuesta = make_response(jsonify({
         "mensaje": "Cuenta creada correctamente",
-        "token": token
     }))
 
     respuesta.set_cookie(

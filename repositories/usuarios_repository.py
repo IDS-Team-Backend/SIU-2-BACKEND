@@ -6,8 +6,8 @@ def obtener_usuarios(
     nombre=None,
     apellido=None,
     email=None,
-    padron=None,
-    tipo_usuario_id=None
+    dni=None,
+    rol_id=None
 ):
 
     query = "FROM usuarios u WHERE 1=1"
@@ -24,13 +24,13 @@ def obtener_usuarios(
         query += " AND u.email LIKE %s"
         params.append(f"%{email}%")
 
-    if padron:
-        query += " AND u.padron = %s"
-        params.append(padron)
+    if dni:
+        query += " AND u.dni = %s"
+        params.append(dni)
 
-    if tipo_usuario_id:
-        query += " AND u.tipo_usuario_id = %s"
-        params.append(tipo_usuario_id)
+    if rol_id:
+        query += " AND u.rol_id = %s"
+        params.append(rol_id)
 
     count_query = "SELECT COUNT(*) as total " + query
     count_usuarios = db.execute_query(
@@ -45,8 +45,8 @@ def obtener_usuarios(
             u.nombre,
             u.apellido,
             u.email,
-            u.padron,
-            u.tipo_usuario_id,
+            u.dni,
+            u.rol_id,
             u.activo,
             u.created_at
     """ + query + " ORDER BY u.id ASC"
@@ -59,13 +59,13 @@ def obtener_usuarios(
     return lista_usuarios, total
 
 
-def crear_usuario(nombre, apellido, email, padron, password, tipo_usuario_id):
+def crear_usuario(nombre, apellido, email, dni, password, rol_id):
 
     password_hash = generate_password_hash(password)
 
     query = """
         INSERT INTO usuarios
-        (nombre, apellido, email, padron, password_hash, tipo_usuario_id)
+        (nombre, apellido, email, dni, password_hash, rol_id)
         VALUES (%s, %s, %s, %s, %s, %s)
     """
 
@@ -73,9 +73,9 @@ def crear_usuario(nombre, apellido, email, padron, password, tipo_usuario_id):
         nombre,
         apellido,
         email,
-        padron,
+        dni,
         password_hash,
-        tipo_usuario_id
+        rol_id
     )
 
     new_id = db.execute_query(query, params, modifica_db=True)
@@ -89,8 +89,8 @@ def obtener_usuario_por_id(id):
         u.nombre, 
         u.apellido,
         u.email,
-        u.padron,
-        u.tipo_usuario_id,
+        u.dni,
+        u.rol_id,
         u.activo
     FROM usuarios u
     WHERE u.id = %s
@@ -112,25 +112,25 @@ def existe_email(email, excluir_id=None):
         result = db.execute_query(query, (email,), un_solo_valor=True)
     return result['total'] > 0 if result else False
     
-def existe_padron(padron, excluir_id=None):
+def existe_dni(dni, excluir_id=None):
     if excluir_id is not None:
-        query = "SELECT COUNT(*) as total FROM usuarios WHERE padron = %s AND id != %s"
-        result = db.execute_query(query, (padron, excluir_id), un_solo_valor=True)
+        query = "SELECT COUNT(*) as total FROM usuarios WHERE dni = %s AND id != %s"
+        result = db.execute_query(query, (dni, excluir_id), un_solo_valor=True)
     else:
-        query = "SELECT COUNT(*) as total FROM usuarios WHERE padron = %s"
-        result = db.execute_query(query, (padron,), un_solo_valor=True)
+        query = "SELECT COUNT(*) as total FROM usuarios WHERE dni = %s"
+        result = db.execute_query(query, (dni,), un_solo_valor=True)
     return result['total'] > 0 if result else False
 
 
-def reemplazar_usuario(id,nombre,apellido,email,padron,tipo_usuario_id,activo):
+def reemplazar_usuario(id,nombre,apellido,email,dni,rol_id,activo):
     query = """
         UPDATE usuarios
         SET
             nombre = %s,
             apellido = %s,
             email = %s,
-            padron = %s,
-            tipo_usuario_id = %s,
+            dni = %s,
+            rol_id = %s,
             activo = %s
         WHERE id = %s
     """
@@ -138,8 +138,8 @@ def reemplazar_usuario(id,nombre,apellido,email,padron,tipo_usuario_id,activo):
         nombre,
         apellido,
         email,
-        padron,
-        tipo_usuario_id,
+        dni,
+        rol_id,
         activo,
         id
     )

@@ -3,12 +3,12 @@ from utils.error_handlers import NotFoundError, ValidationError, DuplicateError
 import mysql.connector
 
 global usuario_params
-usuario_params = ["nombre","apellido","padron","email","password","tipo_usuario_id"]
+usuario_params = ["nombre","apellido","dni","email","password","rol_id"]
 
-usuario_update_params = ["nombre","apellido","padron","email","tipo_usuario_id","activo"]
+usuario_update_params = ["nombre","apellido","dni","email","rol_id","activo"]
 
-def obtener_usuarios(nombre=None, apellido=None ,email=None, padron=None, tipo_usuario_id=None):
-   return db.obtener_usuarios(nombre, apellido, email, padron, tipo_usuario_id)
+def obtener_usuarios(nombre=None, apellido=None ,email=None, dni=None, rol_id=None):
+   return db.obtener_usuarios(nombre, apellido, email, dni, rol_id)
     
 
 def crear_usuario(parametros):
@@ -19,17 +19,17 @@ def crear_usuario(parametros):
     nombre = parametros["nombre"]
     apellido = parametros["apellido"]
     email = parametros["email"]
-    padron = parametros["padron"]
+    dni = parametros["dni"]
     password = parametros["password"]
-    tipo_usuario_id = parametros["tipo_usuario_id"]
+    rol_id = parametros["rol_id"]
 
     if db.existe_email(email):
         raise DuplicateError("Ya existe un usuario con ese email.")
-    if db.existe_padron(padron):
+    if db.existe_dni(dni):
         raise DuplicateError("Ya existe un usuario con ese padrón.")
 
     try:
-        return db.crear_usuario(nombre, apellido, email, padron, password, tipo_usuario_id)
+        return db.crear_usuario(nombre, apellido, email, dni, password, rol_id)
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe un usuario con ese email.")
 
@@ -57,16 +57,16 @@ def reemplazar_usuario(id, parametros):
     nombre = parametros["nombre"]
     apellido = parametros["apellido"]
     email = parametros["email"]
-    padron = parametros["padron"]
-    tipo_usuario_id = parametros["tipo_usuario_id"]
+    dni = parametros["dni"]
+    rol_id = parametros["rol_id"]
     activo = parametros.get("activo", True)
 
     if db.existe_email(email, excluir_id=id):
         raise DuplicateError("Ya existe otro usuario con ese email.")
-    if db.existe_padron(padron, excluir_id=id):
+    if db.existe_dni(dni, excluir_id=id):
         raise DuplicateError("Ya existe otro usuario con ese padrón.")
 
     try:
-        return db.reemplazar_usuario(id, nombre, apellido, email, padron, tipo_usuario_id, activo)
+        return db.reemplazar_usuario(id, nombre, apellido, email, dni, rol_id, activo)
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe otro usuario con ese email.")
