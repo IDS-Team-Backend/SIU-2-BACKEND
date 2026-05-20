@@ -1,4 +1,8 @@
+from datetime import timedelta
+import os
+from dotenv import load_dotenv
 from flask import Flask
+from flask_jwt_extended import JWTManager
 
 from routes.asistencia_router import asistencia_bp
 from routes.auth_router import auth_bp
@@ -24,6 +28,16 @@ app.register_blueprint(equipos_bp, url_prefix="/equipos")
 app.register_blueprint(asistencia_bp, url_prefix="/asistencia")
 app.register_blueprint(reportes_bp, url_prefix="/reportes")
 app.register_blueprint(materiales_bp, url_prefix="/materiales")
+
+
+load_dotenv()
+
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "clave_por_defecto")
+
+horas_expiracion = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_HOURS", 2))
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=horas_expiracion)
+
+jwt = JWTManager(app)
 
 import sys
 if __name__ == "__main__":
