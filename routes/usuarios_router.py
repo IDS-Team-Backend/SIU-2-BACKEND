@@ -38,7 +38,7 @@ def crear_usuario():
 # ─── GET /usuarios/{id} ───────────────────────────────────────────────────────
 
 @usuarios_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles("profesor")
+@auth.requiere_roles("docente")
 def obtener_usuario_por_id(id):
     usuario = logic.obtener_usuario_por_id(id)
     return jsonify(usuario), 200
@@ -56,7 +56,7 @@ def reemplazar_usuario(id):
 
 # ─── DELETE /usuarios/{id} ────────────────────────────────────────────────────
 @usuarios_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles("administrador")
+@auth.requiere_roles("admin")
 def eliminar_usuario(id: int):
     logic.eliminar_usuario(id)
     return "", 204

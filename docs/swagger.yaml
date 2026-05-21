@@ -9,13 +9,116 @@ servers:
 
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token_cookie
+      description: Cookie que contiene el token JWT de sesión del SIU.
+
+  schemas:
+    Clase:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        nombre:
+          type: string
+          example: "Clase 01: Introducción a SQL"
+        profesor_id:
+          type: integer
+          example: 4
+        curso_id:
+          type: integer
+          example: 2
+        fecha_hora:
+          type: string
+          format: date-time
+          example: "2026-05-22T19:00:00Z"
+        tema:
+          type: string
+          nullable: true
+          example: "Modelo Entidad-Relación y Normalización"
+        status:
+          type: string
+          enum: [pendiente, suspendida, en curso, finalizada]
+          example: "pendiente"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-05-21T22:15:00Z"
+
+    ClaseInput:
+      type: object
+      required:
+        - nombre
+        - profesor_id
+        - curso_id
+        - fecha_hora
+      properties:
+        nombre:
+          type: string
+          maxLength: 80
+          example: "Clase Práctica Repaso"
+        profesor_id:
+          type: integer
+          example: 5
+        curso_id:
+          type: integer
+          example: 1
+        fecha_hora:
+          type: string
+          format: date-time
+          example: "2026-06-01T14:30:00Z"
+        tema:
+          type: string
+          maxLength: 255
+          example: "Resolución de ejercicios tipo parcial"
+
+  responses:
+    400BadRequest:
+      description: Datos inválidos o lógicamente incorrectos (ValidationError).
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "La fecha de la clase no puede ser anterior a la fecha actual."
+    401Unauthorized:
+      description: Sesión no iniciada o token expirado (UnauthorizedError).
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "No se encontró un token de autenticación en la cookie."
+    403Forbidden:
+      description: El usuario carece de los privilegios de rol necesarios (ForbiddenError).
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Acceso denegado. No tenés los permisos necesarios."
+    404NotFound:
+      description: El recurso solicitado no existe en el sistema (NotFoundError).
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "No se encontró la clase con el ID especificado."
 
 security:
-  - bearerAuth: []
+  - CookieAuth: []
 
 paths:
   # ================= AUTH & LOGS =================
@@ -402,3 +505,267 @@ paths:
       responses:
         '201':
           description: Archivo cargado y asociado al curso
+
+# ================= CLASES =================
+  /clases:
+    get:
+      summary: Listar todas las clases (Admin)
+      description: Retorna un listado global de todas las clases programadas. Permite filtrar por estado o fecha.
+      tags:
+        - Clases
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filtrar por estado de la clase
+          schema:
+            type: string
+            enum: [pendiente, suspendida, en curso, finalizada]
+        - name: fecha
+          in: query
+          required: false
+          description: Filtrar por fecha específica (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Listado de clases obtenido con éxito.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clases:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Clase"
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+
+    post:
+      summary: Planificar una nueva clase (Admin)
+      description: Crea y agenda una nueva clase para un curso y profesor específico.
+      tags:
+        - Clases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaseInput'
+      responses:
+        '201':
+          description: Clase planificada correctamente.
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  id:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+
+  /clases/{id}:
+    get:
+      summary: Obtener detalle de una clase (Todos los roles)
+      tags:
+        - Clases
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID numérico de la clase
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalle de la clase encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Clase'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+
+    put:
+      summary: Modificación total de una clase (Admin / Profesor)
+      description: Reprograma o edita todos los campos de una clase existente. Los profesores solo modifican sus clases asignadas.
+      tags:
+        - Clases
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaseInput'
+      responses:
+        '200':
+          description: Clase actualizada correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+
+    delete:
+      summary: Eliminar una clase (Admin)
+      description: Elimina físicamente el registro de la clase si no tiene restricciones activas.
+      tags:
+        - Clases
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Clase eliminada con éxito.
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+
+  /clases/{id}/status:
+    patch:
+      summary: Cambiar el estado de la clase (Admin / Profesor)
+      description: Flujo dinámico para pasar la clase entre estados (pendiente, en curso, finalizada, suspendida).
+      tags:
+        - Clases
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [pendiente, suspendida, en curso, finalizada]
+      responses:
+        '200':
+          description: Estado actualizado correctamente.
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+
+  /clases/{id}/tema:
+    patch:
+      summary: Actualizar tema dictado (Admin / Profesor)
+      description: Permite al docente asentar el tema específico que se dio en la jornada de clase.
+      tags:
+        - Clases
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tema
+              properties:
+                tema:
+                  type: string
+                  maxLength: 255
+      responses:
+        '200':
+          description: Tema de la clase registrado correctamente.
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+
+  /cursos/{curso_id}/clases:
+    get:
+      summary: Obtener el cronograma de clases de un curso (Todos los roles)
+      description: Retorna todas las clases que pertenecen a un curso determinado. Usado por alumnos para ver su calendario.
+      tags:
+        - Relaciones
+      parameters:
+        - name: curso_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cronograma del curso obtenido.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clases:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Clase'
+
+  /usuarios/{profesor_id}/clases:
+    get:
+      summary: Obtener la agenda de clases de un profesor (Admin / Profesor)
+      description: Retorna las clases asignadas al ID del profesor consultado.
+      tags:
+        - Relaciones
+      parameters:
+        - name: profesor_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Agenda del docente obtenida con éxito.
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'

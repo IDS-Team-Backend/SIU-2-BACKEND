@@ -10,13 +10,6 @@ CREATE TABLE IF NOT EXISTS tipos_usuario (
     nombre VARCHAR(50) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
 
-INSERT IGNORE INTO tipos_usuario (id, nombre) VALUES 
-(1, 'admin'),
-(2, 'profesor'),
-(3, 'alumno'),
-(4, 'ayudante'); -- ayudante de catedra
-
-
 CREATE TABLE IF NOT EXISTS materias (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
@@ -136,13 +129,19 @@ CREATE TABLE IF NOT EXISTS equipo_integrantes (
 
 CREATE TABLE IF NOT EXISTS clases (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(80) NOT NULL,
+    profesor_id INT NOT NULL, 
     curso_id INT NOT NULL,
-    fecha DATE NOT NULL,
+    fecha_hora DATETIME NOT NULL,
     tema VARCHAR(255) NULL,
+    status ENUM('pendiente', 'suspendida', 'en curso', 'finalizada') NOT NULL DEFAULT 'pendiente',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_clases_cursos 
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_clases_profesores 
+        FOREIGN KEY (profesor_id) REFERENCES usuarios(id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
 -- guarda temporalmente los tokens generados para la asistencia por QR

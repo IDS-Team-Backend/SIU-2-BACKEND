@@ -5,7 +5,8 @@ def seed_tipos_usuario():
     tipos = [
         ("admin",),
         ("docente",),
-        ("alumno",)
+        ("alumno",),
+        ("ayudante",)
     ]
 
     query = """
@@ -61,9 +62,9 @@ def seed_usuarios():
         nombre,
         apellido,
         email,
-        padron,
+        dni,
         password_hash,
-        tipo_usuario_id
+        rol_id
     )
     VALUES (%s, %s, %s, %s, %s, %s)
     """
@@ -152,19 +153,24 @@ def seed_notas():
 
 def seed_clases():
     clases = [
-        (1, "2026-05-15", "Introducción"),
-        (1, "2026-05-20", "Listas enlazadas")
+        ("Clase 1", 2, 1, "2026-05-15 09:00:00", "Introducción a la materia", "finalizada"),
+        ("Clase 2", 2, 1, "2026-05-20 14:30:00", "Listas enlazadas y estructuras", "finalizada"),
+        ("Clase 3", 2, 2, "2026-05-22 18:00:00", "Consultas avanzadas en SQL", "en curso"),
+        ("Clase 4", 2, 2, "2026-05-25 10:00:00", "Arquitectura en 3 Capas", "pendiente"),
+        ("Clase 5", 2, 1, "2026-06-01 16:00:00", "Optimización de Bases de Datos", "pendiente")
     ]
 
     query = """
-    INSERT IGNORE INTO clases(
+    INSERT IGNORE INTO clases (
+        nombre,
+        profesor_id,
         curso_id,
-        fecha,
-        tema
+        fecha_hora,
+        tema,
+        status
     )
-    VALUES (%s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s)
     """
-
     for clase in clases:
         execute_query(query, clase, modifica_db=True)
 
