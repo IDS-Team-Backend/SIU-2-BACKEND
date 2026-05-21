@@ -11,10 +11,10 @@ CREATE TABLE IF NOT EXISTS tipos_usuario (
 ) ENGINE=InnoDB;
 
 INSERT IGNORE INTO tipos_usuario (id, nombre) VALUES 
-(1, 'administrador'),
+(1, 'admin'),
 (2, 'profesor'),
 (3, 'alumno'),
-(4, 'ayudante catedra');
+(4, 'ayudante'); -- ayudante de catedra
 
 
 CREATE TABLE IF NOT EXISTS materias (
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
-    padron BIGINT NOT NULL UNIQUE,
+    dni BIGINT NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     rol_id INT NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE,

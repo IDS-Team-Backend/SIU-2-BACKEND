@@ -32,10 +32,14 @@ app.register_blueprint(materiales_bp, url_prefix="/materiales")
 
 load_dotenv()
 
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "clave_por_defecto")
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not JWT_SECRET_KEY:
+    raise ValueError("CRÍTICO: La variable JWT_SECRET no está configurada en el entorno.")
+
+app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
 
 horas_expiracion = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_HOURS", 2))
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=horas_expiracion)
+app.config["JWT_ACCESS_TOKEN_EXPIRES_HOURS"] = horas_expiracion
 
 jwt = JWTManager(app)
 
