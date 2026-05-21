@@ -17,12 +17,13 @@ def login():
 
     respuesta = make_response(jsonify({
         "mensaje": "Sesión iniciada correctamente",
+        "token": token
     }))
 
     respuesta.set_cookie(
         key="access_token_cookie",
         value=token,
-        httponly=True,       # el frontend NO puede acceder a ella (seguridad)
+        httponly=False,       # el frontend NO puede acceder a ella (seguridad)
         secure=False,        # si es TRUE si o si tiene que ser HTTPS para que se envie la cookie
         samesite="Lax"       # proteccion extra
     )
