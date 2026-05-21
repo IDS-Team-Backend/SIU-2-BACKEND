@@ -13,6 +13,7 @@ from routes.evaluaciones_router import evaluaciones_bp
 from routes.logs_router import logs_bp
 from routes.materiales_router import materiales_bp
 from routes.reportes_router import reportes_bp
+from routes.clases_router import clases_bp
 import utils.error_handlers as error_handlers
 # import utils.middleware_hateoas as middleware
 
@@ -30,6 +31,7 @@ app.register_blueprint(equipos_bp, url_prefix="/equipos")
 app.register_blueprint(asistencia_bp, url_prefix="/asistencia")
 app.register_blueprint(reportes_bp, url_prefix="/reportes")
 app.register_blueprint(materiales_bp, url_prefix="/materiales")
+app.register_blueprint(clases_bp, url_prefix="/clases")
 
 
 load_dotenv()
