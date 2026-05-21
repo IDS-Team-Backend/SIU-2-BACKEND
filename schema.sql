@@ -10,6 +10,12 @@ CREATE TABLE IF NOT EXISTS tipos_usuario (
     nombre VARCHAR(50) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
 
+INSERT IGNORE INTO tipos_usuario (id, nombre) VALUES 
+(1, 'admin'),
+(2, 'profesor'),
+(3, 'alumno'),
+(4, 'ayudante'); -- ayudante de catedra
+
 
 CREATE TABLE IF NOT EXISTS materias (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -25,17 +31,17 @@ CREATE TABLE IF NOT EXISTS tipos_evaluacion (
 
 
 CREATE TABLE IF NOT EXISTS usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY, -- este id seria el padron 
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
-    padron BIGINT NOT NULL UNIQUE,
+    dni BIGINT NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    tipo_usuario_id INT NOT NULL,
+    rol_id INT NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_usuarios_tipos_usuario 
-        FOREIGN KEY (tipo_usuario_id) REFERENCES tipos_usuario(id)
+        FOREIGN KEY (rol_id) REFERENCES tipos_usuario(id)
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 

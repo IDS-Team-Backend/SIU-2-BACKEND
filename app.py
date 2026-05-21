@@ -1,4 +1,8 @@
+from datetime import timedelta
+import os
+from dotenv import load_dotenv
 from flask import Flask
+from flask_jwt_extended import JWTManager
 
 from routes.asistencia_router import asistencia_bp
 from routes.auth_router import auth_bp
@@ -26,6 +30,20 @@ app.register_blueprint(equipos_bp, url_prefix="/equipos")
 app.register_blueprint(asistencia_bp, url_prefix="/asistencia")
 app.register_blueprint(reportes_bp, url_prefix="/reportes")
 app.register_blueprint(materiales_bp, url_prefix="/materiales")
+
+
+load_dotenv()
+
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not JWT_SECRET_KEY:
+    raise ValueError("CRÍTICO: La variable JWT_SECRET no está configurada en el entorno.")
+
+app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
+
+horas_expiracion = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_HOURS", 2))
+app.config["JWT_ACCESS_TOKEN_EXPIRES_HOURS"] = horas_expiracion
+
+jwt = JWTManager(app)
 
 import sys
 if __name__ == "__main__":

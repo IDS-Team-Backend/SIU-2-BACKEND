@@ -9,6 +9,8 @@ def created_response(body, resource_path):
 class NotFoundError(Exception): pass
 class ValidationError(Exception): pass
 class DuplicateError(Exception): pass
+class UnauthorizedError(Exception): pass
+class ForbiddenError(Exception): pass
 
 
 def start(app):
@@ -24,6 +26,30 @@ def start(app):
                 }
             ]
         }), 404
+    
+    @app.errorhandler(UnauthorizedError)
+    def handle_unauthorized_error(e):
+        return jsonify({
+            "errors": [
+                {
+                    "code": "UNAUTHORIZED",
+                    "message": str(e),
+                    "level": "error",
+                }
+            ]
+        }), 401
+    
+    @app.errorhandler(ForbiddenError)
+    def handle_forbidden_error(e):
+        return jsonify({
+            "errors": [
+                {
+                    "code": "FORBIDDEN",
+                    "message": str(e),
+                    "level": "error",
+                }
+            ]
+        }), 403
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(e):
