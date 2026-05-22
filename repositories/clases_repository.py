@@ -35,3 +35,20 @@ def get_clase_by_id(clase_id):
     clase = db.execute_query(query, (clase_id,), un_solo_valor=True)
 
     return clase
+
+def crear_clase(nombre, profesor_id, curso_id, fecha_hora, tema=None, status="pendiente "):
+    query = """
+    INSERT INTO clases (
+        nombre,
+        profesor_id,
+        curso_id,
+        fecha_hora,
+        tema,
+        status
+    ) VALUES (%s, %s, %s, %s, %s, %s)
+    """
+    params = (nombre, profesor_id, curso_id, fecha_hora, tema, status)
+    
+    new_clase_id = db.execute_query(query, params, modifica_db=True)
+    
+    return get_clase_by_id(new_clase_id)
