@@ -50,10 +50,10 @@ def seed_usuarios():
     password = generate_password_hash("1234")
 
     usuarios = [
-        ("Admin", "Sistema", "admin@fiuba.edu.ar", 1000, password, 1),
-        ("Juan", "Perez", "juan@fiuba.edu.ar", 1001, password, 2),
-        ("Ana", "Gomez", "ana@fiuba.edu.ar", 1002, password, 3),
-        ("Lucas", "Martinez", "lucas@fiuba.edu.ar", 1003, password, 3),
+        ("Admin", "Sistema", "admin@fiuba.edu.ar", 30000000, password, 1),
+        ("Juan", "Perez", "juan@fiuba.edu.ar", 30000001, password, 2),
+        ("Ana", "Gomez", "ana@fiuba.edu.ar", 30000002, password, 3),
+        ("Lucas", "Martinez", "lucas@fiuba.edu.ar", 30000003, password, 3),
     ]
 
     query = """
@@ -61,15 +61,34 @@ def seed_usuarios():
         nombre,
         apellido,
         email,
-        padron,
+        dni,
         password_hash,
-        tipo_usuario_id
+        rol_id
     )
     VALUES (%s, %s, %s, %s, %s, %s)
     """
 
     for usuario in usuarios:
         execute_query(query, usuario, modifica_db=True)
+
+def seed_estudiantes():
+    estudiantes = [
+        (3, 100002, "Ingeniería en Informática", 2024),
+        (4, 100003, "Ingeniería en Informática", 2024),
+    ]
+
+    query = """
+    INSERT IGNORE INTO estudiantes(
+        usuario_id,
+        padron,
+        carrera,
+        anio_ingreso
+    )
+    VALUES (%s, %s, %s, %s)
+    """
+
+    for estudiante in estudiantes:
+        execute_query(query, estudiante, modifica_db=True)
 
 def seed_cursos():
     cursos = [
@@ -134,8 +153,8 @@ def seed_evaluaciones():
 
 def seed_notas():
     notas = [
-        (1, 3, 8),
-        (1, 4, 6)
+        (1, 1, 8),
+        (1, 2, 6)
     ]
 
     query = """
@@ -170,8 +189,8 @@ def seed_clases():
 
 def seed_asistencias():
     asistencias = [
-        (1, 3),
-        (1, 4)
+        (1, 1),
+        (1, 2)
     ]
 
     query = """
@@ -192,6 +211,7 @@ def run_seed():
     seed_materias()
     seed_tipos_evaluacion()
     seed_usuarios()
+    seed_estudiantes()
     seed_cursos()
     seed_inscripciones()
     seed_evaluaciones()

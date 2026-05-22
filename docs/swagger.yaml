@@ -13,6 +13,33 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    Estudiante:
+      type: object
+      properties:
+        id: { type: integer }
+        usuario_id: { type: integer }
+        padron: { type: integer }
+        carrera: { type: string }
+        anio_ingreso: { type: integer }
+        activo: { type: boolean }
+        created_at: { type: string, format: date-time }
+        nombre: { type: string }
+        apellido: { type: string }
+        email: { type: string }
+        dni: { type: integer }
+    JWTPayload:
+      type: object
+      description: Payload del JWT emitido por /auth/login. `perfiles` lista los perfiles activos del usuario (ej. ["estudiante"]). `rol_id` queda como campo legacy hasta que se complete la migración a perfiles.
+      properties:
+        id: { type: integer }
+        nombre: { type: string }
+        apellido: { type: string }
+        rol_id: { type: integer, description: "Legacy. Se elimina cuando se separe el perfil profesor." }
+        perfiles:
+          type: array
+          items: { type: string, enum: [estudiante] }
+        exp: { type: integer }
 
 security:
   - bearerAuth: []
@@ -176,6 +203,111 @@ paths:
       responses:
         '200':
           description: CSV procesado e importado con éxito
+
+  # ================= ABM ESTUDIANTES =================
+  /estudiantes:
+    get:
+      summary: Listar perfiles de estudiante (con datos del usuario asociado)
+      tags: [Estudiantes]
+      parameters:
+        - name: carrera
+          in: query
+          schema: { type: string }
+        - name: anio_ingreso
+          in: query
+          schema: { type: integer }
+        - name: activo
+          in: query
+          schema: { type: boolean }
+        - name: usuario_id
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Lista de estudiantes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  estudiantes:
+                    type: array
+                    items: { $ref: '#/components/schemas/Estudiante' }
+                  total: { type: integer }
+        '204':
+          description: Sin resultados
+    post:
+      summary: Crear un perfil estudiante para un usuario existente
+      tags: [Estudiantes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [usuario_id, padron, carrera, anio_ingreso]
+              properties:
+                usuario_id: { type: integer }
+                padron: { type: integer }
+                carrera: { type: string }
+                anio_ingreso: { type: integer }
+      responses:
+        '201':
+          description: Perfil estudiante creado
+        '409':
+          description: El usuario ya tiene perfil estudiante o el padrón está en uso
+
+  /estudiantes/{id}:
+    get:
+      summary: Obtener un estudiante por id
+      tags: [Estudiantes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Estudiante encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Estudiante' }
+        '404':
+          description: Estudiante no encontrado
+    put:
+      summary: Reemplazar los datos de un estudiante
+      tags: [Estudiantes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [padron, carrera, anio_ingreso, activo]
+              properties:
+                padron: { type: integer }
+                carrera: { type: string }
+                anio_ingreso: { type: integer }
+                activo: { type: boolean }
+      responses:
+        '204':
+          description: Estudiante actualizado
+    delete:
+      summary: Dar de baja el perfil estudiante (soft delete)
+      tags: [Estudiantes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204':
+          description: Estudiante dado de baja
 
   # ================= ABM EVALUACIONES =================
   /evaluaciones:
