@@ -1,17 +1,14 @@
 from db import execute_query
 from werkzeug.security import generate_password_hash
 
+from config import ROLES
+
 def seed_tipos_usuario():
-    tipos = [
-        ("admin",),
-        ("docente",),
-        ("alumno",),
-        ("ayudante",)
-    ]
+    tipos = [(id_rol, nombre_rol) for nombre_rol, id_rol in ROLES.items()]
 
     query = """
-    INSERT IGNORE INTO tipos_usuario(nombre)
-    VALUES (%s)
+    INSERT IGNORE INTO tipos_usuario(id, nombre)
+    VALUES (%s, %s)
     """
 
     for tipo in tipos:

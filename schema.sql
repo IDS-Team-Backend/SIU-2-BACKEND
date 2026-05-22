@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS clases (
     curso_id INT NOT NULL,
     fecha_hora DATETIME NOT NULL,
     tema VARCHAR(255) NULL,
-    status ENUM('pendiente', 'suspendida', 'en curso', 'finalizada') NOT NULL DEFAULT 'pendiente',
+    status ENUM('pendiente', 'suspendida', 'en curso', 'finalizada') NOT NULL DEFAULT 'pendiente', -- CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN CONFIG.PY 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_clases_cursos 
         FOREIGN KEY (curso_id) REFERENCES cursos(id)

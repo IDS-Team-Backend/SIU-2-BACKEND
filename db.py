@@ -1,33 +1,22 @@
+from typing import Any
 import mysql.connector
-import os
-from dotenv import load_dotenv
+from config import DB_CONFIG
 
-load_dotenv()
 
-DB_HOST = os.getenv("DB_HOST")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_NAME = os.getenv("DB_NAME")
-DB_PORT = os.getenv("DB_PORT", 3306)
-
-def get_connection(database_name=DB_NAME):
-    return mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=database_name,
-        port=DB_PORT
-    )
+def get_connection():
+    return mysql.connector.connect(**DB_CONFIG)
 
 def get_server_connection():
-    return mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        port=DB_PORT
-    )
+    db_config = DB_CONFIG.copy()
+    db_config.pop("database", None)  # elimina la clave 'database' si existe que no hace falta para crear la DB desde init_db.py
+    return mysql.connector.connect(**db_config)
 
-def execute_query(query, params=None, modifica_db=False, un_solo_valor=False):
+def execute_query(
+        query: str, 
+        params: tuple = (), 
+        modifica_db: bool = False, 
+        un_solo_valor: bool =False
+        ) -> Any: # Any porque puede devolver un dict, lista de dicts, un int o None
     """
         Ejecuta una query SQL.
 
@@ -78,8 +67,8 @@ def execute_query(query, params=None, modifica_db=False, un_solo_valor=False):
     except Exception as e:
         if conn: 
             conn.rollback() # si hay un error en un post o put hay que revertir los cambios hecho a la DB para evitar datos corruptos 
-        e.message = f"Error al ejecutar la query: {str(e)}. Query: {query}, Params: {params}"
-        raise e
+        error_msg = f"Error al ejecutar la query: {str(e)}. Query: {query}, Params: {params}"
+        raise Exception(error_msg) from e
     finally:
         if cur:
             cur.close()
