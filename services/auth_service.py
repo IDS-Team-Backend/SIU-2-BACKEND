@@ -43,12 +43,15 @@ def crear_usuario(nombre: str, apellido: str, dni: int, email: str, password: st
     
     if db.get_user_by_email(email):
         raise ValidationError("El email ya se encuentra registrado")
+    
+    if not validator.es_rol_valido(rol_id):
+        raise ValidationError("El rol_id no corresponde a un rol válido")
 
     new_user = db.crear_usuario(nombre, apellido, email, dni, password, rol_id)
 
     token = TokenHandler.create_token(new_user)
 
-    return token
+    return new_user, token
 
 def get_user_types():
     tipos = db.get_user_types()
