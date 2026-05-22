@@ -51,3 +51,12 @@ def get_estados_clase():
     ]
     
     return jsonify({"estados": lista_de_dicts}), 200
+
+# ─── PUT /clases/{id} ──────────────────────────────────────────────────────────────
+@clases_bp.put("/<int:clase_id>")
+def actualizar_clase(clase_id):
+    args = request.get_json()
+
+    clase_actualizada = logic.actualizar_clase(clase_id, args)
+
+    return jsonify({"clase": clase_actualizada}), 200

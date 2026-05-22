@@ -52,3 +52,20 @@ def crear_clase(nombre, profesor_id, curso_id, fecha_hora, tema=None, status="pe
     new_clase_id = db.execute_query(query, params, modifica_db=True)
     
     return get_clase_by_id(new_clase_id)
+
+def actualizar_clase(clase_id, nombre, profesor_id, curso_id, fecha_hora, tema=None, status="pendiente "):
+    query = """
+    UPDATE clases SET
+        nombre = %s,
+        profesor_id = %s,
+        curso_id = %s,
+        fecha_hora = %s,
+        tema = %s,
+        status = %s
+    WHERE id = %s
+    """
+    params = (nombre, profesor_id, curso_id, fecha_hora, tema, status, clase_id)
+    
+    db.execute_query(query, params, modifica_db=True)
+    
+    return get_clase_by_id(clase_id)
