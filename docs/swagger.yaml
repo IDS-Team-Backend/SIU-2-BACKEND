@@ -580,7 +580,7 @@ paths:
         '403':
           $ref: '#/components/responses/403Forbidden'
 
-  /clases/status:
+  /clases/estados:
     get:
       summary: Obtener los estados válidos de las clases
       description: Devuelve la lista de strings permitidos para el campo status de una clase, basados en el ENUM de la base de datos.
@@ -594,7 +594,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  status_list:
+                  estados:
                     type: array
                     description: Estados válidos para el filtrado y creación de clases.
                     items:

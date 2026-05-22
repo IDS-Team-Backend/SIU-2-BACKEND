@@ -1,12 +1,13 @@
 from flask import Blueprint, jsonify, request
 from utils import auth_validator as auth
 import services.clases_service as logic
+from config import ESTADOS_CLASE
 
 
 clases_bp = Blueprint("clases", __name__)
 clases_bp.before_request(auth.validar_token)
 
-# ─── GET /clases ───────────────────────────────────────────────────────────
+# ─── GET /clases ───────────────────────────────────────────────────────────────
 @clases_bp.get("/")
 def get_clases():
 
@@ -24,14 +25,14 @@ def get_clases():
 
     return jsonify({"clases": clases, "total": total}), 200
 
-# ─── GET /clases/{id} ───────────────────────────────────────────────────────────
+# ─── GET /clases/{id} ──────────────────────────────────────────────────────────
 @clases_bp.get("/<int:clase_id>")
 def get_clase(clase_id):
     clase = logic.get_clase_by_id(clase_id)
 
     return jsonify({"clase": clase}), 200
 
-# ─── POST /clases ───────────────────────────────────────────────────────────
+# ─── POST /clases ──────────────────────────────────────────────────────────────
 @clases_bp.post("/")
 def crear_clase():
     args = request.get_json()
@@ -39,3 +40,14 @@ def crear_clase():
     new_clase = logic.crear_clase(args)
 
     return jsonify({"clase": new_clase}), 201
+
+# ─── GET /clases/estados ────────────────────────────────────────────────────────
+@clases_bp.get("/estados")
+def get_estados_clase():
+    # se convierte la lista de ESTADOS_CLASE en una lista de dicts, donde cada dict es un estado
+    lista_de_dicts = [
+        {"id": i + 1, "nombre": estado} 
+        for i, estado in enumerate(ESTADOS_CLASE)
+    ]
+    
+    return jsonify({"estados": lista_de_dicts}), 200
