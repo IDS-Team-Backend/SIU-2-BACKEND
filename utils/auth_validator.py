@@ -1,6 +1,7 @@
 from functools import wraps
 
 from flask import g, jsonify, request
+from config import ADMIN, DOCENTE
 from utils import JWT_handler
 from utils.validators import id_rol_a_nombre
 from utils.error_handlers import ForbiddenError, UnauthorizedError
@@ -36,3 +37,16 @@ def requiere_roles(*roles_permitidos):
             return f(*args, **kwargs)
         return funcion_decorada
     return decorador
+
+def usuario_es_admin():
+    id_rol_usuario = g.usuario.get("rol_id")
+    rol_usuario = id_rol_a_nombre(id_rol_usuario)
+    return rol_usuario == ADMIN
+
+def usuario_es_docente():
+    id_rol_usuario = g.usuario.get("rol_id")
+    rol_usuario = id_rol_a_nombre(id_rol_usuario)
+    return rol_usuario == DOCENTE
+
+def obtener_usuario_id():
+    return g.usuario.get("id")

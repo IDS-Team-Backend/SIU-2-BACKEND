@@ -11,11 +11,16 @@ def _get_env(nombre, required=True):
         raise RuntimeError(f"Falta la variable de entorno: {nombre}")
     return valor
 
+ADMIN = "admin"
+DOCENTE = "docente"
+ALUMNO = "alumno"
+AYUDANTE = "ayudante"
+
 ROLES = {
-    "admin": 1,
-    "docente": 2,
-    "alumno": 3,
-    "ayudante": 4
+    ADMIN: 1,
+    DOCENTE: 2,
+    ALUMNO: 3,
+    AYUDANTE: 4
 }
 
 ESTADOS_CLASE = [ # caso default: ESTADOS_CLASE[0]
@@ -35,8 +40,8 @@ EMAIL_CONFIG = {
 }
 
 DOMINIOS_EMAIL_PERMITIDOS = [  # en caso de que solo se permitan emails institucionales 
-    "fiuba.edu.ar",
-    "alumnos.fiuba.edu.ar"
+    "fi.uba.ar",
+    "gmail.com"
 ]
 
 DB_CONFIG = {

@@ -2,7 +2,7 @@ from datetime import datetime
 import os
 import re
 from dotenv import load_dotenv
-from config import ESTADOS_CLASE, ROLES
+from config import DOMINIOS_EMAIL_PERMITIDOS, ESTADOS_CLASE, ROLES
 from utils.error_handlers import ValidationError
 
 
@@ -13,11 +13,6 @@ def validar_fecha(fecha_str):
     except ValueError:
         raise ValidationError("El formato de fecha debe ser YYYY-MM-DD.")
     
-load_dotenv()
-
-dominios_raw = os.getenv("DOMINIOS_EMAIL_PERMITIDOS", "gmail.com")
-DOMINIOS_PERMITIDOS = [dominio.strip().lower() for dominio in dominios_raw.split(',')] # pasar del formato .env a una lista de python
-
 def validar_email(email: str):
     if not email:
         return {"valido": False, "mensaje": "El campo email no puede estar vacío."}
@@ -31,9 +26,8 @@ def validar_email(email: str):
     partes = email.split('@')
     dominio = partes[1].lower()
 
-    print(dominio, DOMINIOS_PERMITIDOS, flush=True)
     # compara el dominio
-    if dominio not in DOMINIOS_PERMITIDOS:
+    if dominio not in DOMINIOS_EMAIL_PERMITIDOS:
         return {"valido": False, "mensaje": f"El dominio '@{dominio}' no está permitido en esta institución."}
 
     return {"valido": True, "mensaje": ""}
@@ -66,3 +60,7 @@ def id_rol_a_nombre(rol_id):
 def es_estado_clase_valido(estado: str) -> bool:
     """Valida si un estado de clase enviado por el cliente es correcto."""
     return estado in ESTADOS_CLASE
+
+def es_rol_valido(rol_id: int) -> bool:
+    """Valida si un rol_id corresponde a un rol existente."""
+    return rol_id in ROLES.values()
