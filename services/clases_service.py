@@ -9,3 +9,11 @@ def get_clases(filtros):
     clases, total = db.get_clases(filtros)
     
     return clases, total
+
+def get_clase_by_id(clase_id):
+    clase = db.get_clase_by_id(clase_id)
+
+    if not clase:
+        raise NotFoundError("Clase no encontrada")
+
+    return clase

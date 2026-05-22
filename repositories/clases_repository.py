@@ -29,3 +29,9 @@ def get_clases(filtros):
     total = count_result['total'] if count_result else 0
 
     return clases, total
+
+def get_clase_by_id(clase_id):
+    query = "SELECT * FROM clases WHERE id = %s"
+    clase = db.execute_query(query, (clase_id,), un_solo_valor=True)
+
+    return clase

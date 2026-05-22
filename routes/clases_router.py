@@ -22,3 +22,9 @@ def get_clases():
     clases, total = logic.get_clases(filtros_limpios)
 
     return jsonify({"clases": clases, "total": total}), 200
+
+@clases_bp.get("/<int:clase_id>")
+def get_clase(clase_id):
+    clase = logic.get_clase_by_id(clase_id)
+
+    return jsonify({"clase": clase}), 200
