@@ -5,6 +5,7 @@ from flask import Flask
 from flask_jwt_extended import JWTManager
 
 from routes.asistencia_router import asistencia_bp
+from routes.materias_router import materias_bp
 from routes.cursos_router import cursos_bp
 from routes.auth_router import auth_bp
 from routes.usuarios_router import usuarios_bp
@@ -29,6 +30,7 @@ app.register_blueprint(logs_bp, url_prefix="/logs")
 app.register_blueprint(usuarios_bp, url_prefix="/usuarios")
 app.register_blueprint(evaluaciones_bp, url_prefix="/evaluaciones")
 app.register_blueprint(equipos_bp, url_prefix="/equipos")
+app.register_blueprint(materias_bp, url_prefix="/materias")
 app.register_blueprint(asistencia_bp, url_prefix="/asistencia")
 app.register_blueprint(reportes_bp, url_prefix="/reportes")
 app.register_blueprint(materiales_bp, url_prefix="/materiales")
