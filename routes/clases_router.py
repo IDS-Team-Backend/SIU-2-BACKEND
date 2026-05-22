@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from utils import auth_validator as auth
 import services.clases_service as logic
-from config import ESTADOS_CLASE
+from config import ADMIN, DOCENTE, ESTADOS_CLASE
 
 
 clases_bp = Blueprint("clases", __name__)
@@ -34,6 +34,7 @@ def get_clase(clase_id):
 
 # ─── POST /clases ──────────────────────────────────────────────────────────────
 @clases_bp.post("/")
+@auth.requiere_roles(ADMIN, DOCENTE)
 def crear_clase():
     args = request.get_json()
 
@@ -54,9 +55,18 @@ def get_estados_clase():
 
 # ─── PUT /clases/{id} ──────────────────────────────────────────────────────────────
 @clases_bp.put("/<int:clase_id>")
+@auth.requiere_roles(ADMIN, DOCENTE)
 def actualizar_clase(clase_id):
     args = request.get_json()
 
     clase_actualizada = logic.actualizar_clase(clase_id, args)
 
     return jsonify({"clase": clase_actualizada}), 200
+
+# ─── DELETE /clases/{id} ──────────────────────────────────────────────────────────────
+@clases_bp.delete("/<int:clase_id>")
+@auth.requiere_roles(ADMIN, DOCENTE)
+def eliminar_clase(clase_id):
+    logic.eliminar_clase(clase_id)
+
+    return jsonify({}), 204

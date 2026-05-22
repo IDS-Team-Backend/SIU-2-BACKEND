@@ -69,3 +69,7 @@ def actualizar_clase(clase_id, nombre, profesor_id, curso_id, fecha_hora, tema=N
     db.execute_query(query, params, modifica_db=True)
     
     return get_clase_by_id(clase_id)
+
+def eliminar_clase(clase_id):
+    query = "DELETE FROM clases WHERE id = %s"
+    db.execute_query(query, (clase_id,), modifica_db=True)

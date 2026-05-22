@@ -22,9 +22,6 @@ def validar_clase(parametros, parametros_obligatorios, estado_default=ESTADOS_CL
     status = parametros.get("status", estado_default)
 
     validator.validar_fecha_hora(fecha_hora)
-
-    if not auth.usuario_es_admin() and not auth.usuario_es_docente():
-        raise ValidationError(f"Solo los usuarios con rol {DOCENTE} o {ADMIN} pueden crear o modificar clases.")
     
     if not auth.usuario_es_admin() and auth.obtener_usuario_id() != profesor_id:
         # si el usuario no es admin, entonces el debe ser el profesor asignado a la clase
@@ -79,3 +76,16 @@ def actualizar_clase(clase_id, parametros):
     clase_actualizada = db.actualizar_clase(clase_id, parametros["nombre"], parametros["profesor_id"], parametros["curso_id"], parametros["fecha_hora"], parametros.get("tema"), parametros.get("status"))
 
     return clase_actualizada
+
+def eliminar_clase(clase_id):
+    clase_por_eliminarse = get_clase_by_id(clase_id)
+
+    if not clase_por_eliminarse:
+        raise NotFoundError("Clase no encontrada")
+
+    if auth.usuario_es_docente() and auth.obtener_usuario_id() != clase_por_eliminarse["profesor_id"]:
+        raise ValidationError("Los docentes solo pueden eliminar sus propias clases.")
+    
+    db.eliminar_clase(clase_id)
+
+    return
