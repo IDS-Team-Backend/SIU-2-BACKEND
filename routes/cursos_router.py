@@ -1,9 +1,11 @@
 from flask import request, jsonify, Blueprint
 import services.cursos_service as logic
+from utils import auth_validator as auth
 from utils.error_handlers import created_response, ValidationError
 
 
 cursos_bp = Blueprint('cursos', __name__)
+cursos_bp.before_request(auth.validar_token)
 
 cursos_params = ['materia_id', 'nombre', 'anio', 'cuatrimestre',]
 

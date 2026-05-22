@@ -6,7 +6,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import repositories.usuarios_repository as db 
 from utils.error_handlers import NotFoundError, ValidationError
 import utils.JWT_handler as TokenHandler
-import utils.service_validator as validator
+import utils.validators as validator
 
 def iniciar_sesion(dni, password):
     if not isinstance(dni, int):

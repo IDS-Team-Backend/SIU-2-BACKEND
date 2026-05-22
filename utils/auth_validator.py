@@ -2,6 +2,7 @@ from functools import wraps
 
 from flask import g, jsonify, request
 from utils import JWT_handler
+from utils.validators import id_rol_a_nombre
 from utils.error_handlers import ForbiddenError, UnauthorizedError
 
 # esta funcion se tiene que ejecutar en @before_request
@@ -20,14 +21,6 @@ def validar_token():
 
     except Exception as e:
         raise UnauthorizedError(str(e))
-    
-
-ROLES = {
-    1: "admin",
-    2: "profesor",
-    3: "alumno",
-    4: "ayudante",
-}
 
 def requiere_roles(*roles_permitidos):
     def decorador(f):
@@ -35,7 +28,7 @@ def requiere_roles(*roles_permitidos):
         def funcion_decorada(*args, **kwargs):     
             id_rol_usuario = g.usuario.get("rol_id")
 
-            rol_usuario = ROLES.get(id_rol_usuario)
+            rol_usuario = id_rol_a_nombre(id_rol_usuario)
 
             if rol_usuario not in roles_permitidos:
                 raise ForbiddenError("Acceso denegado. No tenés los permisos necesarios.")

@@ -59,7 +59,6 @@ def start(app):
                     "code": "BAD_REQUEST",
                     "message": str(e),
                     "level": "error",
-                    "description": str(e),
                 }
             ]
         }), 400
