@@ -34,7 +34,7 @@ def requiere_roles(*roles_permitidos):
         @wraps(f)
         def funcion_decorada(*args, **kwargs):     
             id_rol_usuario = g.usuario.get("rol_id")
-
+            
             rol_usuario = ROLES.get(id_rol_usuario)
 
             if rol_usuario not in roles_permitidos:
