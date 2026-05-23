@@ -132,9 +132,11 @@ CREATE TABLE IF NOT EXISTS clases (
     nombre VARCHAR(80) NOT NULL,
     profesor_id INT NOT NULL, 
     curso_id INT NOT NULL,
-    fecha_hora DATETIME NOT NULL,
+    fecha_hora_inicio DATETIME NOT NULL,
+    fecha_hora_fin DATETIME NOT NULL,
     tema VARCHAR(255) NULL,
     status ENUM('pendiente', 'suspendida', 'en curso', 'finalizada') NOT NULL DEFAULT 'pendiente', -- CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN CONFIG.PY 
+    deleted_at TIMESTAMP NULL DEFAULT NULL, -- soft delete. mucho mejor que activo: boolean
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_clases_cursos 
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
@@ -143,6 +145,7 @@ CREATE TABLE IF NOT EXISTS clases (
         FOREIGN KEY (profesor_id) REFERENCES usuarios(id)
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+ALTER TABLE clases ADD INDEX idx_clases_busqueda (deleted_at, fecha_hora_inicio); -- hace las busquedas mas rapidas
 
 -- guarda temporalmente los tokens generados para la asistencia por QR
 CREATE TABLE IF NOT EXISTS qr_asistencia (

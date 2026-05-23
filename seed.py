@@ -149,12 +149,33 @@ def seed_notas():
         execute_query(query, nota, modifica_db=True)
 
 def seed_clases():
+    # (nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema, status)
     clases = [
-        ("Clase 1", 2, 1, "2026-05-15 09:00:00", "Introducción a la materia", "finalizada"),
-        ("Clase 2", 2, 1, "2026-05-20 14:30:00", "Listas enlazadas y estructuras", "finalizada"),
-        ("Clase 3", 2, 2, "2026-05-22 18:00:00", "Consultas avanzadas en SQL", "en curso"),
-        ("Clase 4", 2, 2, "2026-05-25 10:00:00", "Arquitectura en 3 Capas", "pendiente"),
-        ("Clase 5", 2, 1, "2026-06-01 16:00:00", "Optimización de Bases de Datos", "pendiente")
+        (
+            "Clase 1", 2, 1, 
+            "2026-05-15 09:00:00", "2026-05-15 11:00:00", 
+            "Introducción a la materia", "finalizada"
+        ),
+        (
+            "Clase 2", 2, 1, 
+            "2026-05-20 14:30:00", "2026-05-20 16:30:00", 
+            "Listas enlazadas y estructuras", "finalizada"
+        ),
+        (
+            "Clase 3", 2, 2, 
+            "2026-05-22 18:00:00", "2026-05-22 20:00:00", 
+            "Consultas avanzadas en SQL", "finalizada" 
+        ),
+        (
+            "Clase 4", 2, 2, 
+            "2026-05-25 10:00:00", "2026-05-25 12:00:00", 
+            "Arquitectura en 3 Capas", "pendiente"
+        ),
+        (
+            "Clase 5", 2, 1, 
+            "2026-06-01 16:00:00", "2026-06-01 18:00:00", 
+            "Optimización de Bases de Datos", "pendiente"
+        )
     ]
 
     query = """
@@ -162,12 +183,14 @@ def seed_clases():
         nombre,
         profesor_id,
         curso_id,
-        fecha_hora,
+        fecha_hora_inicio,
+        fecha_hora_fin,
         tema,
         status
     )
-    VALUES (%s, %s, %s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
+    
     for clase in clases:
         execute_query(query, clase, modifica_db=True)
 
