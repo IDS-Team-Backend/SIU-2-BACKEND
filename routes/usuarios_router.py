@@ -56,7 +56,7 @@ def reemplazar_usuario(id):
 
 # ─── DELETE /usuarios/{id} ────────────────────────────────────────────────────
 @usuarios_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles("administrador")
+@auth.requiere_roles("admin")
 def eliminar_usuario(id: int):
     logic.eliminar_usuario(id)
     return "", 204
