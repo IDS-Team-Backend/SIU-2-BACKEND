@@ -21,6 +21,7 @@ def init_database():
 
     except Exception as e:
         print(f"Error al inicializar la base de datos: {e}")
+        
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'conn' in locals(): conn.close()
