@@ -9,6 +9,7 @@ from .logs_router import logs_bp
 from .materiales_router import materiales_bp
 from .reportes_router import reportes_bp
 from .usuarios_router import usuarios_bp
+from .equipo_integrantes_router import equipo_integrantes_bp
 
 BLUEPRINTS = (
     ("/auth", auth_bp),
@@ -21,6 +22,7 @@ BLUEPRINTS = (
     ("/asistencia", asistencia_bp),
     ("/reportes", reportes_bp),
     ("/materiales", materiales_bp),
+    ("/equipo_integrantes", equipo_integrantes_bp)
 )
 
 
