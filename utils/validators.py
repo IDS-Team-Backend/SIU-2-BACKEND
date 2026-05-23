@@ -51,6 +51,29 @@ def validar_fecha_hora(fecha_hora_str: str) -> None:
     if dt.hour == 0 and dt.minute == 0:
         raise ValidationError("Debe especificar una hora válida para la clase. No se permiten las 00:00 hs.")
     
+    if dt < datetime.now():
+        raise ValidationError("La fecha y hora de la clase no puede ser en el pasado.")
+    
+def validar_rango_fecha(fecha_hora_inicio: str, fecha_hora_fin: str) -> None:
+    """
+    Valida que un rango de datetimes (fecha_hora_inicio y fecha_hora_fin) cumpla con las siguientes reglas:
+    1) fecha_hora_fin debe ser estrictamente mayor a fecha_hora_inicio
+    2) Ambas fechas deben pertenecer al mismo día calendario (no se permiten clases de corrido entre días distintos)
+    """
+    formato = "%Y-%m-%d %H:%M:%S"
+        
+    # 1. Convertimos los strings a objetos datetime
+    dt_inicio = datetime.strptime(fecha_hora_inicio, formato)
+    dt_fin = datetime.strptime(fecha_hora_fin, formato)
+
+    # fecha_hora_fin debe ser mayor a fecha_hora_inicio
+    if dt_fin <= dt_inicio:
+        raise ValidationError("La fecha y hora de fin debe ser posterior a la de comienzo.")
+
+    # ambas fechas deben ser del mismo dia 
+    if dt_inicio.date() != dt_fin.date():
+        raise ValidationError("La fecha y hora de inicio y fin deben pertenecer al mismo día calendario. No se permiten clases de corrido entre días distintos.")
+
 def id_rol_a_nombre(rol_id):
     for nombre, id in ROLES.items():
         if id == rol_id:

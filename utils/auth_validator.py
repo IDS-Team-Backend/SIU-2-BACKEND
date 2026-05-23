@@ -38,15 +38,10 @@ def requiere_roles(*roles_permitidos):
         return funcion_decorada
     return decorador
 
-def usuario_es_admin():
+def usuario_es(rol):
     id_rol_usuario = g.usuario.get("rol_id")
     rol_usuario = id_rol_a_nombre(id_rol_usuario)
-    return rol_usuario == ADMIN
-
-def usuario_es_docente():
-    id_rol_usuario = g.usuario.get("rol_id")
-    rol_usuario = id_rol_a_nombre(id_rol_usuario)
-    return rol_usuario == DOCENTE
+    return rol_usuario == rol
 
 def obtener_usuario_id():
     return g.usuario.get("id")

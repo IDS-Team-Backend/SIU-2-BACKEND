@@ -10,18 +10,10 @@ clases_bp.before_request(auth.validar_token)
 # ─── GET /clases ───────────────────────────────────────────────────────────────
 @clases_bp.get("/")
 def get_clases():
-
-    filtros = {
-        'status': request.args.get('status'),
-        'profesor_id': request.args.get('profesor_id'),
-        'curso_id': request.args.get('curso_id'),
-        'fecha': request.args.get('fecha')
-    }
-    
     # se sacan los filtros que no se enviaron (value = None)
-    filtros_limpios = {k: v for k, v in filtros.items() if v is not None}
+    filtros = {k: v for k, v in request.args.items() if v is not None and v.strip() != ""}
 
-    clases, total = logic.get_clases(filtros_limpios)
+    clases, total = logic.get_clases(filtros)
 
     return jsonify({"clases": clases, "total": total}), 200
 
@@ -62,6 +54,17 @@ def actualizar_clase(clase_id):
     clase_actualizada = logic.actualizar_clase(clase_id, args)
 
     return jsonify({"clase": clase_actualizada}), 200
+
+# ─── PATCH /clases/{id} ──────────────────────────────────────────────────────────────
+@clases_bp.patch("/<int:clase_id>")
+@auth.requiere_roles(ADMIN, DOCENTE)
+def actualizar_clase_parcial(clase_id):
+    args = request.get_json()
+
+    clase_actualizada = logic.actualizar_clase_parcial(clase_id, args)
+
+    return jsonify({"clase": clase_actualizada}), 200
+
 
 # ─── DELETE /clases/{id} ──────────────────────────────────────────────────────────────
 @clases_bp.delete("/<int:clase_id>")

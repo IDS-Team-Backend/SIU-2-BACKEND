@@ -528,6 +528,25 @@ paths:
           schema:
             type: string
             format: date
+        - name: profesor_id
+          in: query
+          required: false
+          description: Filtrar por profesor
+          schema:
+            type: integer
+        - name: curso_id
+          in: query
+          required: false
+          description: Filtrar por curso
+          schema:
+            type: integer
+        - name: activa
+          in: query
+          required: false
+          description: Filtrar por soft delete
+          schema:
+            type: boolean
+            enum: [true, false]
       responses:
         '200':
           description: Listado de clases obtenido con éxito.
@@ -580,7 +599,7 @@ paths:
         '403':
           $ref: '#/components/responses/403Forbidden'
 
-  /clases/estados:
+  /clases/status:
     get:
       summary: Obtener los estados válidos de las clases
       description: Devuelve la lista de strings permitidos para el campo status de una clase, basados en el ENUM de la base de datos.
@@ -594,7 +613,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  estados:
+                  status_list:
                     type: array
                     description: Estados válidos para el filtrado y creación de clases.
                     items:
@@ -666,6 +685,33 @@ paths:
         '404':
           $ref: '#/components/responses/404NotFound'
 
+    patch:
+      summary: Modifica parcialmente la clase (Admin / Profesor)
+      description: Flujo dinámico para pasar la clase entre estados (pendiente, en curso, finalizada, suspendida).
+      tags:
+        - Clases
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaseInput'
+      responses:
+        '200':
+          description: Estado actualizado correctamente.
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+
     delete:
       summary: Eliminar una clase (Admin)
       description: Elimina físicamente el registro de la clase si no tiene restricciones activas.
@@ -686,70 +732,6 @@ paths:
           $ref: '#/components/responses/403Forbidden'
         '404':
           $ref: '#/components/responses/404NotFound'
-
-  /clases/{id}/status:
-    patch:
-      summary: Cambiar el estado de la clase (Admin / Profesor)
-      description: Flujo dinámico para pasar la clase entre estados (pendiente, en curso, finalizada, suspendida).
-      tags:
-        - Clases
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - status
-              properties:
-                status:
-                  type: string
-                  enum: [pendiente, suspendida, en curso, finalizada]
-      responses:
-        '200':
-          description: Estado actualizado correctamente.
-        '400':
-          $ref: '#/components/responses/400BadRequest'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-
-  /clases/{id}/tema:
-    patch:
-      summary: Actualizar tema dictado (Admin / Profesor)
-      description: Permite al docente asentar el tema específico que se dio en la jornada de clase.
-      tags:
-        - Clases
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - tema
-              properties:
-                tema:
-                  type: string
-                  maxLength: 255
-      responses:
-        '200':
-          description: Tema de la clase registrado correctamente.
-        '400':
-          $ref: '#/components/responses/400BadRequest'
 
   /cursos/{curso_id}/clases:
     get:
