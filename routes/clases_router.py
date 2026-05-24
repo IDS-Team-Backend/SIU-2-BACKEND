@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from utils import auth_validator as auth
 import services.clases_service as logic
 from config import ADMIN, DOCENTE, ESTADOS_CLASE
+from utils.error_handlers import ValidationError
 
 
 clases_bp = Blueprint("clases", __name__)
@@ -28,7 +29,10 @@ def get_clase(clase_id):
 @clases_bp.post("/")
 @auth.requiere_roles(ADMIN, DOCENTE)
 def crear_clase():
-    args = request.get_json()
+    args = request.get_json(silent=True)
+
+    if not isinstance(args, dict):
+        raise ValidationError("El cuerpo de la solicitud debe ser un JSON válido.")
 
     new_clase = logic.crear_clase(args)
 
@@ -72,4 +76,4 @@ def actualizar_clase_parcial(clase_id):
 def eliminar_clase(clase_id):
     logic.eliminar_clase(clase_id)
 
-    return jsonify({}), 204
+    return "", 204

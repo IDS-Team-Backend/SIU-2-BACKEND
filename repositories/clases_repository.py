@@ -34,13 +34,18 @@ def get_clases(filtros):
 
     return clases, total
 
-def get_clase_by_id(clase_id):
+def get_clase_by_id(clase_id, incluir_eliminadas=False):
     query = "SELECT * FROM clases WHERE id = %s"
-    clase = db.execute_query(query, (clase_id,), un_solo_valor=True)
+    params = [clase_id]
+
+    if not incluir_eliminadas:
+        query += " AND deleted_at IS NULL"
+
+    clase = db.execute_query(query, tuple(params), un_solo_valor=True)
 
     return clase
 
-def crear_clase(nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema=None, status="pendiente "):
+def crear_clase(nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema=None, status="pendiente"):
     query = """
     INSERT INTO clases (
         nombre,
@@ -58,7 +63,7 @@ def crear_clase(nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin
     
     return get_clase_by_id(new_clase_id)
 
-def actualizar_clase(clase_id, nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema=None, status="pendiente "):
+def actualizar_clase(clase_id, nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema=None, status="pendiente"):
     query = """
     UPDATE clases SET
         nombre = %s,

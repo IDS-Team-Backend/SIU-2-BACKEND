@@ -31,10 +31,14 @@ components:
         curso_id:
           type: integer
           example: 2
-        fecha_hora:
+        fecha_hora_inicio:
           type: string
           format: date-time
           example: "2026-05-22T19:00:00Z"
+        fecha_hora_fin:
+          type: string
+          format: date-time
+          example: "2026-05-22T20:30:00Z"
         tema:
           type: string
           nullable: true
@@ -54,7 +58,8 @@ components:
         - nombre
         - profesor_id
         - curso_id
-        - fecha_hora
+        - fecha_hora_inicio
+        - fecha_hora_fin
       properties:
         nombre:
           type: string
@@ -66,14 +71,22 @@ components:
         curso_id:
           type: integer
           example: 1
-        fecha_hora:
+        fecha_hora_inicio:
           type: string
           format: date-time
           example: "2026-06-01T14:30:00Z"
+        fecha_hora_fin:
+          type: string
+          format: date-time
+          example: "2026-06-01T16:00:00Z"
         tema:
           type: string
           maxLength: 255
           example: "Resolución de ejercicios tipo parcial"
+        status:
+          type: string
+          enum: [pendiente, suspendida, en curso, finalizada]
+          example: "pendiente"
 
   responses:
     400BadRequest:
@@ -599,7 +612,7 @@ paths:
         '403':
           $ref: '#/components/responses/403Forbidden'
 
-  /clases/status:
+  /clases/estados:
     get:
       summary: Obtener los estados válidos de las clases
       description: Devuelve la lista de strings permitidos para el campo status de una clase, basados en el ENUM de la base de datos.
@@ -613,17 +626,30 @@ paths:
               schema:
                 type: object
                 properties:
-                  status_list:
+                  estados:
                     type: array
                     description: Estados válidos para el filtrado y creación de clases.
                     items:
-                      type: string
-                      enum:
-                        - pendiente
-                        - suspendida
-                        - en curso
-                        - finalizada
-                    example: ["pendiente", "suspendida", "en curso", "finalizada"]
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        nombre:
+                          type: string
+                          enum:
+                            - pendiente
+                            - suspendida
+                            - en curso
+                            - finalizada
+                    example:
+                      - id: 1
+                        nombre: pendiente
+                      - id: 2
+                        nombre: suspendida
+                      - id: 3
+                        nombre: en curso
+                      - id: 4
+                        nombre: finalizada
 
   /clases/{id}:
     get:
@@ -714,7 +740,7 @@ paths:
 
     delete:
       summary: Eliminar una clase (Admin)
-      description: Elimina físicamente el registro de la clase si no tiene restricciones activas.
+      description: Realiza un soft delete de la clase si no tiene restricciones activas.
       tags:
         - Clases
       parameters:
@@ -724,7 +750,7 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        '204':
           description: Clase eliminada con éxito.
         '401':
           $ref: '#/components/responses/401Unauthorized'

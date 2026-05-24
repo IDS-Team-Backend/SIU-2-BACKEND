@@ -39,7 +39,6 @@ def crear_usuario():
 # ─── GET /usuarios/{id} ───────────────────────────────────────────────────────
 
 @usuarios_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(DOCENTE)
 def obtener_usuario_por_id(id):
     usuario = logic.obtener_usuario_por_id(id)
     return jsonify(usuario), 200

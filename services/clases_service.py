@@ -6,15 +6,15 @@ from utils.error_handlers import NotFoundError, ValidationError
 import utils.validators as validator
 import utils.auth_validator as auth
 
-clase_params_obligatorios = ["nombre", "profesor_id", "curso_id", "fecha_hora_inicio", "fecha_hora_fin"]
-clase_params_opcionales = ["tema", "status"]
-clase_filtros_permitidos = ["status", "profesor_id", "curso_id", "fecha", "activa"]
+CLASE_PARAMS_OBLIGATORIOS = ["nombre", "profesor_id", "curso_id", "fecha_hora_inicio", "fecha_hora_fin"]
+CLASE_PARAMS_OPCIONALES = ["tema", "status"]
+CLASE_FILTROS_PERMITIDOS = ["status", "profesor_id", "curso_id", "fecha", "activa"]
 
 def validar_profesor_asignado(profesor_id):
     profesor = usuarios_service.obtener_usuario_por_id(profesor_id)
     if not profesor:
         raise NotFoundError("Profesor no existe")
-    if profesor['rol_id'] != ROLES.get(DOCENTE):
+    if profesor['rol_id'] != ROLES[DOCENTE]:
         raise ValidationError("El usuario asignado como profesor no tiene el rol adecuado.")
     
 def validar_permisos_para_crear_clase(profesor_id):
@@ -47,7 +47,7 @@ def validar_clase(parametros, parametros_obligatorios, estado_default=ESTADOS_CL
         
     # validar que no vengan campos que no existen o estan prohibidos (como deleted_at o id )
     for campo in (parametros.keys()):
-        if campo not in clase_params_obligatorios + clase_params_opcionales:
+        if campo not in CLASE_PARAMS_OBLIGATORIOS + CLASE_PARAMS_OPCIONALES:
             raise ValidationError(f"El campo '{campo}' no es válido para una clase.")
       
     nombre = parametros["nombre"]
@@ -68,7 +68,7 @@ def validar_clase(parametros, parametros_obligatorios, estado_default=ESTADOS_CL
 
     validar_profesor_asignado(profesor_id)
     
-    if status != "suspendida":
+    if status != ESTADOS_CLASE[1]:
         # que no tenga ninguna clase superpuesta en ese rango horario
         validar_disponibilidad_profesor(parametros["profesor_id"], parametros["fecha_hora_inicio"], parametros["fecha_hora_fin"], clase_por_actualizarse)
 
@@ -79,8 +79,8 @@ def validar_clase(parametros, parametros_obligatorios, estado_default=ESTADOS_CL
 def get_clases(filtros):
     # valida que los filtros enviados son correctos 
     for filtro in filtros.keys():
-        if filtro not in clase_filtros_permitidos:
-            raise ValidationError(f"Filtro '{filtro}' no permitido. Filtros permitidos: {', '.join(clase_filtros_permitidos)}")
+        if filtro not in CLASE_FILTROS_PERMITIDOS:
+            raise ValidationError(f"Filtro '{filtro}' no permitido. Filtros permitidos: {', '.join(CLASE_FILTROS_PERMITIDOS)}")
         
     # parseo de 'true' o 'false' a booleanos de python
     if 'activa' in filtros:
@@ -88,6 +88,8 @@ def get_clases(filtros):
             filtros['activa'] = True
         elif filtros['activa'].lower() == 'false':
             filtros['activa'] = False
+            if not auth.usuario_es(ADMIN):
+                raise ValidationError("El filtro 'activa=false' solo puede ser utilizado por administradores.")
         else:
             raise ValidationError("El filtro 'activa' debe ser un valor booleano (true o false).")
 
@@ -105,6 +107,10 @@ def get_clases(filtros):
 def get_clase_by_id(clase_id):
     clase = db.get_clase_by_id(clase_id)
 
+    if auth.usuario_es(ADMIN):
+        # los admin pueden ver las clases eliminadas
+        clase = db.get_clase_by_id(clase_id, incluir_eliminadas=True)
+
     if not clase:
         raise NotFoundError("Clase no encontrada")
 
@@ -112,7 +118,7 @@ def get_clase_by_id(clase_id):
 
 # ─── POST /clases ──────────────────────────────────────────────────────────────
 def crear_clase(parametros):
-    validar_clase(parametros, clase_params_obligatorios)
+    validar_clase(parametros, CLASE_PARAMS_OBLIGATORIOS)
 
     new_clase = db.crear_clase(parametros["nombre"], parametros["profesor_id"], parametros["curso_id"], parametros["fecha_hora_inicio"], parametros["fecha_hora_fin"], parametros.get("tema"), parametros.get("status", ESTADOS_CLASE[0]))
 
@@ -131,10 +137,18 @@ def actualizar_clase(clase_id, parametros):
     if clase_por_actualizarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
         raise ValidationError("No se pueden modificar ni eliminar clases que ya finalizaron.")
     
-    clase_params = clase_params_obligatorios + clase_params_opcionales
-    validar_clase(parametros, clase_params, estado_default="", clase_por_actualizarse=clase_id)
+    validar_clase(parametros, CLASE_PARAMS_OBLIGATORIOS, estado_default=clase_por_actualizarse["status"], clase_por_actualizarse=clase_id)
     
-    clase_actualizada = db.actualizar_clase(clase_id, parametros["nombre"], parametros["profesor_id"], parametros["curso_id"], parametros["fecha_hora_inicio"], parametros["fecha_hora_fin"], parametros.get("tema"), parametros.get("status"))
+    clase_actualizada = db.actualizar_clase(
+        clase_id,
+        parametros["nombre"],
+        parametros["profesor_id"],
+        parametros["curso_id"],
+        parametros["fecha_hora_inicio"],
+        parametros["fecha_hora_fin"],
+        parametros.get("tema", clase_por_actualizarse["tema"]),
+        parametros.get("status", clase_por_actualizarse["status"]),
+    )
 
     return clase_actualizada
 
@@ -159,7 +173,7 @@ def actualizar_clase_parcial(clase_id, parametros):
     
     # validar que no vengan campos que no existen o estan prohibidos (como deleted_at o id )
     for campo in (parametros.keys()):
-        if campo not in clase_params_obligatorios + clase_params_opcionales:
+        if campo not in CLASE_PARAMS_OBLIGATORIOS + CLASE_PARAMS_OPCIONALES:
             raise ValidationError(f"El campo '{campo}' no es válido para una clase.")
 
     # me devuelve como se veria la clase final, asi la puedo validar
@@ -175,13 +189,13 @@ def actualizar_clase_parcial(clase_id, parametros):
 
 
 
+    # En PATCH validamos solo el payload final combinado, no campos obligatorios.
     validar_clase(clase_actualizada_temporalmente, [], clase_por_actualizarse=clase_id)
 
     clase_actualizada = db.actualizar_clase_parcial(clase_id, parametros)
 
     return clase_actualizada
-
-     
+ 
 # ─── DELETE /clases/{id} ──────────────────────────────────────────────────────────────
 def eliminar_clase(clase_id):
     clase_por_eliminarse = get_clase_by_id(clase_id)

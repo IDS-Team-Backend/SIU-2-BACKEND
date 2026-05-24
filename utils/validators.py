@@ -1,13 +1,19 @@
-from datetime import datetime
-import os
 import re
-from dotenv import load_dotenv
+from datetime import datetime
 from config import DOMINIOS_EMAIL_PERMITIDOS, ESTADOS_CLASE, ROLES
 from utils.error_handlers import ValidationError
 
 
+def _parse_datetime(fecha_hora_str: str) -> datetime:
+    for formato in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+        try:
+            return datetime.strptime(fecha_hora_str, formato)
+        except ValueError:
+            continue
+    raise ValidationError("Formato de fecha y hora inválido. Debe ser 'AAAA-MM-DD HH:MM:SS' o 'AAAA-MM-DDTHH:MM:SS'.")
+
+
 def validar_fecha(fecha_str):
-    from datetime import datetime
     try:
         return datetime.strptime(fecha_str, "%Y-%m-%d")
     except ValueError:
@@ -17,7 +23,7 @@ def validar_email(email: str):
     if not email:
         return {"valido": False, "mensaje": "El campo email no puede estar vacío."}
 
-    # verifica: 'texto + @ + texto + . + texto'  mediante regex
+    # Verifica el formato básico user@domain.tld con una regex.
     patron_formato = r'^[\w\.-]+@[\w\.-]+\.\w+$'
     if not re.match(patron_formato, email):
         return {"valido": False, "mensaje": "El formato del email es incorrecto (ejemplo válido: usuario@dominio.com)."}
@@ -38,14 +44,7 @@ def validar_fecha_hora(fecha_hora_str: str) -> None:
     y que incluya una hora válida (no permite las 00:00).
     Sino lanza ValidationError
     """
-    try:
-        dt = datetime.strptime(fecha_hora_str, "%Y-%m-%d %H:%M:%S")
-    except ValueError:
-        try:
-            # formato estándar ISO con la 'T' en el medio
-            dt = datetime.strptime(fecha_hora_str, "%Y-%m-%dT%H:%M:%S")
-        except ValueError:
-            raise ValidationError("Formato de fecha y hora inválido. Debe ser 'AAAA-MM-DD HH:MM:SS' o 'AAAA-MM-DDTHH:MM:SS'.")
+    dt = _parse_datetime(fecha_hora_str)
 
     # si la hora y los minutos son 0 es porque no se mando una hora, solo fecha 
     if dt.hour == 0 and dt.minute == 0:
@@ -60,11 +59,8 @@ def validar_rango_fecha(fecha_hora_inicio: str, fecha_hora_fin: str) -> None:
     1) fecha_hora_fin debe ser estrictamente mayor a fecha_hora_inicio
     2) Ambas fechas deben pertenecer al mismo día calendario (no se permiten clases de corrido entre días distintos)
     """
-    formato = "%Y-%m-%d %H:%M:%S"
-        
-    # 1. Convertimos los strings a objetos datetime
-    dt_inicio = datetime.strptime(fecha_hora_inicio, formato)
-    dt_fin = datetime.strptime(fecha_hora_fin, formato)
+    dt_inicio = _parse_datetime(fecha_hora_inicio)
+    dt_fin = _parse_datetime(fecha_hora_fin)
 
     # fecha_hora_fin debe ser mayor a fecha_hora_inicio
     if dt_fin <= dt_inicio:
@@ -75,8 +71,8 @@ def validar_rango_fecha(fecha_hora_inicio: str, fecha_hora_fin: str) -> None:
         raise ValidationError("La fecha y hora de inicio y fin deben pertenecer al mismo día calendario. No se permiten clases de corrido entre días distintos.")
 
 def id_rol_a_nombre(rol_id):
-    for nombre, id in ROLES.items():
-        if id == rol_id:
+    for nombre, current_rol_id in ROLES.items():
+        if current_rol_id == rol_id:
             return nombre
     return None
 

@@ -9,6 +9,8 @@ class EmailClient:
     def send(self, to, subject, body, html=False):
         if not to:
             raise ValidationError("El destinatario es obligatorio")
+        if not all([EMAIL_CONFIG["HOST"], EMAIL_CONFIG["USERNAME"], EMAIL_CONFIG["PASSWORD"], EMAIL_CONFIG["SENDER"]]):
+            raise ValidationError("La configuración de correo no está completa.")
 
         mensaje = EmailMessage()
         mensaje["From"]    = EMAIL_CONFIG["SENDER"]
