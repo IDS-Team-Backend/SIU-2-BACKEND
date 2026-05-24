@@ -1,0 +1,29 @@
+from .materias_router import materias_bp
+from .asistencia_router import asistencia_bp
+from .auth_router import auth_bp
+from .cursos_router import cursos_bp
+from .email_router import email_bp
+from .equipos_router import equipos_bp
+from .evaluaciones_router import evaluaciones_bp
+from .logs_router import logs_bp
+from .materiales_router import materiales_bp
+from .reportes_router import reportes_bp
+from .usuarios_router import usuarios_bp
+
+BLUEPRINTS = (
+    ("/auth", auth_bp),
+    ("/email", email_bp),
+    ("/cursos", cursos_bp),
+    ("/logs", logs_bp),
+    ("/usuarios", usuarios_bp),
+    ("/evaluaciones", evaluaciones_bp),
+    ("/equipos", equipos_bp),
+    ("/asistencia", asistencia_bp),
+    ("/reportes", reportes_bp),
+    ("/materiales", materiales_bp),
+)
+
+
+def register_routes(app):
+    for prefix, bp in BLUEPRINTS:
+        app.register_blueprint(bp, url_prefix=prefix)
