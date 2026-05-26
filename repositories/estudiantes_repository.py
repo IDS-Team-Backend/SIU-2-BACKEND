@@ -160,12 +160,32 @@ def reemplazar_estudiante(id, padron, carrera, anio_ingreso, activo):
     return filas > 0
 
 
+def modificar_estudiante_parcial(id, parametros):
+    if not parametros:
+        return obtener_estudiante_por_id(id)
+
+    campos = []
+    valores = []
+    for columna, valor in parametros.items():
+        campos.append(f"{columna} = %s")
+        valores.append(valor)
+
+    query = f"UPDATE estudiantes SET {', '.join(campos)} WHERE id = %s"
+    valores.append(id)
+
+    filas = db.execute_query(query, tuple(valores), modifica_db=True)
+    if filas == 0:
+        return None
+    return obtener_estudiante_por_id(id)
+
+
 def eliminar_estudiante(id: int):
     query = "UPDATE estudiantes SET activo = FALSE WHERE id = %s"
     filas_afectadas = db.execute_query(query, (id,), modifica_db=True)
     return filas_afectadas > 0
 
 
+# TODO (fuera de alcance): mover a perfiles_repository cuando se agregue el perfil "profesor".
 def obtener_perfiles_de_usuario(usuario_id):
     query = """
         SELECT COUNT(*) as total

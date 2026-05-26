@@ -325,6 +325,7 @@ paths:
     get:
       summary: Listar perfiles de estudiante (con datos del usuario asociado)
       tags: [Estudiantes]
+      security: [{ CookieAuth: [] }]
       parameters:
         - name: carrera
           in: query
@@ -338,6 +339,12 @@ paths:
         - name: usuario_id
           in: query
           schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100 }
       responses:
         '200':
           description: Lista de estudiantes
@@ -350,11 +357,19 @@ paths:
                     type: array
                     items: { $ref: '#/components/schemas/Estudiante' }
                   total: { type: integer }
+                  page: { type: integer }
+                  page_size: { type: integer }
+                  total_paginas: { type: integer }
         '204':
           description: Sin resultados
+        '400':
+          description: Filtro no permitido
+        '401':
+          description: Token ausente o inválido
     post:
-      summary: Crear un perfil estudiante para un usuario existente
+      summary: Crear un perfil estudiante para un usuario existente (sólo admin)
       tags: [Estudiantes]
+      security: [{ CookieAuth: [] }]
       requestBody:
         required: true
         content:
@@ -366,17 +381,42 @@ paths:
                 usuario_id: { type: integer }
                 padron: { type: integer }
                 carrera: { type: string }
-                anio_ingreso: { type: integer }
+                anio_ingreso: { type: integer, description: "Entre 1900 y el año actual + 1" }
       responses:
         '201':
           description: Perfil estudiante creado
+        '400':
+          description: Body inválido
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: No tenés permisos (sólo admin)
+        '404':
+          description: No existe el usuario indicado
         '409':
           description: El usuario ya tiene perfil estudiante o el padrón está en uso
 
+  /estudiantes/me:
+    get:
+      summary: Obtener el perfil estudiante del usuario autenticado
+      tags: [Estudiantes]
+      security: [{ CookieAuth: [] }]
+      responses:
+        '200':
+          description: Perfil estudiante del usuario logueado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Estudiante' }
+        '401':
+          description: Token ausente o inválido
+        '404':
+          description: El usuario no tiene perfil estudiante asociado
+
   /estudiantes/{id}:
     get:
-      summary: Obtener un estudiante por id
+      summary: Obtener un estudiante por id (admin o profesor)
       tags: [Estudiantes]
+      security: [{ CookieAuth: [] }]
       parameters:
         - name: id
           in: path
@@ -388,11 +428,16 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Estudiante' }
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: No tenés permisos
         '404':
           description: Estudiante no encontrado
     put:
-      summary: Reemplazar los datos de un estudiante
+      summary: Reemplazar los datos de un estudiante (sólo admin)
       tags: [Estudiantes]
+      security: [{ CookieAuth: [] }]
       parameters:
         - name: id
           in: path
@@ -408,14 +453,66 @@ paths:
               properties:
                 padron: { type: integer }
                 carrera: { type: string }
-                anio_ingreso: { type: integer }
+                anio_ingreso: { type: integer, description: "Entre 1900 y el año actual + 1" }
                 activo: { type: boolean }
       responses:
         '204':
           description: Estudiante actualizado
-    delete:
-      summary: Dar de baja el perfil estudiante (soft delete)
+        '400':
+          description: Body inválido
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: No tenés permisos (sólo admin)
+        '404':
+          description: Estudiante no encontrado
+        '409':
+          description: Padrón en uso por otro estudiante
+    patch:
+      summary: Modificación parcial. Admin puede modificar cualquier campo; el propio estudiante sólo `carrera`.
       tags: [Estudiantes]
+      security: [{ CookieAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                padron: { type: integer }
+                carrera: { type: string }
+                anio_ingreso: { type: integer, description: "Entre 1900 y el año actual + 1" }
+                activo: { type: boolean }
+      responses:
+        '200':
+          description: Estudiante actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  estudiante: { $ref: '#/components/schemas/Estudiante' }
+        '400':
+          description: Body inválido (campos desconocidos o vacío)
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: No tenés permisos para modificar este estudiante o este campo
+        '404':
+          description: Estudiante no encontrado
+        '409':
+          description: Padrón en uso por otro estudiante
+    delete:
+      summary: Dar de baja el perfil estudiante (soft delete, sólo admin)
+      tags: [Estudiantes]
+      security: [{ CookieAuth: [] }]
       parameters:
         - name: id
           in: path
@@ -424,6 +521,12 @@ paths:
       responses:
         '204':
           description: Estudiante dado de baja
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: No tenés permisos (sólo admin)
+        '404':
+          description: Estudiante no encontrado
 
   # ================= ABM EVALUACIONES =================
   /evaluaciones:

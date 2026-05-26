@@ -3,6 +3,7 @@ import math
 from flask import request, jsonify, Blueprint
 
 import services.estudiantes_service as logic
+from config import ADMIN, ALUMNO
 from utils.error_handlers import created_response, NotFoundError, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion
@@ -13,7 +14,18 @@ estudiantes_bp = Blueprint("estudiantes", __name__)
 estudiantes_bp.before_request(auth.validar_token)
 
 
+FILTROS_PERMITIDOS = ("carrera", "anio_ingreso", "activo", "usuario_id")
+
+
 def _parsear_filtros():
+    for key in request.args.keys():
+        if key in ("page", "page_size"):
+            continue
+        if key not in FILTROS_PERMITIDOS:
+            raise ValidationError(
+                f"Filtro '{key}' no permitido. Permitidos: {', '.join(FILTROS_PERMITIDOS)}."
+            )
+
     activo_arg = request.args.get("activo")
     activo = activo_arg.lower() in ("true", "1") if activo_arg is not None else None
 
@@ -60,6 +72,12 @@ def crear_estudiante():
     )
 
 
+@estudiantes_bp.route("/me", methods=["GET"])
+def obtener_mi_estudiante():
+    estudiante = logic.obtener_estudiante_me()
+    return jsonify(estudiante), 200
+
+
 @estudiantes_bp.route("/<int:id>", methods=["GET"])
 @auth.requiere_roles("admin", "profesor")
 def obtener_estudiante_por_id(id):
@@ -74,6 +92,17 @@ def reemplazar_estudiante(id):
     if not logic.reemplazar_estudiante(id, parametros):
         raise NotFoundError("No se encontró el estudiante")
     return "", 204
+
+
+@estudiantes_bp.route("/<int:id>", methods=["PATCH"])
+@auth.requiere_roles(ADMIN, ALUMNO)
+def modificar_estudiante_parcial(id):
+    parametros = estudiantes_validator.validar_body_modificar_estudiante(request.get_json())
+    estudiante = logic.modificar_estudiante_parcial(id, parametros)
+    return jsonify({
+        "message": "Estudiante actualizado exitosamente",
+        "estudiante": estudiante,
+    }), 200
 
 
 @estudiantes_bp.route("/<int:id>", methods=["DELETE"])

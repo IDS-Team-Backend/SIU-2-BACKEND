@@ -37,7 +37,9 @@ def requiere_roles(*roles_permitidos):
         def funcion_decorada(*args, **kwargs):
             perfiles = set(g.usuario.get("perfiles") or [])
 
-            rol_usuario = ROLES.get(id_rol_usuario)
+            rol_legacy = ROLES_LEGACY.get(g.usuario.get("rol_id"))
+            if rol_legacy:
+                perfiles.add(rol_legacy)
 
             if not perfiles.intersection(roles_permitidos):
                 raise ForbiddenError("Acceso denegado. No tenés los permisos necesarios.")
