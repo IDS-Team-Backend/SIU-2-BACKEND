@@ -1,4 +1,5 @@
-from flask import app, jsonify
+from flask import jsonify
+from werkzeug.exceptions import BadRequest
 
 
 def created_response(body, resource_path):
@@ -26,6 +27,18 @@ def start(app):
                 }
             ]
         }), 404
+    
+    @app.errorhandler(BadRequest)
+    def handle_bad_request_error(e):
+        return jsonify({
+            "errors": [
+                {
+                    "code": "BAD_REQUEST",
+                    "description": f"El JSON enviado está mal formado. Detalles: {e.description}",
+                    "message": "Sintaxis JSON inválida"
+                }
+            ]
+        }), 400
     
     @app.errorhandler(UnauthorizedError)
     def handle_unauthorized_error(e):
