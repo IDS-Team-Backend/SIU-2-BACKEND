@@ -5,6 +5,7 @@ from .cursos_router import cursos_bp
 from .email_router import email_bp
 from .equipos_router import equipos_bp
 from .estudiantes_router import estudiantes_bp
+from .profesores_router import profesores_bp
 from .evaluaciones_router import evaluaciones_bp
 from .logs_router import logs_bp
 from .materiales_router import materiales_bp
@@ -20,6 +21,7 @@ BLUEPRINTS = (
     ("/logs", logs_bp),
     ("/usuarios", usuarios_bp),
     ("/estudiantes", estudiantes_bp),
+    ("/profesores", profesores_bp),
     ("/evaluaciones", evaluaciones_bp),
     ("/equipos", equipos_bp),
     ("/asistencia", asistencia_bp),
