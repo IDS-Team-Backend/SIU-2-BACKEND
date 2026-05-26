@@ -10,13 +10,6 @@ CREATE TABLE IF NOT EXISTS tipos_usuario (
     nombre VARCHAR(50) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
 
-INSERT IGNORE INTO tipos_usuario (id, nombre) VALUES 
-(1, 'admin'),
-(2, 'profesor'),
-(3, 'alumno'),
-(4, 'ayudante'); -- ayudante de catedra
-
-
 CREATE TABLE IF NOT EXISTS materias (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
@@ -26,7 +19,8 @@ CREATE TABLE IF NOT EXISTS materias (
 
 CREATE TABLE IF NOT EXISTS tipos_evaluacion (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    es_grupal BOOLEAN NOT NULL DEFAULT FALSE
 ) ENGINE=InnoDB;
 
 
@@ -93,6 +87,7 @@ CREATE TABLE IF NOT EXISTS evaluaciones (
     titulo VARCHAR(150) NOT NULL,
     descripcion TEXT NULL,
     fecha DATE NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_evaluaciones_cursos 
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
@@ -125,6 +120,7 @@ CREATE TABLE IF NOT EXISTS equipos (
     curso_id INT NOT NULL,
     evaluacion_id INT NOT NULL,
     nombre VARCHAR(100) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_equipos_cursos 
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
@@ -134,6 +130,29 @@ CREATE TABLE IF NOT EXISTS equipos (
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
+
+CREATE TABLE IF NOT EXISTS notas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    evaluacion_id INT NOT NULL,
+    alumno_id INT NULL,
+    equipo_id INT NULL,
+    nota DECIMAL(4,2) NOT NULL,
+    observaciones TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_notas_evaluaciones 
+        FOREIGN KEY (evaluacion_id) REFERENCES evaluaciones(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_notas_usuarios 
+        FOREIGN KEY (alumno_id) REFERENCES usuarios(id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_notas_equipos 
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT uq_evaluacion_alumno 
+    UNIQUE (evaluacion_id, alumno_id),
+    CONSTRAINT uq_evaluacion_equipo
+        UNIQUE (evaluacion_id, equipo_id)
+) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS equipo_integrantes (
     equipo_id INT NOT NULL,
@@ -149,14 +168,23 @@ CREATE TABLE IF NOT EXISTS equipo_integrantes (
 
 CREATE TABLE IF NOT EXISTS clases (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(80) NOT NULL,
+    profesor_id INT NOT NULL, 
     curso_id INT NOT NULL,
-    fecha DATE NOT NULL,
+    fecha_hora_inicio DATETIME NOT NULL,
+    fecha_hora_fin DATETIME NOT NULL,
     tema VARCHAR(255) NULL,
+    status ENUM('pendiente', 'suspendida', 'en curso', 'finalizada') NOT NULL DEFAULT 'pendiente', -- CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN CONFIG.PY 
+    deleted_at TIMESTAMP NULL DEFAULT NULL, -- soft delete. mucho mejor que activo: boolean
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_clases_cursos 
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_clases_profesores 
+        FOREIGN KEY (profesor_id) REFERENCES usuarios(id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+ALTER TABLE clases ADD INDEX idx_clases_busqueda (deleted_at, fecha_hora_inicio); -- hace las busquedas mas rapidas
 
 -- guarda temporalmente los tokens generados para la asistencia por QR
 CREATE TABLE IF NOT EXISTS qr_asistencia (

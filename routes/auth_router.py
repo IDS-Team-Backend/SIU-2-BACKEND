@@ -42,10 +42,10 @@ def signup():
     password = args.get("password")
     rol_id = args.get("rol_id")
 
-    token = logic.crear_usuario(nombre, apellido, dni, email, password, rol_id)
+    new_usuario, token = logic.crear_usuario(nombre, apellido, dni, email, password, rol_id)
 
     respuesta = make_response(jsonify({
-        "mensaje": "Cuenta creada correctamente",
+        "usuario": new_usuario,
     }))
 
     respuesta.set_cookie(

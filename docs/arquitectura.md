@@ -39,7 +39,7 @@ El sistema mapea internamente los IDs de la base de datos con los siguientes str
 | ID Rol | Nombre del Rol (Usar en el decorador) |
 | :---: | :--- |
 | **`1`** | `"admin"` |
-| **`2`** | `"profesor"` |
+| **`2`** | `"docente"` |
 | **`3`** | `"alumno"` |
 | **`4`** | `"ayudante"` |
 
@@ -68,7 +68,7 @@ def crear_materia():
 
 # CASO C: Accesible por MÚLTIPLES ROLES (Se pasan separados por comas)
 @materias_bp.route("/notas", methods=["PUT"])
-@requiere_roles("admin", "profesor") 
+@requiere_roles("admin", "docente") 
 def cargar_notas():
     return jsonify({"mensaje": "Notas cargadas correctamente."}), 200
 ```
@@ -118,7 +118,23 @@ Los errores que estan definidos son:
 
 ---
 
-## 6. Buenas Practicas para Git 
+## 6. Constantes globales
+**VALORES GLOBALES Y CONSTANTES** se definen en `'/config.py'`. Por ejemplo la asignacion de roles, el nombre utilizado de cada uno con sus respectivos ids que definen su creacion en la base de datos.
+```python
+ROLES = {
+    "admin": 1,
+    "docente": 2,
+    "alumno": 3,
+    "ayudante": 4
+}
+
+DOMINIOS_EMAIL_PERMITIDOS = [  # en caso de que solo se permitan emails institucionales 
+    "fiuba.edu.ar",
+    "alumnos.fiuba.edu.ar"
+]
+```
+---
+## 7. Buenas Practicas para Git 
 
 Para poder entender el historial entre todos, podemos seguir estas recomendaciones:
 

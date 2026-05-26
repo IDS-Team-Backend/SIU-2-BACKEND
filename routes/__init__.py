@@ -1,3 +1,4 @@
+from .materias_router import materias_bp
 from .asistencia_router import asistencia_bp
 from .auth_router import auth_bp
 from .cursos_router import cursos_bp
@@ -10,6 +11,7 @@ from .materiales_router import materiales_bp
 from .reportes_router import reportes_bp
 from .usuarios_router import usuarios_bp
 from utils import auth_validator as auth
+from .clases_router import clases_bp
 
 BLUEPRINTS = (
     ("/auth", auth_bp),
@@ -23,6 +25,7 @@ BLUEPRINTS = (
     ("/asistencia", asistencia_bp),
     ("/reportes", reportes_bp),
     ("/materiales", materiales_bp),
+    ("/clases", clases_bp)
 )
 
 

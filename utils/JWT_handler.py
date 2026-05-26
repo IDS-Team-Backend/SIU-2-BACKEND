@@ -6,9 +6,6 @@ import jwt
 
 from utils.error_handlers import UnauthorizedError
 
-
-
-
 class Usuario(TypedDict):
     id: int
     nombre: str

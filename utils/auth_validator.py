@@ -1,7 +1,9 @@
 from functools import wraps
 
 from flask import g, jsonify, request
+from config import ADMIN, DOCENTE
 from utils import JWT_handler
+from utils.validators import id_rol_a_nombre
 from utils.error_handlers import ForbiddenError, UnauthorizedError
 
 # esta funcion se tiene que ejecutar en @before_request
@@ -35,9 +37,7 @@ def requiere_roles(*roles_permitidos):
         def funcion_decorada(*args, **kwargs):
             perfiles = set(g.usuario.get("perfiles") or [])
 
-            rol_legacy = ROLES_LEGACY.get(g.usuario.get("rol_id"))
-            if rol_legacy:
-                perfiles.add(rol_legacy)
+            rol_usuario = ROLES.get(id_rol_usuario)
 
             if not perfiles.intersection(roles_permitidos):
                 raise ForbiddenError("Acceso denegado. No tenés los permisos necesarios.")
@@ -45,3 +45,11 @@ def requiere_roles(*roles_permitidos):
             return f(*args, **kwargs)
         return funcion_decorada
     return decorador
+
+def usuario_es(rol):
+    id_rol_usuario = g.usuario.get("rol_id")
+    rol_usuario = id_rol_a_nombre(id_rol_usuario)
+    return rol_usuario == rol
+
+def obtener_usuario_id():
+    return g.usuario.get("id")

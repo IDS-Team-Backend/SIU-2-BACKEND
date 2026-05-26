@@ -7,31 +7,7 @@ import repositories.usuarios_repository as db
 import repositories.estudiantes_repository as estudiantes_db
 from utils.error_handlers import NotFoundError, ValidationError
 import utils.JWT_handler as TokenHandler
-
-load_dotenv()
-
-dominios_raw = os.getenv("DOMINIOS_EMAIL_PERMITIDOS", "gmail.com")
-DOMINIOS_PERMITIDOS = [dominio.strip().lower() for dominio in dominios_raw.split(',')] # pasar del formato .env a una lista de python
-
-def validar_email(email: str):
-    if not email:
-        return {"valido": False, "mensaje": "El campo email no puede estar vacío."}
-
-    # verifica: 'texto + @ + texto + . + texto'  mediante regex
-    patron_formato = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-    if not re.match(patron_formato, email):
-        return {"valido": False, "mensaje": "El formato del email es incorrecto (ejemplo válido: usuario@dominio.com)."}
-
-    # extrae el dominio
-    partes = email.split('@')
-    dominio = partes[1].lower()
-
-    print(dominio, DOMINIOS_PERMITIDOS, flush=True)
-    # compara el dominio
-    if dominio not in DOMINIOS_PERMITIDOS:
-        return {"valido": False, "mensaje": f"El dominio '@{dominio}' no está permitido en esta institución."}
-
-    return {"valido": True, "mensaje": ""}
+import utils.validators as validator
 
 def iniciar_sesion(dni, password):
     if not isinstance(dni, int):
@@ -58,7 +34,7 @@ def crear_usuario(nombre: str, apellido: str, dni: int, email: str, password: st
     if not isinstance(dni, int) or dni <= 0 or len(str(dni)) != 8:
         raise ValidationError("El DNI debe ser un número entero de 8 dígitos")
     
-    validacion_email = validar_email(email)
+    validacion_email = validator.validar_email(email)
     if not validacion_email["valido"]:
         raise ValidationError(validacion_email["mensaje"])
     
@@ -70,12 +46,15 @@ def crear_usuario(nombre: str, apellido: str, dni: int, email: str, password: st
     
     if db.get_user_by_email(email):
         raise ValidationError("El email ya se encuentra registrado")
+    
+    if not validator.es_rol_valido(rol_id):
+        raise ValidationError("El rol_id no corresponde a un rol válido")
 
     new_user = db.crear_usuario(nombre, apellido, email, dni, password, rol_id)
 
     token = TokenHandler.create_token(new_user, [])
 
-    return token
+    return new_user, token
 
 def get_user_types():
     tipos = db.get_user_types()
