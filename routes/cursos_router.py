@@ -1,19 +1,18 @@
 from flask import request, jsonify, Blueprint
 import services.cursos_service as logic
-from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
+from config import ADMIN
+from utils.error_handlers import created_response, ValidationError
 from utils import paginacion
 
 cursos_bp = Blueprint("cursos", __name__)
 cursos_bp.before_request(auth.validar_token)
 
 @cursos_bp.route("/health", methods=["GET"])
-@auth.requiere_roles("admin", "profesor", "ayudante", "alumno")
 def health_check():
     return jsonify({"resource": "cursos", "status": "healthy"}), 200
 
 @cursos_bp.route("/", methods=["GET"])
-@auth.requiere_roles("admin", "profesor", "ayudante", "alumno")
 def obtener_cursos():
     page, page_size, offset = paginacion.desde_request()
 
@@ -37,7 +36,7 @@ def obtener_cursos():
     }), 200
 
 @cursos_bp.route("/", methods=["POST"])
-@auth.requiere_roles("admin")
+@auth.requiere_roles(ADMIN)
 def crear_cursos():
     parametros = request.get_json(silent=True)
 
@@ -52,13 +51,12 @@ def crear_cursos():
     }, f"/cursos/{new_curso['id']}")
 
 @cursos_bp.route("/<int:curso_id>", methods=["GET"])
-@auth.requiere_roles("admin", "profesor", "ayudante", "alumno")
 def obtener_curso(curso_id):
     curso = logic.obtener_curso(curso_id)
     return jsonify(curso), 200
 
 @cursos_bp.route("/<int:curso_id>", methods=["PUT"])
-@auth.requiere_roles("admin")
+@auth.requiere_roles(ADMIN)
 def reemplazar_curso(curso_id):
     parametros = request.get_json(silent=True)
 
@@ -73,7 +71,7 @@ def reemplazar_curso(curso_id):
     }), 200
 
 @cursos_bp.route("/<int:curso_id>", methods=["DELETE"])
-@auth.requiere_roles("admin")
+@auth.requiere_roles(ADMIN)
 def eliminar_curso(curso_id: int):
     logic.eliminar_curso(curso_id)
     return "", 204
