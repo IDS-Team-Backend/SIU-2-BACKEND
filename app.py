@@ -12,7 +12,6 @@ app = Flask(__name__)
 
 # middleware.start_hateoas(app)
 error_handlers.start(app)
-
 register_routes(app)
 
 
