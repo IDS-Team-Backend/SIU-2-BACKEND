@@ -3,7 +3,7 @@ import math
 from flask import request, jsonify, Blueprint
 
 import services.estudiantes_service as logic
-from config import ADMIN, ALUMNO
+from config import ADMIN, ALUMNO, DOCENTE
 from utils.error_handlers import created_response, NotFoundError, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion
@@ -62,7 +62,7 @@ def obtener_estudiantes():
 
 
 @estudiantes_bp.route("/", methods=["POST"])
-@auth.requiere_roles("admin")
+@auth.requiere_roles(ADMIN)
 def crear_estudiante():
     parametros = estudiantes_validator.validar_body_crear_estudiante(request.get_json())
     nuevo_estudiante = logic.crear_estudiante(parametros)
@@ -79,14 +79,14 @@ def obtener_mi_estudiante():
 
 
 @estudiantes_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles("admin", "profesor")
+@auth.requiere_roles(ADMIN, DOCENTE)
 def obtener_estudiante_por_id(id):
     estudiante = logic.obtener_estudiante_por_id(id)
     return jsonify(estudiante), 200
 
 
 @estudiantes_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles("admin")
+@auth.requiere_roles(ADMIN)
 def reemplazar_estudiante(id):
     parametros = estudiantes_validator.validar_body_reemplazar_estudiante(request.get_json())
     if not logic.reemplazar_estudiante(id, parametros):
@@ -106,7 +106,7 @@ def modificar_estudiante_parcial(id):
 
 
 @estudiantes_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles("admin")
+@auth.requiere_roles(ADMIN)
 def eliminar_estudiante(id: int):
     logic.eliminar_estudiante(id)
     return "", 204

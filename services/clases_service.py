@@ -1,7 +1,7 @@
-import repositories.clases_repository as db 
+import repositories.clases_repository as db
+import repositories.profesores_repository as profesores_db
 from services import cursos_service
-import services.usuarios_service as usuarios_service
-from config import ADMIN, DOCENTE, ROLES, ESTADOS_CLASE
+from config import ADMIN, ESTADOS_CLASE
 from utils.error_handlers import NotFoundError, ValidationError
 import utils.validators as validator
 import utils.auth_validator as auth
@@ -10,16 +10,20 @@ CLASE_PARAMS_OBLIGATORIOS = ["nombre", "profesor_id", "curso_id", "fecha_hora_in
 CLASE_PARAMS_OPCIONALES = ["tema", "status"]
 CLASE_FILTROS_PERMITIDOS = ["status", "profesor_id", "curso_id", "fecha", "activa"]
 
+
 def validar_profesor_asignado(profesor_id):
-    profesor = usuarios_service.obtener_usuario_por_id(profesor_id)
+    profesor = profesores_db.obtener_profesor_por_id(profesor_id)
     if not profesor:
         raise NotFoundError("Profesor no existe")
-    if profesor['rol_id'] != ROLES[DOCENTE]:
-        raise ValidationError("El usuario asignado como profesor no tiene el rol adecuado.")
-    
+    if not profesor["activo"]:
+        raise ValidationError("El profesor asignado está dado de baja.")
+
+
 def validar_permisos_para_crear_clase(profesor_id):
-    if not auth.usuario_es(ADMIN) and auth.obtener_usuario_id() != profesor_id:
-        # si el usuario no es admin, entonces el debe ser el profesor asignado a la clase
+    if auth.usuario_es(ADMIN):
+        return
+    perfil = profesores_db.obtener_profesor_por_usuario_id(auth.obtener_usuario_id())
+    if not perfil or perfil["id"] != profesor_id:
         raise ValidationError("Los docentes solo pueden asignarse a sí mismos como profesor de una clase.")
     
 def validar_disponibilidad_profesor(profesor_id, fecha_hora_inicio, fecha_hora_fin, clase_id=None):
