@@ -1,6 +1,6 @@
 import repositories.equipo_integrantes_repository as db
 import repositories.equipos_repository as equipos_db
-import repositories.usuarios_repository as usuarios_db
+import repositories.estudiantes_repository as estudiantes_db
 from utils.error_handlers import (
     ValidationError,
     NotFoundError,
@@ -41,7 +41,7 @@ def agregar_integrante(parametros):
         raise NotFoundError(
             "No se encontró el equipo"
         )
-    alumno = usuarios_db.obtener_usuario_por_id(
+    alumno = estudiantes_db.obtener_estudiante_por_id(
         alumno_id
     )
     if not alumno:
