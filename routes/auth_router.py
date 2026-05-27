@@ -12,10 +12,7 @@ auth_bp = Blueprint("auth", __name__)
 def login():
     args = request.get_json()
 
-    dni = args.get("dni")
-    password = args.get("password")
-
-    token = logic.iniciar_sesion(dni, password)
+    token = logic.iniciar_sesion(args)
 
     respuesta = make_response(jsonify({
         "mensaje": "Sesión iniciada correctamente",
@@ -34,16 +31,10 @@ def login():
 
 
 @auth_bp.post("/signup")  # crear cuenta
-def signup(): 
+def signup():
     args = request.get_json()
 
-    nombre = args.get("nombre")
-    apellido = args.get("apellido")
-    dni = args.get("dni")
-    email = args.get("email")
-    password = args.get("password")
-
-    new_usuario, token = logic.crear_usuario(nombre, apellido, dni, email, password)
+    new_usuario, token = logic.crear_usuario(args)
 
     respuesta = make_response(jsonify({
         "usuario": new_usuario,

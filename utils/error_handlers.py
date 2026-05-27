@@ -88,22 +88,6 @@ def start(app):
             ]
         }), 409
 
-    @app.errorhandler(ValueError)
-    def handle_value_error(e):
-        # los validators tiran ValueError(construir_error_api(...)) → e.args[0] = {"errors": [...]}
-        raw = e.args[0] if e.args else None
-        if isinstance(raw, dict) and "errors" in raw:
-            return jsonify(raw), 400
-        # ValueError común sin estructura: bug en otro lado, no error de validación
-        return jsonify({
-            "errors": [{
-                "code": "INTERNAL_SERVER_ERROR",
-                "message": "Ocurrió un error inesperado",
-                "level": "error",
-                "description": str(e),
-            }]
-        }), 500
-
     @app.errorhandler(Exception)
     def handle_unexpected_error(e):
         return jsonify({

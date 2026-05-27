@@ -2,14 +2,15 @@ from werkzeug.security import check_password_hash
 
 import repositories.usuarios_repository as db
 import repositories.perfiles_repository as perfiles_db
-from utils.error_handlers import NotFoundError, ValidationError
+import validators.usuarios_validator as usuarios_validator
 import utils.JWT_handler as TokenHandler
-import utils.validators as validator
+from utils.error_handlers import NotFoundError, ValidationError
 
 
-def iniciar_sesion(dni, password):
-    if not isinstance(dni, int):
-        raise ValidationError("El DNI debe ser un número entero")
+def iniciar_sesion(body):
+    datos = usuarios_validator.validar_body_login(body)
+    dni = datos["dni"]
+    password = datos["password"]
 
     usuario = db.get_user_by_dni(dni)
 
@@ -29,24 +30,18 @@ def iniciar_sesion(dni, password):
     return token
 
 
-def crear_usuario(nombre: str, apellido: str, dni: int, email: str, password: str):
-    if not isinstance(dni, int) or dni <= 0 or len(str(dni)) != 8:
-        raise ValidationError("El DNI debe ser un número entero de 8 dígitos")
+def crear_usuario(body):
+    datos = usuarios_validator.validar_body_signup(body)
 
-    validacion_email = validator.validar_email(email)
-    if not validacion_email["valido"]:
-        raise ValidationError(validacion_email["mensaje"])
-
-    if len(password) < 6:
-        raise ValidationError("La contraseña debe tener al menos 6 caracteres")
-
-    if db.get_user_by_dni(dni):
+    if db.get_user_by_dni(datos["dni"]):
         raise ValidationError("El DNI ya se encuentra registrado")
 
-    if db.get_user_by_email(email):
+    if db.get_user_by_email(datos["email"]):
         raise ValidationError("El email ya se encuentra registrado")
 
-    new_user = db.crear_usuario(nombre, apellido, email, dni, password, False)
+    new_user = db.crear_usuario(
+        datos["nombre"], datos["apellido"], datos["email"], datos["dni"], datos["password"], False
+    )
 
     token = TokenHandler.create_token(new_user, [])
 
