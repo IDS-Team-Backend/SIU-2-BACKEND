@@ -7,7 +7,6 @@ from utils.error_handlers import (
 from utils import auth_validator as auth
 
 equipos_bp = Blueprint("equipos", __name__)
-equipos_bp.before_request(auth.validar_token)
 
 @equipos_bp.get("/health")
 def health_check():

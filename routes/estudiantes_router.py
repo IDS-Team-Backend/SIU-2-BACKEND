@@ -11,8 +11,6 @@ from validators import estudiantes_validator
 
 
 estudiantes_bp = Blueprint("estudiantes", __name__)
-estudiantes_bp.before_request(auth.validar_token)
-
 
 FILTROS_PERMITIDOS = ("carrera", "anio_ingreso", "activo", "usuario_id")
 

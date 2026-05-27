@@ -8,7 +8,6 @@ from utils.error_handlers import (
 from utils import auth_validator as auth
 
 evaluaciones_bp = Blueprint("evaluaciones", __name__)
-evaluaciones_bp.before_request(auth.validar_token)
 
 @evaluaciones_bp.get("/health")
 def health_check():

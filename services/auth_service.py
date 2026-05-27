@@ -49,11 +49,11 @@ def validar_datos_usuario(nombre, apellido, dni, email, password):
     if not validacion_email["valido"]:
         raise ValidationError(validacion_email["mensaje"])
     
-    if len(nombre) < 4 or len(nombre) > 20 or not nombre.strip():
-        raise ValidationError("El nombre debe tener entre 4 y 20 caracteres")
+    if len(nombre) < 3 or len(nombre) > 20 or not nombre.strip():
+        raise ValidationError("El nombre debe tener entre 3 y 20 caracteres")
     
-    if len(apellido) < 4 or len(apellido) > 20 or not apellido.strip():
-        raise ValidationError("El apellido debe tener entre 4 y 20 caracteres")
+    if len(apellido) < 3 or len(apellido) > 20 or not apellido.strip():
+        raise ValidationError("El apellido debe tener entre 3 y 20 caracteres")
 
     if len(password) < 6:
         raise ValidationError("La contraseña debe tener al menos 6 caracteres")

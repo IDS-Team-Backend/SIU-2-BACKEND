@@ -58,7 +58,7 @@ def signup():
 @auth_bp.get("/me/perfiles")  # perfiles del usuario logueado, recalculados desde DB
 def get_mis_perfiles():
     auth.validar_token()
-    # validar_token ya se ejecutó vía app.before_request global; g.usuario está poblado.
+    # En /auth no corre la validación global; por eso se valida explícitamente aquí antes de obtener el usuario.
     usuario_id = auth.obtener_usuario_id()
     perfiles = perfiles_db.obtener_perfiles_de_usuario(usuario_id)
     return jsonify({"perfiles": perfiles}), 200

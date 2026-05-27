@@ -5,8 +5,6 @@ from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
 
 usuarios_bp = Blueprint("usuarios", __name__)
-usuarios_bp.before_request(auth.validar_token)
-
 
 @usuarios_bp.route("/", methods=["GET"])
 def obtener_usuarios():

@@ -4,7 +4,6 @@ import services.logs_service as logic
 
 
 logs_bp = Blueprint("logs", __name__)
-logs_bp.before_request(auth.validar_token)
 
 @logs_bp.get("/health")
 def health_check():

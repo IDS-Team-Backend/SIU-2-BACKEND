@@ -6,7 +6,6 @@ from utils import auth_validator as auth
 from utils import paginacion
 
 materias_bp = Blueprint("materias", __name__)
-materias_bp.before_request(auth.validar_token)
 
 @materias_bp.route("/health", methods=["GET"])
 def health_check():

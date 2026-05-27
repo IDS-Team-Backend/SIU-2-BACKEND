@@ -8,7 +8,6 @@ from utils.error_handlers import (
 from utils import auth_validator as auth
 
 notas_bp = Blueprint("notas", __name__)
-notas_bp.before_request(auth.validar_token)
 
 @notas_bp.route("/", methods=["GET"])
 @auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)

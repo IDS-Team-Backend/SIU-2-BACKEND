@@ -11,10 +11,6 @@ equipo_integrantes_bp = Blueprint(
     __name__
 )
 
-equipo_integrantes_bp.before_request(
-    auth.validar_token
-)
-
 @equipo_integrantes_bp.route("/", methods=["GET"])
 @auth.requiere_roles("profesor", "ayudante")
 def obtener_integrantes():
