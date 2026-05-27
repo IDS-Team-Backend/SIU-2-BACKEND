@@ -3,8 +3,10 @@ import db
 def obtener_integrantes(equipo_id=None,alumno_id=None):
     query = """
         FROM equipo_integrantes ei
+        INNER JOIN estudiantes e
+            ON e.id = ei.alumno_id
         INNER JOIN usuarios u
-            ON u.id = ei.alumno_id
+            ON u.id = e.usuario_id
         WHERE 1=1
     """
     params = []
