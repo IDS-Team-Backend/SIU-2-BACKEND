@@ -1,4 +1,5 @@
 import repositories.evaluaciones_repository as db
+import services.cursos_service as cursos_logic
 
 from utils.error_handlers import (
     NotFoundError,
@@ -93,24 +94,19 @@ def reemplazar_evaluacion(id, parametros):
             raise ValidationError(
                 f"El campo '{campo}' es requerido."
             )
-    curso_id = validar_entero(
-        parametros["curso_id"],
-        "curso_id"
-    )
-    tipo_evaluacion_id = validar_entero(
-        parametros["tipo_evaluacion_id"],
-        "tipo_evaluacion_id"
-    )
-    titulo = validar_string_no_vacio(
-        parametros["titulo"],
-        "titulo"
-    )
-    fecha = validar_string_no_vacio(
-        parametros["fecha"],
-        "fecha"
-    )
+        
+    curso_id = validar_entero(parametros["curso_id"],"curso_id")
+    tipo_evaluacion_id = validar_entero(parametros["tipo_evaluacion_id"],"tipo_evaluacion_id")
+    titulo = validar_string_no_vacio(parametros["titulo"],"titulo")
+    fecha = validar_string_no_vacio(parametros["fecha"],"fecha")
     activo = parametros["activo"]
     descripcion = parametros.get("descripcion")
+
+    curso = cursos_logic.obtener_curso(curso_id)
+
+    # se tendria que validar que si no es admin, el curso tenga de profesor al usuario ejecutando esta request. 
+    # pero tendria que existir la tabla cursos_docentes 
+
     actualizado = db.reemplazar_evaluacion(
         id,
         curso_id,

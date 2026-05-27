@@ -1,20 +1,17 @@
 from flask import request, jsonify, Blueprint
 import services.materias_service as logic
-from config import ADMIN, DOCENTE, ALUMNO, AYUDANTE
+from config import ADMIN, DOCENTE, ALUMNO
 from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion
 
 materias_bp = Blueprint("materias", __name__)
-materias_bp.before_request(auth.validar_token)
 
 @materias_bp.route("/health", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
 def health_check():
     return jsonify({"resource": "materias", "status": "healthy"}), 200
 
 @materias_bp.route("/", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
 def obtener_materias():
     page, page_size, offset = paginacion.desde_request()
 
@@ -49,7 +46,6 @@ def crear_materias():
     }, f"/materias/{new_materia['id']}")
 
 @materias_bp.route("/<int:materia_id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
 def obtener_materia_por_id(materia_id):
     materia = logic.obtener_materia_por_id(materia_id)
     return jsonify(materia), 200
@@ -76,7 +72,6 @@ def eliminar_materia(materia_id: int):
     return "", 204
 
 @materias_bp.route("/<int:materia_id>/cursos", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
 def obtener_cursos_de_materia(materia_id):
     page, page_size, offset = paginacion.desde_request()
 

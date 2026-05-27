@@ -6,7 +6,6 @@ from utils.error_handlers import created_response, ValidationError
 from utils import paginacion
 
 cursos_bp = Blueprint("cursos", __name__)
-cursos_bp.before_request(auth.validar_token)
 
 @cursos_bp.route("/health", methods=["GET"])
 def health_check():

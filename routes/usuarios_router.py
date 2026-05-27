@@ -5,8 +5,6 @@ from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
 
 usuarios_bp = Blueprint("usuarios", __name__)
-usuarios_bp.before_request(auth.validar_token)
-
 
 @usuarios_bp.route("/", methods=["GET"])
 def obtener_usuarios():
@@ -48,9 +46,9 @@ def obtener_usuario_por_id(id):
 @auth.requiere_roles(ADMIN)
 def reemplazar_usuario(id):
     parametros = request.get_json()
-    actualizado = logic.reemplazar_usuario(id, parametros)
-    if not actualizado:
-        return {"error": "Usuario no encontrado"}, 404
+
+    logic.reemplazar_usuario(id, parametros)
+   
     return "", 204
 
 # ─── DELETE /usuarios/{id} ────────────────────────────────────────────────────

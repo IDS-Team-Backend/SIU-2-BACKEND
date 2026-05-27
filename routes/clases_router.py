@@ -6,7 +6,6 @@ from utils.error_handlers import ValidationError
 
 
 clases_bp = Blueprint("clases", __name__)
-clases_bp.before_request(auth.validar_token)
 
 # ─── GET /clases ───────────────────────────────────────────────────────────────
 @clases_bp.get("/")

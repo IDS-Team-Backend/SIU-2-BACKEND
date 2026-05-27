@@ -4,7 +4,6 @@ import services.asistencia_service as logic
 
 
 asistencia_bp = Blueprint("asistencia", __name__)
-asistencia_bp.before_request(auth.validar_token)
 
 @asistencia_bp.get("/health")
 def health_check():

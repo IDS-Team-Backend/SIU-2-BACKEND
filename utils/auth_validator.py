@@ -26,7 +26,12 @@ def requiere_roles(*roles_permitidos):
     def decorador(f):
         @wraps(f)
         def funcion_decorada(*args, **kwargs):
-            perfiles = set(g.usuario.get("perfiles") or [])
+            usuario = getattr(g, "usuario", None)
+
+            if usuario is None:
+                raise UnauthorizedError("No se encontró un token de autenticación en la cookie.")
+
+            perfiles = set(usuario.get("perfiles") or [])
 
             if not perfiles.intersection(roles_permitidos):
                 raise ForbiddenError("Acceso denegado. No tenés los permisos necesarios.")
@@ -37,8 +42,14 @@ def requiere_roles(*roles_permitidos):
 
 
 def usuario_es(rol):
-    return rol in (g.usuario.get("perfiles") or [])
+    usuario = getattr(g, "usuario", None)
+    return rol in ((usuario or {}).get("perfiles") or [])
 
 
 def obtener_usuario_id():
-    return g.usuario.get("id")
+    usuario = getattr(g, "usuario", None)
+
+    if usuario is None:
+        raise UnauthorizedError("No se encontró un token de autenticación en la cookie.")
+
+    return usuario.get("id")

@@ -6,8 +6,6 @@ from utils import auth_validator as auth
 
 curso_usuarios_bp = Blueprint("curso_usuarios", __name__)
 
-curso_usuarios_bp.before_request(auth.validar_token)
-
 
 @curso_usuarios_bp.route("/", methods=["GET"])
 @auth.requiere_roles("admin", "profesor", "ayudante", "alumno")
@@ -48,7 +46,7 @@ def reemplazar_curso_usuario(curso_id):
     if data is None:
         raise ValidationError("El cuerpo de la solicitud debe ser un JSON válido.")
 
-    updated_curso_estudiante = logic.reemplazar_curso(curso_id, data)
+    updated_curso_estudiante = logic.reemplazar_curso_usuario(curso_id, data)
 
     return jsonify({
         "message": "Curso actualizado exitosamente",

@@ -11,8 +11,6 @@ from validators import profesores_validator
 
 
 profesores_bp = Blueprint("profesores", __name__)
-profesores_bp.before_request(auth.validar_token)
-
 
 FILTROS_PERMITIDOS = ("departamento", "titulo", "activo", "usuario_id")
 

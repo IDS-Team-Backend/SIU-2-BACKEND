@@ -4,6 +4,7 @@ import repositories.usuarios_repository as db
 from utils import auth_validator as auth
 from config import ADMIN, DOCENTE, ALUMNO
 from utils.error_handlers import NotFoundError, ValidationError, DuplicateError, ForbiddenError
+from .auth_service import validar_datos_usuario
 
 
 usuario_params = ["nombre", "apellido", "dni", "email", "password"]
@@ -34,6 +35,8 @@ def crear_usuario(parametros):
 
     if es_admin and not auth.usuario_es(ADMIN):
         raise ForbiddenError("Solo un admin puede crear otro admin.")
+    
+    validar_datos_usuario(nombre, apellido, dni, email, password)
 
     if db.existe_email(email):
         raise DuplicateError("Ya existe un usuario con ese email.")
@@ -73,15 +76,24 @@ def reemplazar_usuario(id, parametros):
     activo = parametros.get("activo", True)
     es_admin = bool(parametros.get("es_admin", False))
 
+    usuario_existente = obtener_usuario_por_id(id)
+
+    if not activo and usuario_existente["activo"]:
+        raise ValidationError("El usuario no se puede dar de baja aca, debe eliminarse con el endpoint DELETE /usuarios/{id}")
+
     if es_admin and not auth.usuario_es(ADMIN):
         raise ForbiddenError("Solo un admin puede asignar el flag es_admin.")
+    
+    validar_datos_usuario(nombre, apellido, dni, email, "placeholder")
 
     if db.existe_email(email, excluir_id=id):
         raise DuplicateError("Ya existe otro usuario con ese email.")
+    
     if db.existe_dni(dni, excluir_id=id):
         raise DuplicateError("Ya existe otro usuario con ese DNI.")
+    
 
     try:
-        return db.reemplazar_usuario(id, nombre, apellido, email, dni, es_admin, activo)
+        db.reemplazar_usuario(id, nombre, apellido, email, dni, es_admin, activo)
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe otro usuario con ese email.")

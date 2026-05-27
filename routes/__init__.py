@@ -18,6 +18,7 @@ from .equipo_integrantes_router import equipo_integrantes_bp
 from .notas_router import notas_bp
 from .clases_router import clases_bp
 
+
 BLUEPRINTS = (
     ("/auth", auth_bp),
     ("/email", email_bp),
@@ -33,12 +34,21 @@ BLUEPRINTS = (
     ("/materiales", materiales_bp),
     ("/curso_usuarios", curso_usuarios_bp),
     ("/equipo_integrantes", equipo_integrantes_bp),
+    ("/materias", materias_bp),
     ("/notas", notas_bp),
-    ("/clases", clases_bp),
+    ("/clases", clases_bp)
+)
+
+RUTAS_NO_PROTEGIDAS = (
+    "/auth",
+    "/materiales"
 )
 
 
 def register_routes(app):
-    #app.before_request(auth.validar_token)
     for prefix, bp in BLUEPRINTS:
+
+        if prefix not in RUTAS_NO_PROTEGIDAS:
+            bp.before_request(auth.validar_token)  # proteger rutas con autenticacion
+
         app.register_blueprint(bp, url_prefix=prefix)
