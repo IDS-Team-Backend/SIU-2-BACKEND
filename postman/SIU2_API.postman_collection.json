@@ -3,7 +3,7 @@
     "_postman_id": "siu2-api-collection",
     "name": "SIU2 API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Colección con todos los endpoints del backend Flask del TP Integrador.\n\n## Cómo usar\n\n1. Importá tambien el environment 'SIU2 API' que viene en el mismo directorio.\n2. Seleccioná el environment 'SIU2 API' en el dropdown superior derecho.\n3. Levantá el backend: `python backend/app.py` (necesita MySQL corriendo via `docker-compose up -d mysql` y `.env` con `JWT_SECRET_KEY`).\n4. Empezá por la carpeta '0. Setup' para crear un admin y loguearte.\n5. El cookie jar de Postman maneja la auth automáticamente. El script post-response del login también guarda el token en `{{access_token}}`.\n\n## ⚠️ Bug conocido del backend\n\nEl `before_request(validar_token)` en `routes/__init__.py` se aplica globalmente, lo que hace que `/auth/login` y `/auth/signup` también exijan cookie. La primera vez que uses Postman, el signup va a fallar con 401. El parche está en `tests/_auth_helpers.py:31-48` — replicalo en `routes/__init__.py` excluyendo esas dos rutas (y opcionalmente los `/health`).\n\n## Variables\n\n- `{{baseUrl}}` — URL del backend (default `http://localhost:5000`)\n- `{{admin_dni}}`, `{{admin_email}}`, `{{admin_password}}`, `{{admin_nombre}}`, `{{admin_apellido}}` — datos del admin para el setup\n- `{{access_token}}` — JWT que se setea automáticamente tras el login\n- `{{usuario_id}}`, `{{estudiante_id}}`, `{{profesor_id}}`, `{{clase_id}}`, `{{curso_id}}`, `{{materia_id}}`, `{{evaluacion_id}}`, `{{tipo_evaluacion_id}}` — IDs de recursos. Los POST tienen scripts que los actualizan automáticamente tras crear el recurso.\n\n## Convenciones\n\n- Los requests marcados con ❌ en el nombre son intencionalmente inválidos: devuelven 400 con `{\"errors\": [{\"code\": \"BAD_REQUEST\", \"message\": \"...\"}]}`.\n- Roles: ADMIN, DOCENTE, ALUMNO, AYUDANTE. Cada endpoint indica en su descripción qué rol(es) requiere."
+    "description": "Colección con todos los endpoints del backend Flask del TP Integrador.\n\n## Cómo usar\n\n1. Importá tambien el environment 'SIU2 API' que viene en el mismo directorio.\n2. Seleccioná el environment 'SIU2 API' en el dropdown superior derecho.\n3. Levantá el backend: `python backend/app.py` (necesita MySQL corriendo via `docker-compose up -d mysql` y `.env` con `JWT_SECRET_KEY`).\n4. Empezá por la carpeta '0. Setup' para crear un admin y loguearte.\n5. El cookie jar de Postman maneja la auth automáticamente. El script post-response del login también guarda el token en `{{access_token}}`.\n\n## Auth\n\nCada blueprint aplica `before_request(validar_token)` individualmente. `auth_bp` NO lo aplica, así que `/auth/login` y `/auth/signup` se pueden usar sin cookie. El resto requiere cookie + (a veces) rol.\n\n## Variables\n\n- `{{baseUrl}}` — URL del backend (default `http://localhost:5000`)\n- `{{admin_dni}}`, `{{admin_email}}`, `{{admin_password}}`, `{{admin_nombre}}`, `{{admin_apellido}}` — datos del admin para el setup\n- `{{access_token}}` — JWT que se setea automáticamente tras el login\n- `{{usuario_id}}`, `{{estudiante_id}}`, `{{profesor_id}}`, `{{clase_id}}`, `{{curso_id}}`, `{{materia_id}}`, `{{evaluacion_id}}`, `{{tipo_evaluacion_id}}`, `{{equipo_id}}`, `{{nota_id}}`, `{{curso_usuario_id}}` — IDs de recursos. Los POST tienen scripts que los actualizan automáticamente tras crear el recurso.\n\n## Convenciones\n\n- Los requests marcados con ❌ en el nombre son intencionalmente inválidos: devuelven 400/409 con `{\"errors\": [{\"code\": \"...\", \"message\": \"...\"}]}`.\n- Roles según `config.py` y los decoradores `@auth.requiere_roles(...)`: `admin`, `docente`, `alumno`, `ayudante`, `profesor`. Cada endpoint indica en su descripción qué rol(es) requiere."
   },
   "item": [
     {
@@ -922,6 +922,340 @@
             "method": "DELETE",
             "url": { "raw": "{{baseUrl}}/evaluaciones/{{evaluacion_id}}", "host": ["{{baseUrl}}"], "path": ["evaluaciones", "{{evaluacion_id}}"] },
             "description": "Requiere rol DOCENTE."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Equipos",
+      "item": [
+        {
+          "name": "GET /equipos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/equipos/",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipos", ""],
+              "query": [
+                { "key": "curso_id", "value": "{{curso_id}}", "disabled": true },
+                { "key": "evaluacion_id", "value": "{{evaluacion_id}}", "disabled": true },
+                { "key": "nombre", "value": "", "disabled": true },
+                { "key": "activo", "value": "true", "disabled": true }
+              ]
+            },
+            "description": "Lista equipos. Requiere PROFESOR o AYUDANTE. → 200 con `{equipos, total}` o 204."
+          }
+        },
+        {
+          "name": "POST /equipos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.equipo && json.equipo.id) pm.environment.set('equipo_id', json.equipo.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/equipos/", "host": ["{{baseUrl}}"], "path": ["equipos", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"curso_id\": {{curso_id}},\n  \"evaluacion_id\": {{evaluacion_id}},\n  \"nombre\": \"Grupo 1\"\n}"
+            },
+            "description": "Crea un equipo. La evaluación debe tener `es_grupal=true`. Requiere PROFESOR o AYUDANTE."
+          }
+        },
+        {
+          "name": "POST /equipos (evaluación no grupal) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/equipos/", "host": ["{{baseUrl}}"], "path": ["equipos", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"curso_id\": {{curso_id}},\n  \"evaluacion_id\": {{evaluacion_id}},\n  \"nombre\": \"Grupo inválido\"\n}"
+            },
+            "description": "→ 400 si la evaluación no es grupal. Usá una `evaluacion_id` con `es_grupal=false`."
+          }
+        },
+        {
+          "name": "GET /equipos/{id}",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/equipos/{{equipo_id}}", "host": ["{{baseUrl}}"], "path": ["equipos", "{{equipo_id}}"] }
+          }
+        },
+        {
+          "name": "PUT /equipos/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/equipos/{{equipo_id}}", "host": ["{{baseUrl}}"], "path": ["equipos", "{{equipo_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"curso_id\": {{curso_id}},\n  \"evaluacion_id\": {{evaluacion_id}},\n  \"nombre\": \"Grupo 1 renombrado\",\n  \"activo\": true\n}"
+            },
+            "description": "Reemplazo total. Requiere PROFESOR o AYUDANTE. → 204."
+          }
+        },
+        {
+          "name": "DELETE /equipos/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/equipos/{{equipo_id}}", "host": ["{{baseUrl}}"], "path": ["equipos", "{{equipo_id}}"] },
+            "description": "Requiere PROFESOR (no AYUDANTE)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Equipo Integrantes",
+      "item": [
+        {
+          "name": "GET /equipo_integrantes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/equipo_integrantes/",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipo_integrantes", ""],
+              "query": [
+                { "key": "equipo_id", "value": "{{equipo_id}}", "disabled": true },
+                { "key": "alumno_id", "value": "{{estudiante_id}}", "disabled": true }
+              ]
+            },
+            "description": "Lista integrantes con datos del usuario (JOIN estudiantes → usuarios). Requiere PROFESOR o AYUDANTE."
+          }
+        },
+        {
+          "name": "POST /equipo_integrantes",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/equipo_integrantes/", "host": ["{{baseUrl}}"], "path": ["equipo_integrantes", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipo_id\": {{equipo_id}},\n  \"alumno_id\": {{estudiante_id}}\n}"
+            },
+            "description": "Agrega un estudiante a un equipo. `alumno_id` = `estudiantes.id` (NO `usuarios.id`). Requiere PROFESOR o AYUDANTE."
+          }
+        },
+        {
+          "name": "POST /equipo_integrantes (duplicado) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/equipo_integrantes/", "host": ["{{baseUrl}}"], "path": ["equipo_integrantes", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipo_id\": {{equipo_id}},\n  \"alumno_id\": {{estudiante_id}}\n}"
+            },
+            "description": "→ 409. El alumno ya pertenece al equipo. Correr después de un POST exitoso."
+          }
+        },
+        {
+          "name": "DELETE /equipo_integrantes/{equipo_id}/{alumno_id}",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/equipo_integrantes/{{equipo_id}}/{{estudiante_id}}", "host": ["{{baseUrl}}"], "path": ["equipo_integrantes", "{{equipo_id}}", "{{estudiante_id}}"] },
+            "description": "Elimina un integrante. Requiere PROFESOR o AYUDANTE. → 204."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notas",
+      "item": [
+        {
+          "name": "GET /notas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/notas/",
+              "host": ["{{baseUrl}}"],
+              "path": ["notas", ""],
+              "query": [
+                { "key": "evaluacion_id", "value": "{{evaluacion_id}}", "disabled": true },
+                { "key": "alumno_id", "value": "{{estudiante_id}}", "disabled": true },
+                { "key": "equipo_id", "value": "{{equipo_id}}", "disabled": true }
+              ]
+            },
+            "description": "Lista notas. Filtros opcionales. Requiere PROFESOR o AYUDANTE. → 200 con `{notas, total}` o 204."
+          }
+        },
+        {
+          "name": "POST /notas (individual)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.nota && json.nota.id) pm.environment.set('nota_id', json.nota.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/notas/", "host": ["{{baseUrl}}"], "path": ["notas", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evaluacion_id\": {{evaluacion_id}},\n  \"alumno_id\": {{estudiante_id}},\n  \"nota\": 8,\n  \"observaciones\": \"Bien resuelto\"\n}"
+            },
+            "description": "Crea una nota individual. La evaluación NO debe ser grupal. `alumno_id` = `estudiantes.id`. Requiere PROFESOR o AYUDANTE."
+          }
+        },
+        {
+          "name": "POST /notas (grupal)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/notas/", "host": ["{{baseUrl}}"], "path": ["notas", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evaluacion_id\": {{evaluacion_id}},\n  \"equipo_id\": {{equipo_id}},\n  \"nota\": 9\n}"
+            },
+            "description": "Crea una nota grupal. La evaluación debe tener `es_grupal=true`."
+          }
+        },
+        {
+          "name": "POST /notas (sin alumno ni equipo) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/notas/", "host": ["{{baseUrl}}"], "path": ["notas", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evaluacion_id\": {{evaluacion_id}},\n  \"nota\": 7\n}"
+            },
+            "description": "→ 400. Falta `alumno_id` (individual) o `equipo_id` (grupal)."
+          }
+        },
+        {
+          "name": "GET /notas/{id}",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/notas/{{nota_id}}", "host": ["{{baseUrl}}"], "path": ["notas", "{{nota_id}}"] }
+          }
+        },
+        {
+          "name": "PATCH /notas/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/notas/{{nota_id}}", "host": ["{{baseUrl}}"], "path": ["notas", "{{nota_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nota\": 10\n}"
+            },
+            "description": "Actualiza el campo `nota`. Requiere PROFESOR o AYUDANTE. → 204."
+          }
+        },
+        {
+          "name": "DELETE /notas/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/notas/{{nota_id}}", "host": ["{{baseUrl}}"], "path": ["notas", "{{nota_id}}"] },
+            "description": "Requiere PROFESOR o AYUDANTE."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Curso Usuarios",
+      "item": [
+        {
+          "name": "GET /curso_usuarios",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/curso_usuarios/?page_size=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["curso_usuarios", ""],
+              "query": [
+                { "key": "page_size", "value": "20" },
+                { "key": "offset", "value": "0" },
+                { "key": "usuario_id", "value": "{{usuario_id}}", "disabled": true },
+                { "key": "curso_id", "value": "{{curso_id}}", "disabled": true },
+                { "key": "estado", "value": "activo", "disabled": true }
+              ]
+            },
+            "description": "Lista inscripciones. Filtros opcionales. Requiere ADMIN, PROFESOR, AYUDANTE o ALUMNO."
+          }
+        },
+        {
+          "name": "POST /curso_usuarios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.id) pm.environment.set('curso_usuario_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/curso_usuarios/", "host": ["{{baseUrl}}"], "path": ["curso_usuarios", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"curso_id\": {{curso_id}},\n  \"estado\": \"activo\"\n}"
+            },
+            "description": "Inscribe un usuario a un curso. `estado` ∈ {activo, suspendido, baja}, default `activo`. Requiere ADMIN o PROFESOR."
+          }
+        },
+        {
+          "name": "POST /curso_usuarios (estado inválido) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/curso_usuarios/", "host": ["{{baseUrl}}"], "path": ["curso_usuarios", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"curso_id\": {{curso_id}},\n  \"estado\": \"vacaciones\"\n}"
+            },
+            "description": "→ 400. `estado` no permitido."
+          }
+        },
+        {
+          "name": "PUT /curso_usuarios/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/curso_usuarios/{{curso_usuario_id}}", "host": ["{{baseUrl}}"], "path": ["curso_usuarios", "{{curso_usuario_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"curso_id\": {{curso_id}},\n  \"estado\": \"baja\"\n}"
+            },
+            "description": "Reemplazo total. Requiere ADMIN o PROFESOR."
+          }
+        },
+        {
+          "name": "DELETE /curso_usuarios/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/curso_usuarios/{{curso_usuario_id}}", "host": ["{{baseUrl}}"], "path": ["curso_usuarios", "{{curso_usuario_id}}"] },
+            "description": "Requiere ADMIN o PROFESOR."
           }
         }
       ]
