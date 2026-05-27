@@ -15,7 +15,6 @@ def health_check():
     return jsonify({"resource": "evaluaciones", "status": "ok"})
 
 @evaluaciones_bp.route("/", methods=["GET"])
-@auth.requiere_roles(DOCENTE, AYUDANTE)
 def obtener_evaluaciones():
 
     curso_id = request.args.get("curso_id")
@@ -58,7 +57,6 @@ def crear_evaluacion():
 
 
 @evaluaciones_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(DOCENTE, AYUDANTE)
 def obtener_evaluacion_por_id(id):
     evaluacion = logic.obtener_evaluacion_por_id(id)
     return jsonify(evaluacion), 200

@@ -73,20 +73,20 @@ def crear_profesor():
 
 
 @profesores_bp.route("/me", methods=["GET"])
+@auth.requiere_roles(DOCENTE)
 def obtener_mi_profesor():
     profesor = logic.obtener_profesor_me()
     return jsonify(profesor), 200
 
 
 @profesores_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE)
 def obtener_profesor_por_id(id):
     profesor = logic.obtener_profesor_por_id(id)
     return jsonify(profesor), 200
 
 
 @profesores_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(ADMIN, DOCENTE)
 def reemplazar_profesor(id):
     parametros = profesores_validator.validar_body_reemplazar_profesor(request.get_json())
     if not logic.reemplazar_profesor(id, parametros):

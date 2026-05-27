@@ -73,13 +73,14 @@ def crear_estudiante():
 
 
 @estudiantes_bp.route("/me", methods=["GET"])
+@auth.requiere_roles(ALUMNO)
 def obtener_mi_estudiante():
     estudiante = logic.obtener_estudiante_me()
     return jsonify(estudiante), 200
 
 
 @estudiantes_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(ADMIN, DOCENTE, ALUMNO)
 def obtener_estudiante_por_id(id):
     estudiante = logic.obtener_estudiante_por_id(id)
     return jsonify(estudiante), 200
