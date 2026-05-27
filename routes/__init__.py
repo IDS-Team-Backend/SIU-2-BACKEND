@@ -33,12 +33,12 @@ BLUEPRINTS = (
     ("/materiales", materiales_bp),
     ("/curso_usuarios", curso_usuarios_bp),
     ("/equipo_integrantes", equipo_integrantes_bp),
-    ("/notas", notas_bp)
-    ("/clases", clases_bp)
+    ("/notas", notas_bp),
+    ("/clases", clases_bp),
 )
 
 
 def register_routes(app):
-    app.before_request(auth.validar_token)
+    #app.before_request(auth.validar_token)
     for prefix, bp in BLUEPRINTS:
         app.register_blueprint(bp, url_prefix=prefix)

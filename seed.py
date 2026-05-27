@@ -35,13 +35,12 @@ def seed_tipos_evaluacion():
 
 
 def seed_usuarios():
-    password = generate_password_hash("1234")
 
     usuarios = [
-        ("Admin", "Sistema", "admin@fiuba.edu.ar", 30000000, password, True),
-        ("Juan", "Perez", "juan@fiuba.edu.ar", 30000001, password, False),
-        ("Ana", "Gomez", "ana@fiuba.edu.ar", 30000002, password, False),
-        ("Lucas", "Martinez", "lucas@fiuba.edu.ar", 30000003, password, False),
+        ("Admin", "Sistema", "admin@fiuba.edu.ar", 30000000, generate_password_hash("password1"), True),
+        ("Juan", "Perez", "juan@fiuba.edu.ar", 30000001, generate_password_hash("password2"), False),
+        ("Ana", "Gomez", "ana@fiuba.edu.ar", 30000002, generate_password_hash("password3"), False),
+        ("Lucas", "Martinez", "lucas@fiuba.edu.ar", 30000003, generate_password_hash("password4"), False),
     ]
 
     query = """
@@ -123,7 +122,6 @@ def seed_inscripciones():
     inscripciones = [
         (1, 3),
         (1, 4),
-        (1, 5),
     ]
 
     query = """
@@ -172,9 +170,10 @@ def seed_evaluaciones():
 
 
 def seed_notas():
+    # alumno_id apunta a estudiantes(id): 1 = Ana (usuario 3), 2 = Lucas (usuario 4)
     notas = [
-        (1, 3, None, 8),
-        (1, 4, None, 6),
+        (1, 1, None, 8),
+        (1, 2, None, 6),
         (2, None, 1, 9),
     ]
 
@@ -211,9 +210,10 @@ def seed_equipos():
 
 
 def seed_equipo_integrantes():
+    # alumno_id apunta a estudiantes(id), no a usuarios(id)
     integrantes = [
-        (1, 3),
-        (1, 4),
+        (1, 1),
+        (1, 2),
     ]
 
     query = """
@@ -299,9 +299,10 @@ def seed_qr_asistencia():
 
 
 def seed_asistencias():
+    # alumno_id apunta a estudiantes(id), no a usuarios(id)
     asistencias = [
-        (1, 3),
-        (1, 4),
+        (1, 1),
+        (1, 2),
     ]
 
     query = """
@@ -377,9 +378,9 @@ def run_seed():
     seed_cursos()
     seed_inscripciones()
     seed_evaluaciones()
-    seed_notas()
     seed_equipos()
     seed_equipo_integrantes()
+    seed_notas()
     seed_clases()
     seed_qr_asistencia()
     seed_asistencias()
