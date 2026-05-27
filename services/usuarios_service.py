@@ -1,15 +1,18 @@
-import repositories.usuarios_repository as db 
-from utils.error_handlers import NotFoundError, ValidationError, DuplicateError
 import mysql.connector
 
-global usuario_params
-usuario_params = ["nombre","apellido","dni","email","password","rol_id"]
+import repositories.usuarios_repository as db
+from utils import auth_validator as auth
+from config import ADMIN
+from utils.error_handlers import NotFoundError, ValidationError, DuplicateError, ForbiddenError
 
-usuario_update_params = ["nombre","apellido","dni","email","rol_id","activo"]
 
-def obtener_usuarios(nombre=None, apellido=None ,email=None, dni=None, rol_id=None):
-   return db.obtener_usuarios(nombre, apellido, email, dni, rol_id)
-    
+usuario_params = ["nombre", "apellido", "dni", "email", "password"]
+usuario_update_params = ["nombre", "apellido", "dni", "email", "activo"]
+
+
+def obtener_usuarios(nombre=None, apellido=None, email=None, dni=None, es_admin=None):
+    return db.obtener_usuarios(nombre, apellido, email, dni, es_admin)
+
 
 def crear_usuario(parametros):
     for campo in usuario_params:
@@ -21,15 +24,18 @@ def crear_usuario(parametros):
     email = parametros["email"]
     dni = parametros["dni"]
     password = parametros["password"]
-    rol_id = parametros["rol_id"]
+    es_admin = bool(parametros.get("es_admin", False))
+
+    if es_admin and not auth.usuario_es(ADMIN):
+        raise ForbiddenError("Solo un admin puede crear otro admin.")
 
     if db.existe_email(email):
         raise DuplicateError("Ya existe un usuario con ese email.")
     if db.existe_dni(dni):
-        raise DuplicateError("Ya existe un usuario con ese padrón.")
+        raise DuplicateError("Ya existe un usuario con ese DNI.")
 
     try:
-        return db.crear_usuario(nombre, apellido, email, dni, password, rol_id)
+        return db.crear_usuario(nombre, apellido, email, dni, password, es_admin)
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe un usuario con ese email.")
 
@@ -42,8 +48,8 @@ def obtener_usuario_por_id(id):
     
     return usuario
 
-def eliminar_usuario(id: int):   
 
+def eliminar_usuario(id: int):
     if not db.eliminar_usuario(id):
         raise NotFoundError("No se encontró el usuario")
         
@@ -51,22 +57,25 @@ def eliminar_usuario(id: int):
 
 def reemplazar_usuario(id, parametros):
     for campo in usuario_update_params:
-        if (campo not in parametros) or (not parametros[campo]):
+        if campo not in parametros:
             raise ValidationError(f"El campo '{campo}' es requerido.")
 
     nombre = parametros["nombre"]
     apellido = parametros["apellido"]
     email = parametros["email"]
     dni = parametros["dni"]
-    rol_id = parametros["rol_id"]
     activo = parametros.get("activo", True)
+    es_admin = bool(parametros.get("es_admin", False))
+
+    if es_admin and not auth.usuario_es(ADMIN):
+        raise ForbiddenError("Solo un admin puede asignar el flag es_admin.")
 
     if db.existe_email(email, excluir_id=id):
         raise DuplicateError("Ya existe otro usuario con ese email.")
     if db.existe_dni(dni, excluir_id=id):
-        raise DuplicateError("Ya existe otro usuario con ese padrón.")
+        raise DuplicateError("Ya existe otro usuario con ese DNI.")
 
     try:
-        return db.reemplazar_usuario(id, nombre, apellido, email, dni, rol_id, activo)
+        return db.reemplazar_usuario(id, nombre, apellido, email, dni, es_admin, activo)
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe otro usuario con ese email.")

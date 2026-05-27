@@ -1,14 +1,11 @@
 from flask import Flask, request, jsonify, Blueprint
-from config import ADMIN, DOCENTE
+from config import ADMIN
 import services.usuarios_service as logic
 from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
 
 usuarios_bp = Blueprint("usuarios", __name__)
 usuarios_bp.before_request(auth.validar_token)
-
-usuario_params = ["nombre", "apellido", "dni", "email", "rol_id"]
-
 
 
 @usuarios_bp.route("/", methods=["GET"])
@@ -17,9 +14,11 @@ def obtener_usuarios():
     apellido = request.args.get("apellido")
     dni = request.args.get("dni")
     email = request.args.get("email")
-    rol_id = request.args.get("rol_id")
 
-    usuarios, total = logic.obtener_usuarios(nombre, apellido, email, dni, rol_id)
+    es_admin_arg = request.args.get("es_admin")
+    es_admin = es_admin_arg.lower() in ("true", "1") if es_admin_arg is not None else None
+
+    usuarios, total = logic.obtener_usuarios(nombre, apellido, email, dni, es_admin)
 
     if not usuarios:
         return "", 204

@@ -144,17 +144,34 @@ components:
         apellido: { type: string }
         email: { type: string }
         dni: { type: integer }
+    Profesor:
+      type: object
+      properties:
+        id: { type: integer }
+        usuario_id: { type: integer }
+        legajo: { type: integer }
+        titulo: { type: string }
+        departamento: { type: string }
+        fecha_ingreso: { type: string, format: date }
+        activo: { type: boolean }
+        created_at: { type: string, format: date-time }
+        nombre: { type: string }
+        apellido: { type: string }
+        email: { type: string }
+        dni: { type: integer }
     JWTPayload:
       type: object
-      description: Payload del JWT emitido por /auth/login. `perfiles` lista los perfiles activos del usuario (ej. ["estudiante"]). `rol_id` queda como campo legacy hasta que se complete la migración a perfiles.
+      description: |
+        Payload del JWT emitido por /auth/login. `perfiles` lista los perfiles
+        activos del usuario en el momento del login (ej. ["admin", "docente", "estudiante"]).
+        Para perfiles recalculados en vivo (sin re-loguearse) usar GET /auth/me/perfiles.
       properties:
         id: { type: integer }
         nombre: { type: string }
         apellido: { type: string }
-        rol_id: { type: integer, description: "Legacy. Se elimina cuando se separe el perfil profesor." }
         perfiles:
           type: array
-          items: { type: string, enum: [estudiante] }
+          items: { type: string, enum: [admin, docente, estudiante, ayudante] }
         exp: { type: integer }
 
 security:
@@ -182,34 +199,50 @@ paths:
 
   /auth/signup:
     post:
-      summary: Registrar un nuevo usuario
+      summary: Registrar un nuevo usuario sin perfiles asignados
+      description: |
+        Crea un usuario sin perfiles. Es el admin quien luego le asigna perfil
+        estudiante (POST /estudiantes) o docente (POST /profesores).
       tags: [Auth]
-      security: [] 
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [nombre, apellido, dni, email, password]
               properties:
                 nombre: { type: string }
                 apellido: { type: string }
-                
+                dni: { type: integer }
                 email: { type: string }
                 password: { type: string }
-                rol: { type: string, example: "profesor" } #esto tiene que ser un select  | ayudante de catedra = alumno con permisos especiales
-      responses:
-        '201':
-          description: Usuario registrado
-
-  /auth/tipos_usuario:
-    get:
-      summary: Obtener todos los tipos de usuario (alumno, docente, ayudante de catedra) para el select del register
-      tags: [Auth]
-      security: []
       responses:
         '200':
-          description: Lista de tipos de usuario 
+          description: Usuario registrado
+
+  /auth/me/perfiles:
+    get:
+      summary: Perfiles del usuario logueado, recalculados desde DB
+      description: |
+        A diferencia del JWT (que lleva los perfiles del momento del login),
+        este endpoint recalcula los perfiles en tiempo real. Útil cuando el
+        admin asigna un nuevo perfil después del login.
+      tags: [Auth]
+      responses:
+        '200':
+          description: Lista de perfiles del usuario
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  perfiles:
+                    type: array
+                    items: { type: string, enum: [admin, docente, estudiante] }
+        '401':
+          description: Token ausente o inválido
 
   /logs:
     get:
@@ -527,6 +560,217 @@ paths:
           description: No tenés permisos (sólo admin)
         '404':
           description: Estudiante no encontrado
+
+  # ================= ABM PROFESORES =================
+  /profesores:
+    get:
+      summary: Listar perfiles de profesor (con datos del usuario asociado)
+      tags: [Profesores]
+      security: [{ CookieAuth: [] }]
+      parameters:
+        - name: departamento
+          in: query
+          schema: { type: string }
+        - name: titulo
+          in: query
+          schema: { type: string }
+        - name: activo
+          in: query
+          schema: { type: boolean }
+        - name: usuario_id
+          in: query
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        '200':
+          description: Lista de profesores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profesores:
+                    type: array
+                    items: { $ref: '#/components/schemas/Profesor' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  page_size: { type: integer }
+                  total_paginas: { type: integer }
+        '204':
+          description: Sin resultados
+        '400':
+          description: Filtro no permitido
+        '401':
+          description: Token ausente o inválido
+    post:
+      summary: Crear un perfil profesor para un usuario existente (sólo admin)
+      tags: [Profesores]
+      security: [{ CookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [usuario_id, legajo, titulo, departamento, fecha_ingreso]
+              properties:
+                usuario_id: { type: integer }
+                legajo: { type: integer }
+                titulo: { type: string }
+                departamento: { type: string }
+                fecha_ingreso: { type: string, format: date, description: "YYYY-MM-DD; no futura" }
+      responses:
+        '201':
+          description: Perfil profesor creado
+        '400':
+          description: Body inválido
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: No tenés permisos (sólo admin)
+        '404':
+          description: No existe el usuario indicado
+        '409':
+          description: El usuario ya tiene perfil profesor o el legajo está en uso
+
+  /profesores/me:
+    get:
+      summary: Obtener el perfil profesor del usuario autenticado
+      tags: [Profesores]
+      security: [{ CookieAuth: [] }]
+      responses:
+        '200':
+          description: Perfil profesor del usuario logueado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profesor' }
+        '401':
+          description: Token ausente o inválido
+        '404':
+          description: El usuario no tiene perfil profesor asociado
+
+  /profesores/{id}:
+    get:
+      summary: Obtener un profesor por id (admin o docente)
+      tags: [Profesores]
+      security: [{ CookieAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Profesor encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profesor' }
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: No tenés permisos
+        '404':
+          description: Profesor no encontrado
+    put:
+      summary: Reemplazar los datos de un profesor (sólo admin)
+      tags: [Profesores]
+      security: [{ CookieAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [legajo, titulo, departamento, fecha_ingreso, activo]
+              properties:
+                legajo: { type: integer }
+                titulo: { type: string }
+                departamento: { type: string }
+                fecha_ingreso: { type: string, format: date }
+                activo: { type: boolean }
+      responses:
+        '204':
+          description: Profesor actualizado
+        '400':
+          description: Body inválido
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: No tenés permisos (sólo admin)
+        '404':
+          description: Profesor no encontrado
+        '409':
+          description: Legajo en uso por otro profesor
+    patch:
+      summary: Modificación parcial. Admin puede modificar cualquier campo; el propio docente sólo `titulo` y `departamento`.
+      tags: [Profesores]
+      security: [{ CookieAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                legajo: { type: integer }
+                titulo: { type: string }
+                departamento: { type: string }
+                fecha_ingreso: { type: string, format: date }
+                activo: { type: boolean }
+      responses:
+        '200':
+          description: Profesor actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  profesor: { $ref: '#/components/schemas/Profesor' }
+        '400':
+          description: Body inválido (campos desconocidos o vacío)
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: No tenés permisos para modificar este profesor o este campo
+        '404':
+          description: Profesor no encontrado
+        '409':
+          description: Legajo en uso por otro profesor
+    delete:
+      summary: Dar de baja el perfil profesor (soft delete, sólo admin)
+      tags: [Profesores]
+      security: [{ CookieAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204':
+          description: Profesor dado de baja
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: No tenés permisos (sólo admin)
+        '404':
+          description: Profesor no encontrado
 
   # ================= ABM EVALUACIONES =================
   /evaluaciones:

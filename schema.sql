@@ -5,11 +5,6 @@ COLLATE utf8mb4_unicode_ci;
 USE siu2_db;
 
 
-CREATE TABLE IF NOT EXISTS tipos_usuario (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL UNIQUE
-) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS materias (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
@@ -31,12 +26,9 @@ CREATE TABLE IF NOT EXISTS usuarios (
     email VARCHAR(150) NOT NULL UNIQUE,
     dni BIGINT NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    rol_id INT NOT NULL,
+    es_admin BOOLEAN NOT NULL DEFAULT FALSE,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_usuarios_tipos_usuario
-        FOREIGN KEY (rol_id) REFERENCES tipos_usuario(id)
-        ON DELETE RESTRICT ON UPDATE CASCADE
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS estudiantes (
@@ -48,6 +40,20 @@ CREATE TABLE IF NOT EXISTS estudiantes (
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_estudiantes_usuarios
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS profesores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL UNIQUE,
+    legajo BIGINT NOT NULL UNIQUE,
+    titulo VARCHAR(150) NOT NULL,
+    departamento VARCHAR(100) NOT NULL,
+    fecha_ingreso DATE NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_profesores_usuarios
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
@@ -177,11 +183,11 @@ CREATE TABLE IF NOT EXISTS clases (
     status ENUM('pendiente', 'suspendida', 'en curso', 'finalizada') NOT NULL DEFAULT 'pendiente', -- CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN CONFIG.PY 
     deleted_at TIMESTAMP NULL DEFAULT NULL, -- soft delete. mucho mejor que activo: boolean
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_clases_cursos 
+    CONSTRAINT fk_clases_cursos
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_clases_profesores 
-        FOREIGN KEY (profesor_id) REFERENCES usuarios(id)
+    CONSTRAINT fk_clases_profesores
+        FOREIGN KEY (profesor_id) REFERENCES profesores(id)
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 ALTER TABLE clases ADD INDEX idx_clases_busqueda (deleted_at, fecha_hora_inicio); -- hace las busquedas mas rapidas

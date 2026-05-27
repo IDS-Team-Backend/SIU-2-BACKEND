@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from config import DOMINIOS_EMAIL_PERMITIDOS, ESTADOS_CLASE, ROLES
+from config import DOMINIOS_EMAIL_PERMITIDOS, ESTADOS_CLASE
 from utils.error_handlers import ValidationError
 
 
@@ -70,16 +70,6 @@ def validar_rango_fecha(fecha_hora_inicio: str, fecha_hora_fin: str) -> None:
     if dt_inicio.date() != dt_fin.date():
         raise ValidationError("La fecha y hora de inicio y fin deben pertenecer al mismo día calendario. No se permiten clases de corrido entre días distintos.")
 
-def id_rol_a_nombre(rol_id):
-    for nombre, current_rol_id in ROLES.items():
-        if current_rol_id == rol_id:
-            return nombre
-    return None
-
 def es_estado_clase_valido(estado: str) -> bool:
     """Valida si un estado de clase enviado por el cliente es correcto."""
     return estado in ESTADOS_CLASE
-
-def es_rol_valido(rol_id: int) -> bool:
-    """Valida si un rol_id corresponde a un rol existente."""
-    return rol_id in ROLES.values()

@@ -183,15 +183,3 @@ def eliminar_estudiante(id: int):
     query = "UPDATE estudiantes SET activo = FALSE WHERE id = %s"
     filas_afectadas = db.execute_query(query, (id,), modifica_db=True)
     return filas_afectadas > 0
-
-
-# TODO (fuera de alcance): mover a perfiles_repository cuando se agregue el perfil "profesor".
-def obtener_perfiles_de_usuario(usuario_id):
-    query = """
-        SELECT COUNT(*) as total
-        FROM estudiantes
-        WHERE usuario_id = %s AND activo = TRUE
-    """
-    result = db.execute_query(query, (usuario_id,), un_solo_valor=True)
-    es_estudiante = result['total'] > 0 if result else False
-    return ["estudiante"] if es_estudiante else []

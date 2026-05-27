@@ -1,3 +1,5 @@
+import re
+
 from flask import request
 
 import db
@@ -28,13 +30,18 @@ def ejecutar(query, params, order_by, page_size, offset):
 
     query: SELECT base, sin ORDER BY, sin LIMIT/OFFSET.
     params: tupla/lista de parámetros del WHERE del query base.
-    order_by: cláusula de orden (ej. 'e.id ASC'). Se concatena como string,
-              así que debe venir hardcodeada por el repo — nunca user input.
+    order_by: cláusula de orden (ej. 'e.id ASC' o 'created_at DESC'). Se
+              concatena como string, así que debe venir hardcodeada por el
+              repo — nunca user input.
     """
+    # Cualquier prefijo de alias del query original (ej. "e." o "p.") tiene que
+    # mapearse a "base." porque el ORDER BY corre fuera de la subquery `base`.
+    order_by_normalizado = re.sub(r"\b\w+\.", "base.", order_by)
+
     sql = f"""
         SELECT base.*, COUNT(*) OVER() AS _total
         FROM ({query}) AS base
-        ORDER BY {order_by}
+        ORDER BY {order_by_normalizado}
         LIMIT %s OFFSET %s
     """
     filas = db.execute_query(sql, tuple(params) + (page_size, offset))

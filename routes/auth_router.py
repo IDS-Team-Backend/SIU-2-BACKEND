@@ -1,13 +1,15 @@
 from flask import Blueprint, jsonify, make_response, request
 
 import services.auth_service as logic
+import repositories.perfiles_repository as perfiles_db
+from utils import auth_validator as auth
 
 
 auth_bp = Blueprint("auth", __name__)
 
 
 @auth_bp.post("/login")  # iniciar sesion
-def login(): 
+def login():
     args = request.get_json()
 
     dni = args.get("dni")
@@ -40,9 +42,8 @@ def signup():
     dni = args.get("dni")
     email = args.get("email")
     password = args.get("password")
-    rol_id = args.get("rol_id")
 
-    new_usuario, token = logic.crear_usuario(nombre, apellido, dni, email, password, rol_id)
+    new_usuario, token = logic.crear_usuario(nombre, apellido, dni, email, password)
 
     respuesta = make_response(jsonify({
         "usuario": new_usuario,
@@ -58,8 +59,10 @@ def signup():
 
     return respuesta, 200
 
-@auth_bp.get("/tipos_usuario") # get tipos de usuario (roles)
-def get_user_types(): 
-    tipos = logic.get_user_types()
 
-    return jsonify({"tipos": tipos}), 200
+@auth_bp.get("/me/perfiles")  # perfiles del usuario logueado, recalculados desde DB
+def get_mis_perfiles():
+    # validar_token ya se ejecutó vía app.before_request global; g.usuario está poblado.
+    usuario_id = auth.obtener_usuario_id()
+    perfiles = perfiles_db.obtener_perfiles_de_usuario(usuario_id)
+    return jsonify({"perfiles": perfiles}), 200

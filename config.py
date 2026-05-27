@@ -20,13 +20,6 @@ DOCENTE = "docente"
 ALUMNO = "alumno"
 AYUDANTE = "ayudante"
 
-ROLES = {
-    ADMIN: 1,
-    DOCENTE: 2,
-    ALUMNO: 3,
-    AYUDANTE: 4
-}
-
 ESTADOS_CLASE = [ # caso default: ESTADOS_CLASE[0]
     "pendiente",
     "suspendida",
