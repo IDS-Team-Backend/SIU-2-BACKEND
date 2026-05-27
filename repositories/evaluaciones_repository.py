@@ -103,7 +103,8 @@ def obtener_evaluacion_por_id(id):
             e.fecha,
             e.activo,
             e.created_at,
-            te.es_grupal
+            te.es_grupal,
+            te.nombre as tipo_evaluacion
         FROM evaluaciones e
         INNER JOIN tipos_evaluacion te
             ON te.id = e.tipo_evaluacion_id
