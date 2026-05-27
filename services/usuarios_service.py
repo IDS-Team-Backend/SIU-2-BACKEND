@@ -2,7 +2,7 @@ import mysql.connector
 
 import repositories.usuarios_repository as db
 from utils import auth_validator as auth
-from config import ADMIN
+from config import ADMIN, DOCENTE, ALUMNO
 from utils.error_handlers import NotFoundError, ValidationError, DuplicateError, ForbiddenError
 
 
@@ -10,8 +10,14 @@ usuario_params = ["nombre", "apellido", "dni", "email", "password"]
 usuario_update_params = ["nombre", "apellido", "dni", "email", "activo"]
 
 
-def obtener_usuarios(nombre=None, apellido=None, email=None, dni=None, es_admin=None):
-    return db.obtener_usuarios(nombre, apellido, email, dni, es_admin)
+def obtener_usuarios(nombre=None, apellido=None, email=None, dni=None, rol=None):
+    if rol and rol not in [ADMIN, ALUMNO, DOCENTE, "pendiente"]:
+        raise ValidationError("El rol debe ser 'admin', 'alumno', 'docente' o 'pendiente'.")
+    
+    if rol and not auth.usuario_es(ADMIN):
+        raise ForbiddenError("Solo un admin puede filtrar por rol.")
+
+    return db.obtener_usuarios(nombre, apellido, email, dni, rol)
 
 
 def crear_usuario(parametros):
