@@ -1,0 +1,972 @@
+{
+  "info": {
+    "_postman_id": "siu2-api-collection",
+    "name": "SIU2 API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Colección con todos los endpoints del backend Flask del TP Integrador.\n\n## Cómo usar\n\n1. Importá tambien el environment 'SIU2 API' que viene en el mismo directorio.\n2. Seleccioná el environment 'SIU2 API' en el dropdown superior derecho.\n3. Levantá el backend: `python backend/app.py` (necesita MySQL corriendo via `docker-compose up -d mysql` y `.env` con `JWT_SECRET_KEY`).\n4. Empezá por la carpeta '0. Setup' para crear un admin y loguearte.\n5. El cookie jar de Postman maneja la auth automáticamente. El script post-response del login también guarda el token en `{{access_token}}`.\n\n## ⚠️ Bug conocido del backend\n\nEl `before_request(validar_token)` en `routes/__init__.py` se aplica globalmente, lo que hace que `/auth/login` y `/auth/signup` también exijan cookie. La primera vez que uses Postman, el signup va a fallar con 401. El parche está en `tests/_auth_helpers.py:31-48` — replicalo en `routes/__init__.py` excluyendo esas dos rutas (y opcionalmente los `/health`).\n\n## Variables\n\n- `{{baseUrl}}` — URL del backend (default `http://localhost:5000`)\n- `{{admin_dni}}`, `{{admin_email}}`, `{{admin_password}}`, `{{admin_nombre}}`, `{{admin_apellido}}` — datos del admin para el setup\n- `{{access_token}}` — JWT que se setea automáticamente tras el login\n- `{{usuario_id}}`, `{{estudiante_id}}`, `{{profesor_id}}`, `{{clase_id}}`, `{{curso_id}}`, `{{materia_id}}`, `{{evaluacion_id}}`, `{{tipo_evaluacion_id}}` — IDs de recursos. Los POST tienen scripts que los actualizan automáticamente tras crear el recurso.\n\n## Convenciones\n\n- Los requests marcados con ❌ en el nombre son intencionalmente inválidos: devuelven 400 con `{\"errors\": [{\"code\": \"BAD_REQUEST\", \"message\": \"...\"}]}`.\n- Roles: ADMIN, DOCENTE, ALUMNO, AYUDANTE. Cada endpoint indica en su descripción qué rol(es) requiere."
+  },
+  "item": [
+    {
+      "name": "0. Setup",
+      "description": "Secuencia inicial: crear admin y loguearse. Ejecutar en orden.",
+      "item": [
+        {
+          "name": "POST /auth/signup (crear admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.usuario && json.usuario.id) {",
+                  "    pm.environment.set('usuario_id', json.usuario.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/signup", "host": ["{{baseUrl}}"], "path": ["auth", "signup"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{admin_nombre}}\",\n  \"apellido\": \"{{admin_apellido}}\",\n  \"dni\": {{admin_dni}},\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            },
+            "description": "Crea el primer usuario. Setea cookie httpOnly. Postman la guarda automáticamente."
+          }
+        },
+        {
+          "name": "POST /auth/login (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.token) {",
+                  "    pm.environment.set('access_token', json.token);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": {{admin_dni}},\n  \"password\": \"{{admin_password}}\"\n}"
+            },
+            "description": "Loguea al admin. El script guarda el token en {{access_token}} y Postman cachea la cookie."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /auth/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.token) pm.environment.set('access_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": {{admin_dni}},\n  \"password\": \"{{admin_password}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /auth/signup",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/signup", "host": ["{{baseUrl}}"], "path": ["auth", "signup"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Pérez\",\n  \"dni\": 30000001,\n  \"email\": \"juan.perez@fi.uba.ar\",\n  \"password\": \"secret123\"\n}"
+            },
+            "description": "DNI debe ser entero de 8 dígitos. Email debe estar en DOMINIOS_EMAIL_PERMITIDOS (`fi.uba.ar` o `gmail.com` por default). Password ≥ 6 caracteres."
+          }
+        },
+        {
+          "name": "POST /auth/signup (email dominio no permitido) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/signup", "host": ["{{baseUrl}}"], "path": ["auth", "signup"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Pérez\",\n  \"dni\": 30000002,\n  \"email\": \"juan@hotmail.com\",\n  \"password\": \"secret123\"\n}"
+            },
+            "description": "→ 400. Hotmail no está en DOMINIOS_EMAIL_PERMITIDOS."
+          }
+        },
+        {
+          "name": "POST /auth/signup (DNI corto) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/signup", "host": ["{{baseUrl}}"], "path": ["auth", "signup"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Pérez\",\n  \"dni\": 1234567,\n  \"email\": \"juan@fi.uba.ar\",\n  \"password\": \"secret123\"\n}"
+            },
+            "description": "→ 400. DNI tiene 7 dígitos, deben ser exactamente 8."
+          }
+        },
+        {
+          "name": "GET /auth/me/perfiles",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/auth/me/perfiles", "host": ["{{baseUrl}}"], "path": ["auth", "me", "perfiles"] },
+            "description": "Requiere cookie. Devuelve los perfiles del usuario logueado."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "GET /usuarios",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/?nombre=&apellido=&dni=&email=&es_admin=",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", ""],
+              "query": [
+                { "key": "nombre", "value": "", "disabled": true },
+                { "key": "apellido", "value": "", "disabled": true },
+                { "key": "dni", "value": "", "disabled": true },
+                { "key": "email", "value": "", "disabled": true },
+                { "key": "es_admin", "value": "true", "disabled": true }
+              ]
+            },
+            "description": "Lista usuarios. Filtros opcionales por query string. → 200 con `{usuarios, total}` o 204 si no hay."
+          }
+        },
+        {
+          "name": "POST /usuarios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.usuario && json.usuario.id) pm.environment.set('usuario_id', json.usuario.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/usuarios/", "host": ["{{baseUrl}}"], "path": ["usuarios", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"García\",\n  \"dni\": 30000010,\n  \"email\": \"ana.garcia@fi.uba.ar\",\n  \"password\": \"secret123\",\n  \"es_admin\": false\n}"
+            },
+            "description": "Crear usuario. `es_admin=true` requiere que el llamador sea ADMIN."
+          }
+        },
+        {
+          "name": "POST /usuarios (campo faltante) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/usuarios/", "host": ["{{baseUrl}}"], "path": ["usuarios", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"García\",\n  \"dni\": 30000011\n}"
+            },
+            "description": "→ 400. Faltan campos obligatorios (email, password)."
+          }
+        },
+        {
+          "name": "GET /usuarios/{id}",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/usuarios/{{usuario_id}}", "host": ["{{baseUrl}}"], "path": ["usuarios", "{{usuario_id}}"] }
+          }
+        },
+        {
+          "name": "PUT /usuarios/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/usuarios/{{usuario_id}}", "host": ["{{baseUrl}}"], "path": ["usuarios", "{{usuario_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana María\",\n  \"apellido\": \"García\",\n  \"dni\": 30000010,\n  \"email\": \"ana.garcia@fi.uba.ar\",\n  \"activo\": true\n}"
+            },
+            "description": "Requiere todos los campos. → 204 sin body."
+          }
+        },
+        {
+          "name": "DELETE /usuarios/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/usuarios/{{usuario_id}}", "host": ["{{baseUrl}}"], "path": ["usuarios", "{{usuario_id}}"] },
+            "description": "Requiere rol ADMIN. → 204."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Estudiantes",
+      "item": [
+        {
+          "name": "GET /estudiantes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes/?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes", ""],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "10" },
+                { "key": "carrera", "value": "Informática", "disabled": true },
+                { "key": "anio_ingreso", "value": "2024", "disabled": true },
+                { "key": "activo", "value": "true", "disabled": true },
+                { "key": "usuario_id", "value": "1", "disabled": true }
+              ]
+            },
+            "description": "Lista paginada. Filtros opcionales."
+          }
+        },
+        {
+          "name": "POST /estudiantes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.estudiante && json.estudiante.id) pm.environment.set('estudiante_id', json.estudiante.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/estudiantes/", "host": ["{{baseUrl}}"], "path": ["estudiantes", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"padron\": 100001,\n  \"carrera\": \"Informática\",\n  \"anio_ingreso\": 2024\n}"
+            },
+            "description": "Requiere rol ADMIN. `anio_ingreso` entre 1900 y año actual+1."
+          }
+        },
+        {
+          "name": "POST /estudiantes (anio_ingreso inválido) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/estudiantes/", "host": ["{{baseUrl}}"], "path": ["estudiantes", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"padron\": 100002,\n  \"carrera\": \"Informática\",\n  \"anio_ingreso\": 1850\n}"
+            },
+            "description": "→ 400. 1850 < ANIO_INGRESO_MIN (1900)."
+          }
+        },
+        {
+          "name": "POST /estudiantes (padron negativo) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/estudiantes/", "host": ["{{baseUrl}}"], "path": ["estudiantes", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"padron\": -5,\n  \"carrera\": \"Informática\",\n  \"anio_ingreso\": 2024\n}"
+            },
+            "description": "→ 400. Padron debe ser >= 1."
+          }
+        },
+        {
+          "name": "GET /estudiantes/me",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/estudiantes/me", "host": ["{{baseUrl}}"], "path": ["estudiantes", "me"] },
+            "description": "Devuelve el estudiante asociado al usuario logueado."
+          }
+        },
+        {
+          "name": "GET /estudiantes/{id}",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/estudiantes/{{estudiante_id}}", "host": ["{{baseUrl}}"], "path": ["estudiantes", "{{estudiante_id}}"] },
+            "description": "Requiere rol ADMIN o DOCENTE."
+          }
+        },
+        {
+          "name": "PUT /estudiantes/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/estudiantes/{{estudiante_id}}", "host": ["{{baseUrl}}"], "path": ["estudiantes", "{{estudiante_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"padron\": 100001,\n  \"carrera\": \"Sistemas\",\n  \"anio_ingreso\": 2023,\n  \"activo\": true\n}"
+            },
+            "description": "Requiere rol ADMIN. → 204."
+          }
+        },
+        {
+          "name": "PATCH /estudiantes/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/estudiantes/{{estudiante_id}}", "host": ["{{baseUrl}}"], "path": ["estudiantes", "{{estudiante_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carrera\": \"Datos\"\n}"
+            },
+            "description": "Requiere rol ADMIN o ALUMNO. Cualquier subset de {padron, carrera, anio_ingreso, activo}."
+          }
+        },
+        {
+          "name": "DELETE /estudiantes/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/estudiantes/{{estudiante_id}}", "host": ["{{baseUrl}}"], "path": ["estudiantes", "{{estudiante_id}}"] },
+            "description": "Requiere rol ADMIN."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profesores",
+      "item": [
+        {
+          "name": "GET /profesores",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/profesores/?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["profesores", ""],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "10" },
+                { "key": "departamento", "value": "Informática", "disabled": true },
+                { "key": "titulo", "value": "Ingeniero", "disabled": true },
+                { "key": "activo", "value": "true", "disabled": true },
+                { "key": "usuario_id", "value": "1", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /profesores",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.profesor && json.profesor.id) pm.environment.set('profesor_id', json.profesor.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profesores/", "host": ["{{baseUrl}}"], "path": ["profesores", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"legajo\": 500001,\n  \"titulo\": \"Ingeniero en Sistemas\",\n  \"departamento\": \"Informática\",\n  \"fecha_ingreso\": \"2020-03-01\"\n}"
+            },
+            "description": "Requiere rol ADMIN. `fecha_ingreso` no puede ser futura."
+          }
+        },
+        {
+          "name": "POST /profesores (fecha_ingreso futura) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profesores/", "host": ["{{baseUrl}}"], "path": ["profesores", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"legajo\": 500002,\n  \"titulo\": \"Ingeniero\",\n  \"departamento\": \"Informática\",\n  \"fecha_ingreso\": \"2099-01-01\"\n}"
+            },
+            "description": "→ 400. fecha_ingreso no admite fechas futuras."
+          }
+        },
+        {
+          "name": "POST /profesores (titulo vacío) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profesores/", "host": ["{{baseUrl}}"], "path": ["profesores", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"legajo\": 500003,\n  \"titulo\": \"\",\n  \"departamento\": \"Informática\",\n  \"fecha_ingreso\": \"2020-03-01\"\n}"
+            },
+            "description": "→ 400. Título no puede estar vacío."
+          }
+        },
+        {
+          "name": "GET /profesores/me",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/profesores/me", "host": ["{{baseUrl}}"], "path": ["profesores", "me"] }
+          }
+        },
+        {
+          "name": "GET /profesores/{id}",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/profesores/{{profesor_id}}", "host": ["{{baseUrl}}"], "path": ["profesores", "{{profesor_id}}"] },
+            "description": "Requiere rol ADMIN o DOCENTE."
+          }
+        },
+        {
+          "name": "PUT /profesores/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profesores/{{profesor_id}}", "host": ["{{baseUrl}}"], "path": ["profesores", "{{profesor_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legajo\": 500001,\n  \"titulo\": \"Lic. en Informática\",\n  \"departamento\": \"Sistemas\",\n  \"fecha_ingreso\": \"2020-03-01\",\n  \"activo\": true\n}"
+            },
+            "description": "Requiere rol ADMIN. → 204."
+          }
+        },
+        {
+          "name": "PATCH /profesores/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profesores/{{profesor_id}}", "host": ["{{baseUrl}}"], "path": ["profesores", "{{profesor_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"departamento\": \"Sistemas\"\n}"
+            },
+            "description": "Requiere rol ADMIN o DOCENTE. Cualquier subset de campos."
+          }
+        },
+        {
+          "name": "DELETE /profesores/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/profesores/{{profesor_id}}", "host": ["{{baseUrl}}"], "path": ["profesores", "{{profesor_id}}"] },
+            "description": "Requiere rol ADMIN."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clases",
+      "item": [
+        {
+          "name": "GET /clases",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/clases/",
+              "host": ["{{baseUrl}}"],
+              "path": ["clases", ""],
+              "query": [
+                { "key": "status", "value": "pendiente", "disabled": true },
+                { "key": "profesor_id", "value": "1", "disabled": true },
+                { "key": "curso_id", "value": "1", "disabled": true },
+                { "key": "fecha", "value": "2026-12-15", "disabled": true },
+                { "key": "activa", "value": "true", "disabled": true }
+              ]
+            },
+            "description": "Filtros: status, profesor_id, curso_id, fecha (YYYY-MM-DD), activa. `activa=false` requiere ADMIN."
+          }
+        },
+        {
+          "name": "GET /clases/estados",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/clases/estados", "host": ["{{baseUrl}}"], "path": ["clases", "estados"] },
+            "description": "Devuelve la lista de ESTADOS_CLASE: pendiente, suspendida, en curso, finalizada."
+          }
+        },
+        {
+          "name": "GET /clases/{id}",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/clases/{{clase_id}}", "host": ["{{baseUrl}}"], "path": ["clases", "{{clase_id}}"] }
+          }
+        },
+        {
+          "name": "POST /clases",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.clase && json.clase.id) pm.environment.set('clase_id', json.clase.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/clases/", "host": ["{{baseUrl}}"], "path": ["clases", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Clase introductoria\",\n  \"profesor_id\": {{profesor_id}},\n  \"curso_id\": {{curso_id}},\n  \"fecha_hora_inicio\": \"2026-12-15 10:00:00\",\n  \"fecha_hora_fin\": \"2026-12-15 12:00:00\",\n  \"tema\": \"Repaso general\",\n  \"status\": \"pendiente\"\n}"
+            },
+            "description": "Requiere rol ADMIN o DOCENTE. Fechas deben ser futuras y del mismo día calendario. Status en ESTADOS_CLASE."
+          }
+        },
+        {
+          "name": "POST /clases (fecha en el pasado) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/clases/", "host": ["{{baseUrl}}"], "path": ["clases", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Clase pasada\",\n  \"profesor_id\": {{profesor_id}},\n  \"curso_id\": {{curso_id}},\n  \"fecha_hora_inicio\": \"2020-01-01 10:00:00\",\n  \"fecha_hora_fin\": \"2020-01-01 12:00:00\"\n}"
+            },
+            "description": "→ 400. fecha_hora_inicio no puede estar en el pasado."
+          }
+        },
+        {
+          "name": "POST /clases (rango cruzando días) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/clases/", "host": ["{{baseUrl}}"], "path": ["clases", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Clase cross-day\",\n  \"profesor_id\": {{profesor_id}},\n  \"curso_id\": {{curso_id}},\n  \"fecha_hora_inicio\": \"2026-12-15 22:00:00\",\n  \"fecha_hora_fin\": \"2026-12-16 02:00:00\"\n}"
+            },
+            "description": "→ 400. inicio y fin deben pertenecer al mismo día calendario."
+          }
+        },
+        {
+          "name": "POST /clases (status inválido) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/clases/", "host": ["{{baseUrl}}"], "path": ["clases", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Clase status raro\",\n  \"profesor_id\": {{profesor_id}},\n  \"curso_id\": {{curso_id}},\n  \"fecha_hora_inicio\": \"2026-12-15 10:00:00\",\n  \"fecha_hora_fin\": \"2026-12-15 12:00:00\",\n  \"status\": \"vacaciones\"\n}"
+            },
+            "description": "→ 400. 'vacaciones' no está en ESTADOS_CLASE."
+          }
+        },
+        {
+          "name": "PUT /clases/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/clases/{{clase_id}}", "host": ["{{baseUrl}}"], "path": ["clases", "{{clase_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Clase actualizada\",\n  \"profesor_id\": {{profesor_id}},\n  \"curso_id\": {{curso_id}},\n  \"fecha_hora_inicio\": \"2026-12-16 10:00:00\",\n  \"fecha_hora_fin\": \"2026-12-16 12:00:00\",\n  \"tema\": \"Tema nuevo\",\n  \"status\": \"pendiente\"\n}"
+            },
+            "description": "Reemplazo completo. Requiere ADMIN o DOCENTE."
+          }
+        },
+        {
+          "name": "PATCH /clases/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/clases/{{clase_id}}", "host": ["{{baseUrl}}"], "path": ["clases", "{{clase_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tema\": \"Solo cambio el tema\"\n}"
+            },
+            "description": "Modificación parcial. Requiere ADMIN o DOCENTE."
+          }
+        },
+        {
+          "name": "DELETE /clases/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/clases/{{clase_id}}", "host": ["{{baseUrl}}"], "path": ["clases", "{{clase_id}}"] },
+            "description": "Soft delete. Requiere ADMIN o DOCENTE."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cursos",
+      "item": [
+        {
+          "name": "GET /cursos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/cursos/?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["cursos", ""],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "10" },
+                { "key": "materia_id", "value": "1", "disabled": true },
+                { "key": "nombre", "value": "", "disabled": true },
+                { "key": "anio", "value": "2026", "disabled": true },
+                { "key": "cuatrimestre", "value": "1", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /cursos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.curso && json.curso.id) pm.environment.set('curso_id', json.curso.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cursos/", "host": ["{{baseUrl}}"], "path": ["cursos", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materia_id\": {{materia_id}},\n  \"nombre\": \"Curso 1\",\n  \"anio\": 2026,\n  \"cuatrimestre\": 1\n}"
+            },
+            "description": "Requiere ADMIN. anio >= 2000, cuatrimestre ∈ {1, 2}, nombre ≤ 100 chars."
+          }
+        },
+        {
+          "name": "POST /cursos (cuatrimestre inválido) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cursos/", "host": ["{{baseUrl}}"], "path": ["cursos", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materia_id\": {{materia_id}},\n  \"nombre\": \"Curso raro\",\n  \"anio\": 2026,\n  \"cuatrimestre\": 5\n}"
+            },
+            "description": "→ 400. Cuatrimestre debe ser 1 o 2."
+          }
+        },
+        {
+          "name": "GET /cursos/{id}",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/cursos/{{curso_id}}", "host": ["{{baseUrl}}"], "path": ["cursos", "{{curso_id}}"] }
+          }
+        },
+        {
+          "name": "PUT /cursos/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cursos/{{curso_id}}", "host": ["{{baseUrl}}"], "path": ["cursos", "{{curso_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materia_id\": {{materia_id}},\n  \"nombre\": \"Curso 1 actualizado\",\n  \"anio\": 2026,\n  \"cuatrimestre\": 2\n}"
+            },
+            "description": "Requiere ADMIN."
+          }
+        },
+        {
+          "name": "DELETE /cursos/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/cursos/{{curso_id}}", "host": ["{{baseUrl}}"], "path": ["cursos", "{{curso_id}}"] },
+            "description": "Requiere ADMIN."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Materias",
+      "item": [
+        {
+          "name": "GET /materias",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/materias/?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["materias", ""],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "10" },
+                { "key": "nombre", "value": "", "disabled": true },
+                { "key": "codigo", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Requiere ADMIN, DOCENTE, AYUDANTE o ALUMNO."
+          }
+        },
+        {
+          "name": "POST /materias",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.materia && json.materia.id) pm.environment.set('materia_id', json.materia.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/materias/", "host": ["{{baseUrl}}"], "path": ["materias", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Algoritmos y Programación I\",\n  \"codigo\": \"7540\"\n}"
+            },
+            "description": "Requiere ADMIN. nombre ≤ 150 chars, codigo opcional ≤ 50 chars."
+          }
+        },
+        {
+          "name": "POST /materias (nombre vacío) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/materias/", "host": ["{{baseUrl}}"], "path": ["materias", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"codigo\": \"X123\"\n}"
+            },
+            "description": "→ 400. Nombre no puede estar vacío."
+          }
+        },
+        {
+          "name": "GET /materias/{id}",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/materias/{{materia_id}}", "host": ["{{baseUrl}}"], "path": ["materias", "{{materia_id}}"] },
+            "description": "Requiere ADMIN, DOCENTE, AYUDANTE o ALUMNO."
+          }
+        },
+        {
+          "name": "PUT /materias/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/materias/{{materia_id}}", "host": ["{{baseUrl}}"], "path": ["materias", "{{materia_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Algoritmos y Programación I (Renombrada)\",\n  \"codigo\": \"7540\"\n}"
+            },
+            "description": "Requiere ADMIN."
+          }
+        },
+        {
+          "name": "DELETE /materias/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/materias/{{materia_id}}", "host": ["{{baseUrl}}"], "path": ["materias", "{{materia_id}}"] },
+            "description": "Requiere ADMIN. Falla con 400 si la materia tiene cursos asociados."
+          }
+        },
+        {
+          "name": "GET /materias/{id}/cursos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/materias/{{materia_id}}/cursos?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["materias", "{{materia_id}}", "cursos"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "10" }
+              ]
+            },
+            "description": "Cursos de una materia. Requiere ADMIN, DOCENTE, AYUDANTE o ALUMNO."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Evaluaciones",
+      "item": [
+        {
+          "name": "GET /evaluaciones",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/evaluaciones/",
+              "host": ["{{baseUrl}}"],
+              "path": ["evaluaciones", ""],
+              "query": [
+                { "key": "curso_id", "value": "1", "disabled": true },
+                { "key": "tipo_evaluacion_id", "value": "1", "disabled": true },
+                { "key": "titulo", "value": "", "disabled": true },
+                { "key": "fecha", "value": "2026-06-15", "disabled": true },
+                { "key": "activo", "value": "true", "disabled": true }
+              ]
+            },
+            "description": "Requiere rol DOCENTE o AYUDANTE."
+          }
+        },
+        {
+          "name": "POST /evaluaciones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.evaluacion && json.evaluacion.id) pm.environment.set('evaluacion_id', json.evaluacion.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/evaluaciones/", "host": ["{{baseUrl}}"], "path": ["evaluaciones", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"curso_id\": {{curso_id}},\n  \"tipo_evaluacion_id\": {{tipo_evaluacion_id}},\n  \"titulo\": \"Primer parcial\",\n  \"fecha\": \"2026-06-15\",\n  \"descripcion\": \"Cubre las primeras 5 unidades\"\n}"
+            },
+            "description": "Requiere rol DOCENTE o AYUDANTE."
+          }
+        },
+        {
+          "name": "POST /evaluaciones (campos faltantes) ❌",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/evaluaciones/", "host": ["{{baseUrl}}"], "path": ["evaluaciones", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"curso_id\": {{curso_id}},\n  \"titulo\": \"Sin tipo ni fecha\"\n}"
+            },
+            "description": "→ 400. Faltan tipo_evaluacion_id y fecha."
+          }
+        },
+        {
+          "name": "GET /evaluaciones/{id}",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/evaluaciones/{{evaluacion_id}}", "host": ["{{baseUrl}}"], "path": ["evaluaciones", "{{evaluacion_id}}"] },
+            "description": "Requiere rol DOCENTE o AYUDANTE."
+          }
+        },
+        {
+          "name": "PUT /evaluaciones/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/evaluaciones/{{evaluacion_id}}", "host": ["{{baseUrl}}"], "path": ["evaluaciones", "{{evaluacion_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"curso_id\": {{curso_id}},\n  \"tipo_evaluacion_id\": {{tipo_evaluacion_id}},\n  \"titulo\": \"Primer parcial recuperatorio\",\n  \"fecha\": \"2026-07-01\",\n  \"activo\": true,\n  \"descripcion\": \"Mismo temario\"\n}"
+            },
+            "description": "Requiere DOCENTE o AYUDANTE. → 204."
+          }
+        },
+        {
+          "name": "DELETE /evaluaciones/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/evaluaciones/{{evaluacion_id}}", "host": ["{{baseUrl}}"], "path": ["evaluaciones", "{{evaluacion_id}}"] },
+            "description": "Requiere rol DOCENTE."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health checks",
+      "description": "Endpoints de health por blueprint. La mayoría requiere cookie por el before_request global.",
+      "item": [
+        {
+          "name": "GET /cursos/health",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/cursos/health", "host": ["{{baseUrl}}"], "path": ["cursos", "health"] } }
+        },
+        {
+          "name": "GET /materias/health",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/materias/health", "host": ["{{baseUrl}}"], "path": ["materias", "health"] }, "description": "Requiere ADMIN, DOCENTE, AYUDANTE o ALUMNO." }
+        },
+        {
+          "name": "GET /evaluaciones/health",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/evaluaciones/health", "host": ["{{baseUrl}}"], "path": ["evaluaciones", "health"] } }
+        },
+        {
+          "name": "GET /asistencia/health",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/asistencia/health", "host": ["{{baseUrl}}"], "path": ["asistencia", "health"] } }
+        },
+        {
+          "name": "GET /equipos/health",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/equipos/health", "host": ["{{baseUrl}}"], "path": ["equipos", "health"] } }
+        },
+        {
+          "name": "GET /email/health",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/email/health", "host": ["{{baseUrl}}"], "path": ["email", "health"] } }
+        },
+        {
+          "name": "GET /logs/health",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/logs/health", "host": ["{{baseUrl}}"], "path": ["logs", "health"] } }
+        },
+        {
+          "name": "GET /materiales/health",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/materiales/health", "host": ["{{baseUrl}}"], "path": ["materiales", "health"] } }
+        },
+        {
+          "name": "GET /reportes/health",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/reportes/health", "host": ["{{baseUrl}}"], "path": ["reportes", "health"] } }
+        }
+      ]
+    }
+  ]
+}
