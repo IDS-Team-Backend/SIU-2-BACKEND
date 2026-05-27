@@ -130,8 +130,8 @@ CREATE TABLE IF NOT EXISTS notas (
     CONSTRAINT fk_notas_evaluaciones 
         FOREIGN KEY (evaluacion_id) REFERENCES evaluaciones(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_notas_usuarios 
-        FOREIGN KEY (alumno_id) REFERENCES usuarios(id)
+    CONSTRAINT fk_notas_estudiantes
+        FOREIGN KEY (alumno_id) REFERENCES estudiantes(id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_notas_equipos 
         FOREIGN KEY (equipo_id) REFERENCES equipos(id)

@@ -1,6 +1,6 @@
 import repositories.notas_repository as db
 import repositories.evaluaciones_repository as evaluaciones_db
-import repositories.usuarios_repository as usuarios_db
+import repositories.estudiantes_repository as estudiantes_db
 import repositories.equipos_repository as equipos_db
 from utils.error_handlers import (
     ValidationError,
@@ -67,7 +67,7 @@ def crear_nota(parametros):
     else:
         if not alumno_id:
             raise ValidationError("Las evaluaciones individuales requieren alumno_id.")
-        alumno = usuarios_db.obtener_usuario_por_id(alumno_id)
+        alumno = estudiantes_db.obtener_estudiante_por_id(alumno_id)
         if not alumno:
             raise NotFoundError("No se encontró el alumno")
         if db.existe_nota_alumno(evaluacion_id, alumno_id):
