@@ -103,24 +103,6 @@ CREATE TABLE IF NOT EXISTS evaluaciones (
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS notas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    evaluacion_id INT NOT NULL,
-    alumno_id INT NOT NULL,
-    nota DECIMAL(4,2) NOT NULL,
-    observaciones TEXT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_notas_evaluaciones 
-        FOREIGN KEY (evaluacion_id) REFERENCES evaluaciones(id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_notas_estudiantes
-        FOREIGN KEY (alumno_id) REFERENCES estudiantes(id)
-        ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT uq_evaluacion_alumno
-        UNIQUE (evaluacion_id, alumno_id) 
-) ENGINE=InnoDB;
-
-
 CREATE TABLE IF NOT EXISTS equipos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     curso_id INT NOT NULL,
