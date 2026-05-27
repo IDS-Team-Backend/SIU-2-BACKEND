@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, make_response, request
 
+from config import ADMIN, DOCENTE, ALUMNO
 import services.auth_service as logic
 import repositories.perfiles_repository as perfiles_db
 from utils import auth_validator as auth
@@ -25,7 +26,7 @@ def login():
     respuesta.set_cookie(
         key="access_token_cookie",
         value=token,
-        httponly=False,       # el frontend NO puede acceder a ella (seguridad)
+        httponly=True,       # el frontend NO puede acceder a ella (seguridad)
         secure=False,        # si es TRUE si o si tiene que ser HTTPS para que se envie la cookie
         samesite="Lax"       # proteccion extra
     )
@@ -37,13 +38,7 @@ def login():
 def signup(): 
     args = request.get_json()
 
-    nombre = args.get("nombre")
-    apellido = args.get("apellido")
-    dni = args.get("dni")
-    email = args.get("email")
-    password = args.get("password")
-
-    new_usuario, token = logic.crear_usuario(nombre, apellido, dni, email, password)
+    new_usuario, token = logic.crear_usuario(args)
 
     respuesta = make_response(jsonify({
         "usuario": new_usuario,
@@ -62,6 +57,7 @@ def signup():
 
 @auth_bp.get("/me/perfiles")  # perfiles del usuario logueado, recalculados desde DB
 def get_mis_perfiles():
+    auth.validar_token()
     # validar_token ya se ejecutó vía app.before_request global; g.usuario está poblado.
     usuario_id = auth.obtener_usuario_id()
     perfiles = perfiles_db.obtener_perfiles_de_usuario(usuario_id)

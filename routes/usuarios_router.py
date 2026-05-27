@@ -48,9 +48,9 @@ def obtener_usuario_por_id(id):
 @auth.requiere_roles(ADMIN)
 def reemplazar_usuario(id):
     parametros = request.get_json()
-    actualizado = logic.reemplazar_usuario(id, parametros)
-    if not actualizado:
-        return {"error": "Usuario no encontrado"}, 404
+
+    logic.reemplazar_usuario(id, parametros)
+   
     return "", 204
 
 # ─── DELETE /usuarios/{id} ────────────────────────────────────────────────────

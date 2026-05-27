@@ -35,12 +35,13 @@ def seed_tipos_evaluacion():
 
 
 def seed_usuarios():
+    password = generate_password_hash("123456")
 
     usuarios = [
-        ("Admin", "Sistema", "admin@fiuba.edu.ar", 30000000, generate_password_hash("password1"), True),
-        ("Juan", "Perez", "juan@fiuba.edu.ar", 30000001, generate_password_hash("password2"), False),
-        ("Ana", "Gomez", "ana@fiuba.edu.ar", 30000002, generate_password_hash("password3"), False),
-        ("Lucas", "Martinez", "lucas@fiuba.edu.ar", 30000003, generate_password_hash("password4"), False),
+        ("admin", "Del Sistema", "admin@fi.uba.ar", 47000000, password, True),
+        ("Juan Carlos", "Perez", "juan@fi.uba.ar", 47000001, password, False),
+        ("Analia", "Gomez", "ana@fi.uba.ar", 47000002, password, False),
+        ("Lucas", "Martinez", "lucas@fi.uba.ar", 47000003, password, False),
     ]
 
     query = """
