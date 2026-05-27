@@ -2,23 +2,6 @@ from db import execute_query
 from werkzeug.security import generate_password_hash
 
 
-def seed_tipos_usuario():
-    tipos = [
-        (1, "admin"),
-        (2, "profesor"),
-        (3, "alumno"),
-        (4, "ayudante"),
-    ]
-
-    query = """
-    INSERT IGNORE INTO tipos_usuario(id, nombre)
-    VALUES (%s, %s)
-    """
-
-    for tipo in tipos:
-        execute_query(query, tipo, modifica_db=True)
-
-
 def seed_materias():
     materias = [
         ("Algoritmos y Programación", "75.40"),
@@ -55,46 +38,10 @@ def seed_usuarios():
     password = generate_password_hash("1234")
 
     usuarios = [
-        (
-            "Admin",
-            "Sistema",
-            "admin@fiuba.edu.ar",
-            1000,
-            password,
-            1,
-        ),
-        (
-            "Juan",
-            "Perez",
-            "juan@fiuba.edu.ar",
-            1001,
-            password,
-            2,
-        ),
-        (
-            "Ana",
-            "Gomez",
-            "ana@fiuba.edu.ar",
-            1002,
-            password,
-            3,
-        ),
-        (
-            "Lucas",
-            "Martinez",
-            "lucas@fiuba.edu.ar",
-            1003,
-            password,
-            3,
-        ),
-        (
-            "Pedro",
-            "Ruiz",
-            "pedro@fiuba.edu.ar",
-            1004,
-            password,
-            4,
-        ),
+        ("Admin", "Sistema", "admin@fiuba.edu.ar", 30000000, password, True),
+        ("Juan", "Perez", "juan@fiuba.edu.ar", 30000001, password, False),
+        ("Ana", "Gomez", "ana@fiuba.edu.ar", 30000002, password, False),
+        ("Lucas", "Martinez", "lucas@fiuba.edu.ar", 30000003, password, False),
     ]
 
     query = """
@@ -104,13 +51,52 @@ def seed_usuarios():
         email,
         dni,
         password_hash,
-        rol_id
+        es_admin
     )
     VALUES (%s, %s, %s, %s, %s, %s)
     """
 
     for usuario in usuarios:
         execute_query(query, usuario, modifica_db=True)
+
+def seed_estudiantes():
+    estudiantes = [
+        (3, 100002, "Ingeniería en Informática", 2024),
+        (4, 100003, "Ingeniería en Informática", 2024),
+    ]
+
+    query = """
+    INSERT IGNORE INTO estudiantes(
+        usuario_id,
+        padron,
+        carrera,
+        anio_ingreso
+    )
+    VALUES (%s, %s, %s, %s)
+    """
+
+    for estudiante in estudiantes:
+        execute_query(query, estudiante, modifica_db=True)
+
+
+def seed_profesores():
+    profesores = [
+        (2, 500001, "Ingeniero en Informática", "Informática", "2018-03-01"),
+    ]
+
+    query = """
+    INSERT IGNORE INTO profesores(
+        usuario_id,
+        legajo,
+        titulo,
+        departamento,
+        fecha_ingreso
+    )
+    VALUES (%s, %s, %s, %s, %s)
+    """
+
+    for profesor in profesores:
+        execute_query(query, profesor, modifica_db=True)
 
 
 def seed_cursos():
@@ -243,20 +229,49 @@ def seed_equipo_integrantes():
 
 
 def seed_clases():
+    # (nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema, status)
+    # profesor_id apunta a profesores(id), no a usuarios(id). 1 = Juan (usuario_id=2).
     clases = [
-        (1, "2026-05-15", "Introducción"),
-        (1, "2026-05-20", "Listas enlazadas"),
+        (
+            "Clase 1", 1, 1,
+            "2026-05-15 09:00:00", "2026-05-15 11:00:00",
+            "Introducción a la materia", "finalizada"
+        ),
+        (
+            "Clase 2", 1, 1,
+            "2026-05-20 14:30:00", "2026-05-20 16:30:00",
+            "Listas enlazadas y estructuras", "finalizada"
+        ),
+        (
+            "Clase 3", 1, 2,
+            "2026-05-22 18:00:00", "2026-05-22 20:00:00",
+            "Consultas avanzadas en SQL", "finalizada"
+        ),
+        (
+            "Clase 4", 1, 2,
+            "2026-05-25 10:00:00", "2026-05-25 12:00:00",
+            "Arquitectura en 3 Capas", "pendiente"
+        ),
+        (
+            "Clase 5", 1, 1,
+            "2026-06-01 16:00:00", "2026-06-01 18:00:00",
+            "Optimización de Bases de Datos", "pendiente"
+        )
     ]
 
     query = """
-    INSERT IGNORE INTO clases(
+    INSERT IGNORE INTO clases (
+        nombre,
+        profesor_id,
         curso_id,
-        fecha,
-        tema
+        fecha_hora_inicio,
+        fecha_hora_fin,
+        tema,
+        status
     )
-    VALUES (%s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
-
+    
     for clase in clases:
         execute_query(query, clase, modifica_db=True)
 
@@ -354,10 +369,11 @@ def seed_logs():
 def run_seed():
     print("Seeding database...")
 
-    seed_tipos_usuario()
     seed_materias()
     seed_tipos_evaluacion()
     seed_usuarios()
+    seed_estudiantes()
+    seed_profesores()
     seed_cursos()
     seed_inscripciones()
     seed_evaluaciones()

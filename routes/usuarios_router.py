@@ -1,13 +1,11 @@
 from flask import Flask, request, jsonify, Blueprint
+from config import ADMIN
 import services.usuarios_service as logic
 from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
 
 usuarios_bp = Blueprint("usuarios", __name__)
 usuarios_bp.before_request(auth.validar_token)
-
-usuario_params = ["nombre", "apellido", "dni", "email", "rol_id"]
-
 
 
 @usuarios_bp.route("/", methods=["GET"])
@@ -16,9 +14,11 @@ def obtener_usuarios():
     apellido = request.args.get("apellido")
     dni = request.args.get("dni")
     email = request.args.get("email")
-    rol_id = request.args.get("rol_id")
 
-    usuarios, total = logic.obtener_usuarios(nombre, apellido, email, dni, rol_id)
+    es_admin_arg = request.args.get("es_admin")
+    es_admin = es_admin_arg.lower() in ("true", "1") if es_admin_arg is not None else None
+
+    usuarios, total = logic.obtener_usuarios(nombre, apellido, email, dni, es_admin)
 
     if not usuarios:
         return "", 204
@@ -38,7 +38,6 @@ def crear_usuario():
 # ─── GET /usuarios/{id} ───────────────────────────────────────────────────────
 
 @usuarios_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles("profesor")
 def obtener_usuario_por_id(id):
     usuario = logic.obtener_usuario_por_id(id)
     return jsonify(usuario), 200
@@ -56,7 +55,7 @@ def reemplazar_usuario(id):
 
 # ─── DELETE /usuarios/{id} ────────────────────────────────────────────────────
 @usuarios_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles("admin")
+@auth.requiere_roles(ADMIN)
 def eliminar_usuario(id: int):
     logic.eliminar_usuario(id)
     return "", 204

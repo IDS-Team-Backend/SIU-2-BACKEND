@@ -1,6 +1,6 @@
 from functools import wraps
 
-from flask import g, jsonify, request
+from flask import g, request
 from utils import JWT_handler
 from utils.error_handlers import ForbiddenError, UnauthorizedError
 
@@ -15,31 +15,30 @@ def validar_token():
         if not token:
             raise UnauthorizedError("No se encontró un token de autenticación en la cookie.")
 
-        # valida si el token es correcto y devuelve el payload del mismo (nombre, apellido, rol_id)
-        g.usuario = JWT_handler.decode_token(token) 
+        # valida si el token es correcto y devuelve el payload del mismo (id, nombre, apellido, perfiles)
+        g.usuario = JWT_handler.decode_token(token)
 
     except Exception as e:
         raise UnauthorizedError(str(e))
-    
 
-ROLES = {
-    1: "admin",
-    2: "profesor",
-    3: "alumno",
-    4: "ayudante",
-}
 
 def requiere_roles(*roles_permitidos):
     def decorador(f):
         @wraps(f)
-        def funcion_decorada(*args, **kwargs):     
-            id_rol_usuario = g.usuario.get("rol_id")
-            
-            rol_usuario = ROLES.get(id_rol_usuario)
+        def funcion_decorada(*args, **kwargs):
+            perfiles = set(g.usuario.get("perfiles") or [])
 
-            if rol_usuario not in roles_permitidos:
+            if not perfiles.intersection(roles_permitidos):
                 raise ForbiddenError("Acceso denegado. No tenés los permisos necesarios.")
-            
+
             return f(*args, **kwargs)
         return funcion_decorada
     return decorador
+
+
+def usuario_es(rol):
+    return rol in (g.usuario.get("perfiles") or [])
+
+
+def obtener_usuario_id():
+    return g.usuario.get("id")

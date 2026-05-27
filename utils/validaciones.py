@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, date
 
 from constants import (
     ERROR_CODE_INVALID_BODY,
@@ -99,3 +100,27 @@ def validar_booleano(valor, nombre):
             description=f"Se recibió: {valor!r}",
         ))
     return valor
+
+
+def validar_fecha_iso(valor, nombre, permitir_futura=True):
+    if valor is None or not str(valor).strip():
+        raise ValueError(construir_error_api(
+            code=f"required.{nombre}",
+            message=f"Campo requerido: '{nombre}'",
+            description=f"El campo '{nombre}' es obligatorio y no puede estar vacío",
+        ))
+    try:
+        fecha = datetime.strptime(str(valor).strip(), "%Y-%m-%d").date()
+    except ValueError:
+        raise ValueError(construir_error_api(
+            code=f"invalid.{nombre}.format",
+            message=f"Formato de '{nombre}' inválido",
+            description=f"El campo '{nombre}' debe tener formato YYYY-MM-DD. Se recibió: {valor!r}",
+        ))
+    if not permitir_futura and fecha > date.today():
+        raise ValueError(construir_error_api(
+            code=ERROR_CODE_INVALID_MAX_VALUE,
+            message=f"'{nombre}' no puede ser una fecha futura",
+            description=f"El campo '{nombre}' debe ser hoy o anterior. Se recibió: {valor}",
+        ))
+    return fecha.isoformat()

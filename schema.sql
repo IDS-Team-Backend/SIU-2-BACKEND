@@ -5,18 +5,6 @@ COLLATE utf8mb4_unicode_ci;
 USE siu2_db;
 
 
-CREATE TABLE IF NOT EXISTS tipos_usuario (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL UNIQUE
-) ENGINE=InnoDB;
-
-INSERT IGNORE INTO tipos_usuario (id, nombre) VALUES 
-(1, 'admin'),
-(2, 'profesor'),
-(3, 'alumno'),
-(4, 'ayudante'); -- ayudante de catedra
-
-
 CREATE TABLE IF NOT EXISTS materias (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
@@ -32,18 +20,42 @@ CREATE TABLE IF NOT EXISTS tipos_evaluacion (
 
 
 CREATE TABLE IF NOT EXISTS usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY, -- este id seria el padron 
+    id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     dni BIGINT NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    rol_id INT NOT NULL,
+    es_admin BOOLEAN NOT NULL DEFAULT FALSE,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS estudiantes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL UNIQUE,
+    padron BIGINT NOT NULL UNIQUE,
+    carrera VARCHAR(150) NOT NULL,
+    anio_ingreso INT NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_usuarios_tipos_usuario 
-        FOREIGN KEY (rol_id) REFERENCES tipos_usuario(id)
-        ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT fk_estudiantes_usuarios
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS profesores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL UNIQUE,
+    legajo BIGINT NOT NULL UNIQUE,
+    titulo VARCHAR(150) NOT NULL,
+    departamento VARCHAR(100) NOT NULL,
+    fecha_ingreso DATE NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_profesores_usuarios
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS cursos (
@@ -91,6 +103,24 @@ CREATE TABLE IF NOT EXISTS evaluaciones (
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS notas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    evaluacion_id INT NOT NULL,
+    alumno_id INT NOT NULL,
+    nota DECIMAL(4,2) NOT NULL,
+    observaciones TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_notas_evaluaciones 
+        FOREIGN KEY (evaluacion_id) REFERENCES evaluaciones(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_notas_estudiantes
+        FOREIGN KEY (alumno_id) REFERENCES estudiantes(id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT uq_evaluacion_alumno
+        UNIQUE (evaluacion_id, alumno_id) 
+) ENGINE=InnoDB;
+
+
 CREATE TABLE IF NOT EXISTS equipos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     curso_id INT NOT NULL,
@@ -137,21 +167,30 @@ CREATE TABLE IF NOT EXISTS equipo_integrantes (
     CONSTRAINT fk_equipo_integrantes_equipos 
         FOREIGN KEY (equipo_id) REFERENCES equipos(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_equipo_integrantes_usuarios 
-        FOREIGN KEY (alumno_id) REFERENCES usuarios(id)
+    CONSTRAINT fk_equipo_integrantes_estudiantes
+        FOREIGN KEY (alumno_id) REFERENCES estudiantes(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS clases (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(80) NOT NULL,
+    profesor_id INT NOT NULL, 
     curso_id INT NOT NULL,
-    fecha DATE NOT NULL,
+    fecha_hora_inicio DATETIME NOT NULL,
+    fecha_hora_fin DATETIME NOT NULL,
     tema VARCHAR(255) NULL,
+    status ENUM('pendiente', 'suspendida', 'en curso', 'finalizada') NOT NULL DEFAULT 'pendiente', -- CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN CONFIG.PY 
+    deleted_at TIMESTAMP NULL DEFAULT NULL, -- soft delete. mucho mejor que activo: boolean
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_clases_cursos 
+    CONSTRAINT fk_clases_cursos
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_clases_profesores
+        FOREIGN KEY (profesor_id) REFERENCES profesores(id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+ALTER TABLE clases ADD INDEX idx_clases_busqueda (deleted_at, fecha_hora_inicio); -- hace las busquedas mas rapidas
 
 -- guarda temporalmente los tokens generados para la asistencia por QR
 CREATE TABLE IF NOT EXISTS qr_asistencia (
@@ -173,10 +212,10 @@ CREATE TABLE IF NOT EXISTS asistencias (
     CONSTRAINT fk_asistencias_clases 
         FOREIGN KEY (clase_id) REFERENCES clases(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_asistencias_usuarios 
-        FOREIGN KEY (alumno_id) REFERENCES usuarios(id)
+    CONSTRAINT fk_asistencias_estudiantes
+        FOREIGN KEY (alumno_id) REFERENCES estudiantes(id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT uq_clase_alumno 
+    CONSTRAINT uq_clase_alumno
         UNIQUE (clase_id, alumno_id) 
 ) ENGINE=InnoDB;
 

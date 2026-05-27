@@ -19,56 +19,58 @@ En el TP se pide la separacion de responsabilidades. **Cada capa hace una sola c
 
 ---
 
-## 2. Autenticación y Control de Accesos (JWT y Roles)
+## 2. Autenticación y Control de Accesos (JWT y Perfiles dinámicos)
 
-Para proteger los endpoints de la API y controlar qué usuario puede hacer qué acción, implementamos un sistema basado en tokens JWT (guardados en cookies) y roles de usuario.
+Para proteger los endpoints de la API y controlar qué usuario puede hacer qué acción, implementamos un sistema basado en tokens JWT (guardados en cookies) y **perfiles dinámicos**: un mismo usuario puede tener simultáneamente varios perfiles (ej. `docente` + `estudiante`), calculados al login desde las tablas específicas de cada perfil.
 
 ### 🔒 Validación General de Tokens (`before_request`)
-Si querés que **toda una ruta completa** (un Blueprint) requiera que el usuario esté logueado, tenés que registrar la función `validar_token_global` al principio de tu router utilizando `before_request`.
+Si querés que **toda una ruta completa** (un Blueprint) requiera que el usuario esté logueado, tenés que registrar la función `validar_token` al principio de tu router utilizando `before_request`.
 
 > ⚠️ **REGLA DE ORO:** Pasá la función únicamente por su nombre, **sin paréntesis `()`**. Si ponés los paréntesis, la función se ejecutará al arrancar el servidor y romperá la aplicación por falta de contexto de petición HTTP.
 
-### 👮 Control por Roles específicos (`@requiere_roles`)
-Cuando un endpoint deba ser exclusivo para ciertos tipos de usuarios, debés agregarle nuestro decorador personalizado `@requiere_roles("nombre_rol")`.
+### 👮 Control por Perfiles (`@requiere_roles`)
+Cuando un endpoint deba ser exclusivo para ciertos perfiles, agregale el decorador `@requiere_roles(PERFIL_1, PERFIL_2, ...)`. Internamente `requiere_roles` chequea si alguno de los perfiles del JWT (`perfiles[]`) está en la lista permitida.
 
-> 🚨 **MUY IMPORTANTE (Orden de los decoradores):** En Python, los decoradores se ejecutan de abajo hacia arriba. Por lo tanto, el decorador de ruta de Flask (`@bp.route`) **SIEMPRE debe ir primero (arriba de todo)**, y tu decorador de roles debe ir inmediatamente abajo. Si los ponés al revés, Flask ignorará la validación de roles.
+> 🚨 **MUY IMPORTANTE (Orden de los decoradores):** En Python, los decoradores se ejecutan de abajo hacia arriba. Por lo tanto, el decorador de ruta de Flask (`@bp.route`) **SIEMPRE debe ir primero (arriba de todo)**, y tu decorador de perfiles debe ir inmediatamente abajo.
 
-### 📋 Listado de Roles Disponibles
-El sistema mapea internamente los IDs de la base de datos con los siguientes strings que debés usar en los decoradores:
+### 📋 Perfiles Disponibles
+Los perfiles son strings (constantes en `config.py`) que se calculan dinámicamente al login mediante `repositories/perfiles_repository.py`:
 
-| ID Rol | Nombre del Rol (Usar en el decorador) |
-| :---: | :--- |
-| **`1`** | `"admin"` |
-| **`2`** | `"profesor"` |
-| **`3`** | `"alumno"` |
-| **`4`** | `"ayudante"` |
+| Constante (`config.py`) | String | Fuente de verdad |
+| :--- | :--- | :--- |
+| `ADMIN` | `"admin"` | columna `usuarios.es_admin = TRUE` |
+| `DOCENTE` | `"docente"` | registro activo en tabla `profesores` |
+| `ALUMNO` | `"alumno"` | registro activo en tabla `estudiantes` |
+| `AYUDANTE` | `"ayudante"` | **deuda** — sin tabla todavía; nadie lo tiene en `perfiles[]` |
+
+Un usuario con perfil `docente` + `estudiante` simultáneamente pasa cualquiera de los dos decoradores. Para conocer los perfiles **recalculados en vivo** (sin re-loguearse), usar `GET /auth/me/perfiles`.
 
 ### 📝 Ejemplo de implementación en un Router:
 ```python
 from flask import Blueprint, jsonify, g
-from utils.auth_validator import validar_token_global, requiere_roles
+from config import ADMIN, DOCENTE
+from utils import auth_validator as auth
 
 materias_bp = Blueprint("materias", __name__)
 
 # 1. PROTECCIÓN GLOBAL: Aplica a todas las rutas de este archivo (SIN paréntesis)
-materias_bp.before_request(validar_token_global)
+materias_bp.before_request(auth.validar_token)
 
 # CASO A: Accesible por CUALQUIER usuario logueado (No lleva decorador extra)
 @materias_bp.route("/", methods=["GET"])
 def listar_materias():
-    # Podés acceder a los datos del usuario logueado usando el objeto global 'g'
     id_usuario = g.usuario.get("id")
     return jsonify({"materias": ["Análisis II", "Física I"]}), 200
 
-# CASO B: Accesible SOLO por el rol Administrador (Ojo al orden de decoradores)
+# CASO B: Accesible SOLO por el perfil Administrador
 @materias_bp.route("/crear", methods=["POST"])  # <- 1° El de Flask
-@requiere_roles("admin")                        # <- 2° El de Roles
+@auth.requiere_roles(ADMIN)                      # <- 2° El de Perfiles
 def crear_materia():
     return jsonify({"mensaje": "Materia creada por el Administrador."}), 201
 
-# CASO C: Accesible por MÚLTIPLES ROLES (Se pasan separados por comas)
+# CASO C: Accesible por MÚLTIPLES PERFILES (basta con tener al menos uno)
 @materias_bp.route("/notas", methods=["PUT"])
-@requiere_roles("admin", "profesor") 
+@auth.requiere_roles(ADMIN, DOCENTE)
 def cargar_notas():
     return jsonify({"mensaje": "Notas cargadas correctamente."}), 200
 ```
@@ -118,7 +120,21 @@ Los errores que estan definidos son:
 
 ---
 
-## 6. Buenas Practicas para Git 
+## 6. Constantes globales
+**VALORES GLOBALES Y CONSTANTES** se definen en `'/config.py'`. Los perfiles ya no son un mapa con ids — son simplemente strings canónicos, ya que la fuente de verdad son las tablas específicas (`profesores`, `estudiantes`) o la columna `usuarios.es_admin`.
+```python
+ADMIN = "admin"
+DOCENTE = "docente"
+ALUMNO = "alumno"
+AYUDANTE = "ayudante"
+
+DOMINIOS_EMAIL_PERMITIDOS = [
+    "fiuba.edu.ar",
+    "alumnos.fiuba.edu.ar"
+]
+```
+---
+## 7. Buenas Practicas para Git 
 
 Para poder entender el historial entre todos, podemos seguir estas recomendaciones:
 
