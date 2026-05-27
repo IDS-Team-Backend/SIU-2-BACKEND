@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 import services.evaluaciones_service as logic
-from config import ADMIN, DOCENTE, AYUDANTE
+from config import ADMIN, DOCENTE, AYUDANTE, ALUMNO
 from utils.error_handlers import (
     created_response,
     ValidationError
@@ -14,7 +14,7 @@ def health_check():
     return jsonify({"resource": "evaluaciones", "status": "ok"})
 
 @evaluaciones_bp.route("/", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
 def obtener_evaluaciones():
 
     curso_id = request.args.get("curso_id")
@@ -57,7 +57,7 @@ def crear_evaluacion():
 
 
 @evaluaciones_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
 def obtener_evaluacion_por_id(id):
     evaluacion = logic.obtener_evaluacion_por_id(id)
     return jsonify(evaluacion), 200
