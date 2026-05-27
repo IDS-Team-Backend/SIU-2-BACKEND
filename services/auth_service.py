@@ -3,7 +3,8 @@ import re
 
 from dotenv import load_dotenv
 from werkzeug.security import check_password_hash, generate_password_hash
-import repositories.usuarios_repository as db 
+import repositories.usuarios_repository as db
+import repositories.estudiantes_repository as estudiantes_db
 from utils.error_handlers import NotFoundError, ValidationError
 import utils.JWT_handler as TokenHandler
 import utils.validators as validator
@@ -22,8 +23,10 @@ def iniciar_sesion(dni, password):
     
     if not check_password_hash(usuario["password_hash"], password):
         raise ValidationError("Contraseña incorrecta")
-    
-    token = TokenHandler.create_token(usuario)
+
+    perfiles = estudiantes_db.obtener_perfiles_de_usuario(usuario["id"])
+
+    token = TokenHandler.create_token(usuario, perfiles)
 
     return token
 
@@ -49,7 +52,7 @@ def crear_usuario(nombre: str, apellido: str, dni: int, email: str, password: st
 
     new_user = db.crear_usuario(nombre, apellido, email, dni, password, rol_id)
 
-    token = TokenHandler.create_token(new_user)
+    token = TokenHandler.create_token(new_user, [])
 
     return new_user, token
 

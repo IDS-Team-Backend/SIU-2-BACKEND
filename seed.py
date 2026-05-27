@@ -51,46 +51,10 @@ def seed_usuarios():
     password = generate_password_hash("1234")
 
     usuarios = [
-        (
-            "Admin",
-            "Sistema",
-            "admin@fiuba.edu.ar",
-            1000,
-            password,
-            1,
-        ),
-        (
-            "Juan",
-            "Perez",
-            "juan@fiuba.edu.ar",
-            1001,
-            password,
-            2,
-        ),
-        (
-            "Ana",
-            "Gomez",
-            "ana@fiuba.edu.ar",
-            1002,
-            password,
-            3,
-        ),
-        (
-            "Lucas",
-            "Martinez",
-            "lucas@fiuba.edu.ar",
-            1003,
-            password,
-            3,
-        ),
-        (
-            "Pedro",
-            "Ruiz",
-            "pedro@fiuba.edu.ar",
-            1004,
-            password,
-            4,
-        ),
+        ("Admin", "Sistema", "admin@fiuba.edu.ar", 30000000, password, 1),
+        ("Juan", "Perez", "juan@fiuba.edu.ar", 30000001, password, 2),
+        ("Ana", "Gomez", "ana@fiuba.edu.ar", 30000002, password, 3),
+        ("Lucas", "Martinez", "lucas@fiuba.edu.ar", 30000003, password, 3),
     ]
 
     query = """
@@ -108,6 +72,24 @@ def seed_usuarios():
     for usuario in usuarios:
         execute_query(query, usuario, modifica_db=True)
 
+def seed_estudiantes():
+    estudiantes = [
+        (3, 100002, "Ingeniería en Informática", 2024),
+        (4, 100003, "Ingeniería en Informática", 2024),
+    ]
+
+    query = """
+    INSERT IGNORE INTO estudiantes(
+        usuario_id,
+        padron,
+        carrera,
+        anio_ingreso
+    )
+    VALUES (%s, %s, %s, %s)
+    """
+
+    for estudiante in estudiantes:
+        execute_query(query, estudiante, modifica_db=True)
 
 def seed_cursos():
     cursos = [
@@ -382,6 +364,7 @@ def run_seed():
     seed_materias()
     seed_tipos_evaluacion()
     seed_usuarios()
+    seed_estudiantes()
     seed_cursos()
     seed_inscripciones()
     seed_evaluaciones()

@@ -13,7 +13,7 @@ class Usuario(TypedDict):
     rol_id: int
     ... # otros campos extra 
 
-def create_token(usuario: Usuario) -> str:
+def create_token(usuario: Usuario, perfiles: list) -> str:
     SECRET_KEY = current_app.config["JWT_SECRET_KEY"]
     JWT_ACCESS_TOKEN_EXPIRES_HOURS = current_app.config["JWT_ACCESS_TOKEN_EXPIRES_HOURS"]
 
@@ -22,6 +22,7 @@ def create_token(usuario: Usuario) -> str:
         "nombre": usuario["nombre"],
         "apellido": usuario["apellido"],
         "rol_id": usuario["rol_id"],
+        "perfiles": perfiles,
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_ACCESS_TOKEN_EXPIRES_HOURS)
     }
 

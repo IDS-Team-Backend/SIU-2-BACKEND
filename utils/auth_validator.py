@@ -22,18 +22,28 @@ def validar_token():
 
     except Exception as e:
         raise UnauthorizedError(str(e))
+    
+
+ROLES_LEGACY = {
+    1: "admin",
+    2: "profesor",
+    3: "alumno",
+    4: "ayudante",
+}
 
 def requiere_roles(*roles_permitidos):
     def decorador(f):
         @wraps(f)
-        def funcion_decorada(*args, **kwargs):     
-            id_rol_usuario = g.usuario.get("rol_id")
+        def funcion_decorada(*args, **kwargs):
+            perfiles = set(g.usuario.get("perfiles") or [])
 
-            rol_usuario = id_rol_a_nombre(id_rol_usuario)
+            rol_legacy = ROLES_LEGACY.get(g.usuario.get("rol_id"))
+            if rol_legacy:
+                perfiles.add(rol_legacy)
 
-            if rol_usuario not in roles_permitidos:
+            if not perfiles.intersection(roles_permitidos):
                 raise ForbiddenError("Acceso denegado. No tenés los permisos necesarios.")
-            
+
             return f(*args, **kwargs)
         return funcion_decorada
     return decorador
