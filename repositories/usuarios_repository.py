@@ -1,3 +1,4 @@
+from config import ADMIN, ALUMNO, DOCENTE
 import db
 from werkzeug.security import generate_password_hash
 
@@ -7,7 +8,7 @@ def obtener_usuarios(
     apellido=None,
     email=None,
     dni=None,
-    es_admin=None,
+    rol=None,
 ):
 
     query = "FROM usuarios u WHERE 1=1"
@@ -28,9 +29,23 @@ def obtener_usuarios(
         query += " AND u.dni = %s"
         params.append(dni)
 
-    if es_admin is not None:
-        query += " AND u.es_admin = %s"
-        params.append(es_admin)
+
+
+    if rol == ADMIN:
+        query += " AND u.es_admin = TRUE"
+
+    if rol == ALUMNO:
+        query += " AND EXISTS (SELECT 1 FROM estudiantes e WHERE e.usuario_id = u.id AND e.activo = TRUE)"
+
+    if rol == DOCENTE:
+        query += " AND EXISTS (SELECT 1 FROM profesores p WHERE p.usuario_id = u.id AND p.activo = TRUE)"
+
+    if rol == "pendiente": # usuarios sin perfil asignado, solo para admins
+        query += """ 
+                    AND u.es_admin = FALSE 
+                    AND NOT EXISTS (SELECT 1 FROM estudiantes e WHERE e.usuario_id = u.id AND e.activo = TRUE)
+                    AND NOT EXISTS (SELECT 1 FROM profesores p WHERE p.usuario_id = u.id AND p.activo = TRUE)
+                """
 
     count_query = "SELECT COUNT(*) as total " + query
     count_usuarios = db.execute_query(

@@ -14,11 +14,9 @@ def obtener_usuarios():
     apellido = request.args.get("apellido")
     dni = request.args.get("dni")
     email = request.args.get("email")
+    rol = request.args.get("rol") # argumento exclusivo de admins para filtrar por rol (admin, alumno, docente, PENDIENTE)
 
-    es_admin_arg = request.args.get("es_admin")
-    es_admin = es_admin_arg.lower() in ("true", "1") if es_admin_arg is not None else None
-
-    usuarios, total = logic.obtener_usuarios(nombre, apellido, email, dni, es_admin)
+    usuarios, total = logic.obtener_usuarios(nombre, apellido, email, dni, rol)
 
     if not usuarios:
         return "", 204
@@ -29,6 +27,7 @@ def obtener_usuarios():
 # ─── POST /usuarios ───────────────────────────────────────────────────────────
 
 @usuarios_bp.route("/", methods=["POST"])
+@auth.requiere_roles(ADMIN)
 def crear_usuario():
     parametros = request.get_json()
     new_usuario = logic.crear_usuario(parametros)
@@ -46,6 +45,7 @@ def obtener_usuario_por_id(id):
 # ─── PUT /usuarios/{id} ───────────────────────────────────────────────────────
 
 @usuarios_bp.route("/<int:id>", methods=["PUT"])
+@auth.requiere_roles(ADMIN)
 def reemplazar_usuario(id):
     parametros = request.get_json()
     actualizado = logic.reemplazar_usuario(id, parametros)
