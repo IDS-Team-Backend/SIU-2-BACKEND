@@ -39,6 +39,6 @@ BLUEPRINTS = (
 
 
 def register_routes(app):
-    app.before_request(auth.validar_token)
+    #app.before_request(auth.validar_token)
     for prefix, bp in BLUEPRINTS:
         app.register_blueprint(bp, url_prefix=prefix)
