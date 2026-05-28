@@ -2921,21 +2921,211 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /asistencia/health:
-    get:
-      tags: [Asistencia]
-      summary: Health check de asistencia
-      responses:
-        '200':
-          description: Servicio saludable.
+  /asistencia/clases/{clase_id}/generar-qrs:
+      post:
+        tags: [Asistencias]
+        summary: Generar y enviar QRs dinámicos para una clase
+        parameters:
+          - name: clase_id
+            in: path
+            required: true
+            schema:
+              type: integer
+        requestBody:
+          required: false
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
+                type: object
+                properties:
+                  expiracion_horas:
+                    type: integer
+                    default: 4
+        responses:
+          '201':
+            description: QRs generados y enviados exitosamente.
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+
+  /asistencia/escanear:
+    post:
+      tags: [Asistencias]
+      summary: Registrar asistencia escaneando el token del QR del alumno
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Asistencia registrada correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [mensaje, asistencia]
+                properties:
+                  mensaje:
+                    type: string
+                  asistencia:
+                    type: object
+                    properties:
+                      alumno_id:
+                        type: integer
+                      clase_id:
+                        type: integer
+                      estado:
+                        type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
+  /asistencia/clases/{clase_id}:
+    get:
+      tags: [Asistencias]
+      summary: Obtener planilla completa de asistencia de una clase
+      parameters:
+        - name: clase_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Planilla de asistencia obtenida correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [clase_id, total_alumnos, asistencias]
+                properties:
+                  clase_id:
+                    type: integer
+                  total_alumnos:
+                    type: integer
+                  asistencias:
+                    type: array
+                    items:
+                      type: object
+                      required: [alumno_id, nombre, estado]
+                      properties:
+                        alumno_id:
+                          type: integer
+                        nombre:
+                          type: string
+                        estado:
+                          type: string
+                          enum: [presente, ausente, tarde, justificada]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Asistencias]
+      summary: Modificar manualmente la planilla de asistencia (Bulk Update)
+      parameters:
+        - name: clase_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asistencias]
+              properties:
+                asistencias:
+                  type: array
+                  items:
+                    type: object
+                    required: [alumno_id, estado]
+                    properties:
+                      alumno_id:
+                        type: integer
+                      estado:
+                        type: string
+                        enum: [presente, ausente, tarde, justificada]
+      responses:
+        '204':
+          description: Planilla actualizada correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /asistencia/cursos/{curso_id}/me:
+    get:
+      tags: [Asistencias]
+      summary: Ver el porcentaje y detalle de asistencias propio del alumno logueado
+      parameters:
+        - name: curso_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Historial y métricas de asistencia devueltas correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [curso_id, clases_totales_dictadas, presentes, ausentes, tardes, porcentaje_asistencia, condicion_asistencia, detalle]
+                properties:
+                  curso_id:
+                    type: integer
+                  clases_totales_dictadas:
+                    type: integer
+                  presentes:
+                    type: integer
+                  ausentes:
+                    type: integer
+                  tardes:
+                    type: integer
+                  porcentaje_asistencia:
+                    type: number
+                    format: float
+                  condicion_asistencia:
+                    type: string
+                  detalle:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        clase_id:
+                          type: integer
+                        fecha:
 
   /reportes/health:
     get:

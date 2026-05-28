@@ -18,7 +18,6 @@ from .equipo_integrantes_router import equipo_integrantes_bp
 from .notas_router import notas_bp
 from .clases_router import clases_bp
 
-
 BLUEPRINTS = (
     ("/auth", auth_bp),
     ("/email", email_bp),
@@ -36,7 +35,7 @@ BLUEPRINTS = (
     ("/equipo_integrantes", equipo_integrantes_bp),
     ("/materias", materias_bp),
     ("/notas", notas_bp),
-    ("/clases", clases_bp)
+    ("/clases", clases_bp),
 )
 
 RUTAS_NO_PROTEGIDAS = (
