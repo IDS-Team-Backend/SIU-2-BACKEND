@@ -178,18 +178,22 @@ ALTER TABLE clases ADD INDEX idx_clases_busqueda (deleted_at, fecha_hora_inicio)
 CREATE TABLE IF NOT EXISTS qr_asistencia (
     id INT AUTO_INCREMENT PRIMARY KEY,
     clase_id INT NOT NULL,
+    alumno_id INT NOT NULL, 
     token VARCHAR(255) NOT NULL UNIQUE,
     expiracion DATETIME NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_qr_asistencia_clases 
         FOREIGN KEY (clase_id) REFERENCES clases(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT uq_qr_asistencia_clase_alumno
+        UNIQUE (clase_id, alumno_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS asistencias (
     id INT AUTO_INCREMENT PRIMARY KEY,
     clase_id INT NOT NULL,
     alumno_id INT NOT NULL,
+    estado ENUM('presente', 'ausente', 'justificada', 'tarde') NOT NULL DEFAULT 'ausente',
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_asistencias_clases 
         FOREIGN KEY (clase_id) REFERENCES clases(id)
