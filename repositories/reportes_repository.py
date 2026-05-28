@@ -29,7 +29,7 @@ def obtener_alumnos_reporte(
     """
     params = []
     
-    # filtros basicos 
+    # filtros estructurales
     if curso_id:
         query += " AND cu.curso_id = %s AND cu.estado = 'activo'"
         params.append(curso_id)
@@ -48,7 +48,7 @@ def obtener_alumnos_reporte(
         query += " AND e.padron = %s"
         params.append(padron)
         
-    # filtros academicos 
+    # filtros académicos
     if evaluacion_id:
         query += " AND n.evaluacion_id = %s"
         params.append(evaluacion_id)
@@ -61,8 +61,20 @@ def obtener_alumnos_reporte(
     if nota_mayor_a:
         query += " AND n.nota > %s"
         params.append(float(nota_mayor_a))
-        
-    query += " GROUP BY e.id ORDER BY u.apellido ASC, u.nombre ASC"
+
+    query += """ 
+        GROUP BY 
+            e.id, 
+            e.padron, 
+            e.carrera, 
+            e.anio_ingreso, 
+            u.nombre, 
+            u.apellido, 
+            u.email, 
+            u.dni, 
+            n.nota 
+        ORDER BY u.apellido ASC, u.nombre ASC
+    """
     
     return db.execute_query(query, tuple(params))
 
