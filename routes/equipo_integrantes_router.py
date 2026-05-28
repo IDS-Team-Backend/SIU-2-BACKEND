@@ -1,5 +1,6 @@
 from flask import request, jsonify, Blueprint
 import services.equipo_integrantes_service as logic
+from config import ADMIN, ALUMNO, AYUDANTE, DOCENTE
 from utils.error_handlers import (
     created_response,
     ValidationError
@@ -12,7 +13,7 @@ equipo_integrantes_bp = Blueprint(
 )
 
 @equipo_integrantes_bp.route("/", methods=["GET"])
-@auth.requiere_roles("profesor", "ayudante")
+@auth.requiere_roles("DOCENTE", "AYUDANTE")
 def obtener_integrantes():
     equipo_id = request.args.get("equipo_id")
     alumno_id = request.args.get("alumno_id")
@@ -28,7 +29,7 @@ def obtener_integrantes():
     }), 200
 
 @equipo_integrantes_bp.route("/", methods=["POST"])
-@auth.requiere_roles("profesor", "ayudante")
+@auth.requiere_roles("DOCENTE", "AYUDANTE")
 def agregar_integrante():
     parametros = request.get_json()
     integrante = logic.agregar_integrante(parametros)
@@ -40,11 +41,8 @@ def agregar_integrante():
         "/equipo-integrantes/"
     )
 
-@equipo_integrantes_bp.route(
-    "/<int:equipo_id>/<int:alumno_id>",
-    methods=["DELETE"]
-)
-@auth.requiere_roles("profesor", "ayudante")
+@equipo_integrantes_bp.route("/<int:equipo_id>/<int:alumno_id>",methods=["DELETE"])
+@auth.requiere_roles("DOCENTE", "AYUDANTE")
 def eliminar_integrante(equipo_id,alumno_id):
     logic.eliminar_integrante(equipo_id,alumno_id)
     return "", 204

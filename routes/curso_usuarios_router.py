@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, Blueprint
 import services.curso_usuarios_service as logic
+from config import ADMIN, ALUMNO, AYUDANTE, DOCENTE
 from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
 
@@ -8,7 +9,7 @@ curso_usuarios_bp = Blueprint("curso_usuarios", __name__)
 
 
 @curso_usuarios_bp.route("/", methods=["GET"])
-@auth.requiere_roles("admin", "profesor", "ayudante", "alumno")
+@auth.requiere_roles("ADMIN", "DOCENTE", "AYUDANTE", "ALUMNO")
 def obtener_curso_usuarios():
     usuario_id = request.args.get("usuario_id")
     curso_id = request.args.get("curso_id")
@@ -30,7 +31,7 @@ def obtener_curso_usuarios():
 
 
 @curso_usuarios_bp.route("/", methods=["POST"])
-@auth.requiere_roles("admin", "profesor")
+@auth.requiere_roles("ADMIN", "DOCENTE")
 def crear_curso_usuario():
     data = request.get_json()
     registro = logic.crear_curso_usuario(data)
@@ -39,7 +40,7 @@ def crear_curso_usuario():
 
 
 @curso_usuarios_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles("admin", "profesor")
+@auth.requiere_roles("ADMIN", "DOCENTE")
 def reemplazar_curso_usuario(curso_id):
     data = request.get_json(silent=True)
 
@@ -56,7 +57,7 @@ def reemplazar_curso_usuario(curso_id):
 
 
 @curso_usuarios_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles("admin", "profesor")
+@auth.requiere_roles("ADMIN", "DOCENTE")
 def eliminar_curso_usuario(id):
     logic.eliminar_curso_usuario(id)
     

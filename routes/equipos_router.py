@@ -1,5 +1,6 @@
 from flask import request, jsonify, Blueprint
 import services.equipos_service as logic
+from config import ADMIN, ALUMNO, AYUDANTE, DOCENTE
 from utils.error_handlers import (
     created_response,
     ValidationError
@@ -13,7 +14,7 @@ def health_check():
     return jsonify({"resource": "equipos", "status": "ok"})
 
 @equipos_bp.route("/", methods=["GET"])
-@auth.requiere_roles("profesor", "ayudante")
+@auth.requiere_roles("DOCENTE", "AYUDANTE")
 def obtener_equipos():
 
     curso_id = request.args.get("curso_id")
@@ -38,7 +39,7 @@ def obtener_equipos():
 
 
 @equipos_bp.route("/", methods=["POST"])
-@auth.requiere_roles("profesor", "ayudante")
+@auth.requiere_roles("DOCENTE", "AYUDANTE")
 def crear_equipo():
     parametros = request.get_json()
     nuevo_equipo = logic.crear_equipo(parametros)
@@ -53,14 +54,14 @@ def crear_equipo():
 
 
 @equipos_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles("profesor", "ayudante")
+@auth.requiere_roles("DOCENTE", "AYUDANTE")
 def obtener_equipo_por_id(id):
     equipo = logic.obtener_equipo_por_id(id)
     return jsonify(equipo), 200
 
 
 @equipos_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles("profesor", "ayudante")
+@auth.requiere_roles("DOCENTE", "AYUDANTE")
 def reemplazar_equipo(id):
     parametros = request.get_json()
     actualizado = logic.reemplazar_equipo(id, parametros)
@@ -72,7 +73,7 @@ def reemplazar_equipo(id):
 
 
 @equipos_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles("profesor")
+@auth.requiere_roles("DOCENTE")
 def eliminar_equipo(id):
     logic.eliminar_equipo(id)
     return "", 204
