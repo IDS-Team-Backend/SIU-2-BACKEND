@@ -53,6 +53,13 @@ def obtener_estudiante_por_id(id):
     return estudiante
 
 
+def obtener_estudiante_por_padron(padron):
+    estudiante = db.obtener_estudiante_por_padron(padron)
+    if not estudiante:
+        raise NotFoundError(f"No se encontró ningún estudiante con el padrón {padron}")
+    return estudiante
+
+
 def obtener_estudiante_me():
     usuario_id = auth.obtener_usuario_id()
     estudiante = db.obtener_estudiante_por_usuario_id(usuario_id)

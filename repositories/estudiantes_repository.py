@@ -117,13 +117,27 @@ def obtener_estudiante_por_usuario_id(usuario_id):
     resultado = db.execute_query(query, (usuario_id,), un_solo_valor=True)
     return resultado
 
+
 def obtener_estudiante_por_padron(padron):
     query = """
-        SELECT id, usuario_id, padron 
-        FROM estudiantes 
-        WHERE padron = %s AND activo = TRUE
+        SELECT
+            e.id,
+            e.usuario_id,
+            e.padron,
+            e.carrera,
+            e.anio_ingreso,
+            e.activo,
+            e.created_at,
+            u.nombre,
+            u.apellido,
+            u.email,
+            u.dni
+        FROM estudiantes e
+        INNER JOIN usuarios u ON u.id = e.usuario_id
+        WHERE e.padron = %s AND e.activo = TRUE
     """
     return db.execute_query(query, (padron,), un_solo_valor=True)
+
 
 def existe_padron(padron, excluir_id=None):
     if excluir_id is not None:

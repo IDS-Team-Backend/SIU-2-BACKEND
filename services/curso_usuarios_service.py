@@ -63,6 +63,7 @@ def reemplazar_curso_usuario(id, data):
 def eliminar_curso_usuario(id):
     if not db.obtener_por_id(id):
         raise NotFoundError(f"No se pudo eliminar: la inscripción con ID {id} no existe.")
+
     db.eliminar(id)
 
 

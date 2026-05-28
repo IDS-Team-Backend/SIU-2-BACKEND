@@ -65,17 +65,14 @@ def eliminar_curso_usuario(id):
 @curso_usuarios_bp.route("/importar-lote", methods=["POST"])
 @auth.requiere_roles(ADMIN, DOCENTE)
 def importar_lote_estudiantes():
-    # flask almacena los archivos en request.files
     if 'archivo' not in request.files:
         return jsonify({"error": "No se encontró la parte del archivo en la petición con la clave 'archivo'"}), 400
         
     archivo = request.files['archivo']
-    
     if archivo.filename == '':
         return jsonify({"error": "No se seleccionó ningún archivo"}), 400
 
     resultado_proceso = logic.importar_inscripciones_por_lote(archivo)
-    
     return jsonify({
         "mensaje": "Procesamiento de lote finalizado",
         "resultado": resultado_proceso

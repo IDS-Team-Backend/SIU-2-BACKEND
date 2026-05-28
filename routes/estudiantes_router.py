@@ -83,6 +83,13 @@ def obtener_estudiante_por_id(id):
     return jsonify(estudiante), 200
 
 
+@estudiantes_bp.route("/padron/<int:padron>", methods=["GET"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def obtener_estudiante_por_padron(padron):
+    estudiante = logic.obtener_estudiante_por_padron(padron)
+    return jsonify(estudiante), 200
+
+
 @estudiantes_bp.route("/<int:id>", methods=["PUT"])
 @auth.requiere_roles(ADMIN)
 def reemplazar_estudiante(id):
