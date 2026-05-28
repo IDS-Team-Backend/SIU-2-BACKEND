@@ -42,6 +42,15 @@ def obtener_por_id(id):
     return db.execute_query(query, (id,), un_solo_valor=True)
 
 
+def obtener_por_usuario_curso(usuario_id, curso_id):
+    query = """
+        SELECT id, usuario_id, curso_id, estado, fecha_inscripcion
+        FROM curso_usuarios
+        WHERE usuario_id = %s AND curso_id = %s
+    """
+    return db.execute_query(query, (usuario_id, curso_id), un_solo_valor=True)
+
+
 def existe_inscripcion(usuario_id, curso_id):
     query = "SELECT 1 FROM curso_usuarios WHERE usuario_id = %s AND curso_id = %s"
     resultado = db.execute_query(query, (usuario_id, curso_id), un_solo_valor=True)
