@@ -11,3 +11,5 @@ python-dotenv
 flask
 Flask-JWT-Extended
 PyJWT>=2.0.0
+qrcode
+pillow

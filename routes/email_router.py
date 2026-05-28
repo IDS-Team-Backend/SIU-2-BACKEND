@@ -1,16 +1,10 @@
 from flask import Blueprint, jsonify, request
 
-from clients.email_client import EmailClient
+import clients.email_client as email_client
 from utils.error_handlers import ValidationError
 
 
 email_bp = Blueprint("email", __name__)
-
-
-@email_bp.get("/health")
-def health_check():
-    return jsonify({"resource": "email", "status": "ok"})
-
 
 # @email_bp.post("/send") para pruebas nomas, es peligroso exponer este endpoint xd
 def send_email():
@@ -26,6 +20,6 @@ def send_email():
     if not body:
         raise ValidationError("El campo 'body' es obligatorio")
 
-    EmailClient().send(to=to, subject=subject, body=body, html=html)
+    email_client.send(to=to, subject=subject, body=body, html=html)
 
     return jsonify({"status": "ok", "message": "Correo enviado"}), 200
