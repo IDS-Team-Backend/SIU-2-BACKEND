@@ -4,7 +4,6 @@ from config import ADMIN, ALUMNO, AYUDANTE, DOCENTE
 from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
 
-
 curso_usuarios_bp = Blueprint("curso_usuarios", __name__)
 
 
@@ -57,8 +56,27 @@ def reemplazar_curso_usuario(curso_id):
 
 
 @curso_usuarios_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles("ADMIN", "DOCENTE")
+@auth.requiere_roles("admin", "DOCENTE")
 def eliminar_curso_usuario(id):
     logic.eliminar_curso_usuario(id)
     
     return "", 204
+
+@curso_usuarios_bp.route("/importar-lote", methods=["POST"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def importar_lote_estudiantes():
+    # flask almacena los archivos en request.files
+    if 'archivo' not in request.files:
+        return jsonify({"error": "No se encontró la parte del archivo en la petición con la clave 'archivo'"}), 400
+        
+    archivo = request.files['archivo']
+    
+    if archivo.filename == '':
+        return jsonify({"error": "No se seleccionó ningún archivo"}), 400
+
+    resultado_proceso = logic.importar_inscripciones_por_lote(archivo)
+    
+    return jsonify({
+        "mensaje": "Procesamiento de lote finalizado",
+        "resultado": resultado_proceso
+    }), 200

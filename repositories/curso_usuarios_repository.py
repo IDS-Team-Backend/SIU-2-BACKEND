@@ -24,8 +24,6 @@ def obtener_todos(usuario_id=None, curso_id=None, estado=None, page_size=20, off
     return paginacion.ejecutar(query, params, "id ASC", page_size, offset)
 
 
-
-
 def insertar(usuario_id, curso_id, estado):
     query = """
         INSERT INTO curso_usuarios (usuario_id, curso_id, estado)
@@ -56,7 +54,12 @@ def existe_inscripcion(usuario_id, curso_id):
     resultado = db.execute_query(query, (usuario_id, curso_id), un_solo_valor=True)
     return resultado is not None
 
-
+def inscribir_estudiante(curso_id, usuario_id):
+    query = """
+        INSERT INTO curso_usuarios (curso_id, usuario_id, estado) 
+        VALUES (%s, %s, 'activo')
+    """
+    return db.execute_query(query, (curso_id, usuario_id), modifica_db=True)
 
 def actualizar(id, usuario_id, curso_id, estado):
     query = """
