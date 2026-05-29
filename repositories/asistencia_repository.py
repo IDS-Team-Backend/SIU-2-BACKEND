@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any, cast
 
 import db
 
@@ -59,7 +60,8 @@ def guardar_qrs(clase_id, qrs):
 			VALUES (%s, %s, %s, %s)
 			ON DUPLICATE KEY UPDATE
 				token = VALUES(token),
-				expiracion = VALUES(expiracion)
+				expiracion = VALUES(expiracion),
+				consumido_at = NULL
 		"""
 		cursor.executemany(query, qrs)
 		conn.commit()
@@ -75,7 +77,7 @@ def guardar_qrs(clase_id, qrs):
 			conn.close()
 
 
-def obtener_qr_por_token(token):
+def obtener_qr_por_token(token) -> dict[str, Any] | None:
 	query = """
 		SELECT
 			qa.clase_id,
@@ -84,7 +86,8 @@ def obtener_qr_por_token(token):
 			u.nombre,
 			u.apellido,
 			c.fecha_hora_inicio,
-			qa.expiracion
+			qa.expiracion,
+			qa.consumido_at
 		FROM qr_asistencia qa
 		INNER JOIN clases c ON c.id = qa.clase_id
 		INNER JOIN estudiantes e ON e.id = qa.alumno_id
@@ -92,6 +95,47 @@ def obtener_qr_por_token(token):
 		WHERE qa.token = %s
 	"""
 	return db.execute_query(query, (token,), un_solo_valor=True)
+
+
+def consumir_qr_por_token(token) -> dict[str, Any] | None:
+	query = """
+		SELECT
+			qa.clase_id,
+			qa.alumno_id,
+			e.padron,
+			u.nombre,
+			u.apellido,
+			c.fecha_hora_inicio,
+			qa.expiracion,
+			qa.consumido_at
+		FROM qr_asistencia qa
+		INNER JOIN clases c ON c.id = qa.clase_id
+		INNER JOIN estudiantes e ON e.id = qa.alumno_id
+		INNER JOIN usuarios u ON u.id = e.usuario_id
+		WHERE qa.token = %s
+	"""
+	qr = db.execute_query(query, (token,), un_solo_valor=True)
+	if not qr:
+		return None
+
+	if qr["consumido_at"] is not None:
+		qr["ya_consumido"] = True
+		return qr
+
+	if qr["expiracion"] < datetime.now():
+		qr["expirado"] = True
+		return qr
+
+	update_query = """
+		UPDATE qr_asistencia
+		SET consumido_at = NOW()
+		WHERE token = %s AND consumido_at IS NULL
+	"""
+	filas_actualizadas = db.execute_query(update_query, (token,), modifica_db=True)
+	if filas_actualizadas == 0:
+		qr["ya_consumido"] = True
+
+	return qr
 
 
 def upsert_asistencia(clase_id, alumno_id, estado):
