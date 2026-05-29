@@ -1,12 +1,53 @@
 import repositories.cursos_repository as db
-from utils.error_handlers import NotFoundError, ValidationError, DuplicateError
+import repositories.profesores_repository as profesores_db
+from config import ALUMNO, DOCENTE
+from utils.error_handlers import NotFoundError, ValidationError, DuplicateError, ForbiddenError
 import mysql.connector
 
 curso_params = ["materia_id", "nombre", "anio", "cuatrimestre"]
 curso_update_params = ["materia_id", "nombre", "anio", "cuatrimestre"]
 
-def obtener_cursos(materia_id=None, nombre=None, anio=None, cuatrimestre=None, page_size=20, offset=0):
-    return db.obtener_cursos(materia_id, nombre, anio, cuatrimestre, page_size, offset)
+def obtener_cursos_del_usuario_actual(usuario_id, rol):
+    if rol == ALUMNO:
+        cursos = db.obtener_cursos_del_alumno(usuario_id)
+    elif rol == DOCENTE:
+        profesor = profesores_db.obtener_profesor_por_usuario_id(usuario_id)
+        if not profesor or not profesor.get("activo"):
+            raise NotFoundError("El usuario no tiene un perfil docente activo.")
+        cursos = db.obtener_cursos_del_docente(profesor["id"])
+    else:
+        raise ForbiddenError("No tenés permisos para acceder a este recurso.")
+
+    return cursos
+
+def obtener_cursos(materia_id=None, nombre=None, anio=None, cuatrimestre=None, profesor_id=None, page_size=20, offset=0):
+    cursos, total = db.obtener_cursos(materia_id, nombre, anio, cuatrimestre, profesor_id, page_size, offset)
+
+    if not cursos: 
+        return [], 0
+    
+    # se guarda el id de todos los cursos obtenidos en una lista 
+    curso_ids = [curso["id"] for curso in cursos]
+
+    print("estos son los curso_ids: ", curso_ids, flush=True)
+    # se consigue el equipo docente de cada curso en una query
+    docentes_por_curso = db.obtener_docentes_por_cursos(curso_ids)
+
+    print("estos son los docentes_por_curso: ", docentes_por_curso, flush=True)
+
+    # se le asigna el docente respectivo a cada curso
+    for curso in cursos:
+        curso["equipo_docente"] = [
+            {
+                "docente_id": docente["docente_id"],
+                "nombre": docente["nombre"],
+                "apellido": docente["apellido"],
+                "rol": docente["rol"]
+            }
+            for docente in docentes_por_curso if docente["curso_id"] == curso["id"]
+        ]
+
+    return cursos, total
 
 def crear_cursos(parametros):
     if not parametros or not isinstance(parametros, dict):

@@ -20,6 +20,16 @@ DOCENTE = "docente"
 ALUMNO = "alumno"
 AYUDANTE = "ayudante"
 
+TITULAR = "titular"
+JEFE_TP = "jefe_tp"
+AYUDANTE_CATEDRA = "ayudante"
+
+ROLES_DOCENTE_CATEDRA = [
+    TITULAR,
+    JEFE_TP,
+    AYUDANTE_CATEDRA,
+]
+
 ESTADOS_CLASE = [ # caso default: ESTADOS_CLASE[0]
     "pendiente",
     "suspendida",

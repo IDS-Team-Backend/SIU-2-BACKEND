@@ -1,11 +1,25 @@
 from flask import request, jsonify, Blueprint
 import services.cursos_service as logic
 from utils import auth_validator as auth
-from config import ADMIN
+from config import ADMIN, ALUMNO, DOCENTE
 from utils.error_handlers import created_response, ValidationError
 from utils import paginacion
 
 cursos_bp = Blueprint("cursos", __name__)
+
+
+@cursos_bp.get("/me")
+@auth.requiere_roles(ALUMNO, DOCENTE)
+def get_mis_cursos():
+    usuario_id = auth.obtener_usuario_id()
+
+    if auth.usuario_es(DOCENTE):
+        rol = DOCENTE
+    else:
+        rol = ALUMNO
+
+    cursos = logic.obtener_cursos_del_usuario_actual(usuario_id, rol)
+    return jsonify({"cursos": cursos, "total": len(cursos)}), 200
 
 @cursos_bp.route("/health", methods=["GET"])
 def health_check():
@@ -19,9 +33,10 @@ def obtener_cursos():
     nombre = request.args.get("nombre")
     anio = request.args.get("anio", type=int)
     cuatrimestre = request.args.get("cuatrimestre", type=int)
+    profesor_id = request.args.get("profesor_id", type=int)
 
     cursos, total = logic.obtener_cursos(
-        materia_id, nombre, anio, cuatrimestre, page_size, offset
+        materia_id, nombre, anio, cuatrimestre, profesor_id, page_size, offset
     )
 
     if not cursos:
