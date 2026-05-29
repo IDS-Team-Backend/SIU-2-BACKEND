@@ -1,13 +1,45 @@
 import db
 from utils import paginacion
 
-def obtener_cursos(materia_id=None, nombre=None, anio=None, cuatrimestre=None, page_size=20, offset=0):
+
+def obtener_cursos_del_alumno(usuario_id):
+    query = """
+        SELECT c.id, c.nombre, c.anio, c.cuatrimestre
+        FROM curso_usuarios cu
+        INNER JOIN cursos c ON c.id = cu.curso_id
+        WHERE cu.usuario_id = %s
+          AND cu.estado = 'activo'
+        ORDER BY c.id ASC
+    """
+    return db.execute_query(query, (usuario_id,)) or []
+
+
+def obtener_cursos_del_docente(docente_id):
+    query = """
+        SELECT c.id, c.nombre, c.anio, c.cuatrimestre
+        FROM curso_docentes cd
+        INNER JOIN cursos c ON c.id = cd.curso_id
+        WHERE cd.docente_id = %s
+        ORDER BY c.id ASC
+    """
+    return db.execute_query(query, (docente_id,)) or []
+
+def obtener_cursos(materia_id=None, nombre=None, anio=None, cuatrimestre=None, docente_id=None, page_size=20, offset=0):
     query = """
         SELECT c.id, c.materia_id, c.nombre, c.anio, c.cuatrimestre
         FROM cursos c
-        WHERE 1=1
     """
+    
+    # si se filtra por docente, hay que hacer un join
+    if docente_id:
+        query += " INNER JOIN curso_docentes cd ON c.id = cd.curso_id"
+
+    query += " WHERE 1=1"
     params = []
+
+    if docente_id:
+        query += " AND cd.docente_id = %s"
+        params.append(docente_id)
 
     if materia_id:
         query += " AND c.materia_id = %s"
@@ -25,7 +57,29 @@ def obtener_cursos(materia_id=None, nombre=None, anio=None, cuatrimestre=None, p
         query += " AND c.cuatrimestre = %s"
         params.append(cuatrimestre)
 
-    return paginacion.ejecutar(query, params, "id ASC", page_size, offset)
+    return paginacion.ejecutar(query, params, "c.id ASC", page_size, offset)
+
+def obtener_docentes_por_cursos(curso_ids):
+    if not curso_ids:
+        return []
+        
+    # se necesita un %s por cada curso que haya 
+    placeholders = ', '.join(['%s'] * len(curso_ids))
+    
+    query = f"""
+        SELECT 
+            cd.curso_id, 
+            cd.docente_id, 
+            cd.nombre AS rol, 
+            u.nombre, 
+            u.apellido
+        FROM curso_docentes cd
+        INNER JOIN profesores p ON cd.docente_id = p.id
+        INNER JOIN usuarios u ON p.usuario_id = u.id
+        WHERE cd.curso_id IN ({placeholders})
+    """
+    
+    return db.execute_query(query, tuple(curso_ids))
 
 def crear_cursos(materia_id, nombre, anio, cuatrimestre):
     query = """
