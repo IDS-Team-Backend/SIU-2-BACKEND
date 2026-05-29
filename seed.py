@@ -42,6 +42,8 @@ def seed_usuarios():
         ("Juan Carlos", "Perez", "juan@fi.uba.ar", 47000001, password, False),
         ("Analia", "Gomez", "ana@fi.uba.ar", 47000002, password, False),
         ("Lucas", "Martinez", "lucas@fi.uba.ar", 47000003, password, False),
+        ("mateo", "Martinez", "mateo@fi.uba.ar", 47000004, password, False),
+        ("thiago", "Martinez", "thiago@fi.uba.ar", 47000005, password, False),
     ]
 
     query = """
@@ -82,6 +84,8 @@ def seed_estudiantes():
 def seed_profesores():
     profesores = [
         (2, 500001, "Ingeniero en Informática", "Informática", "2018-03-01"),
+        (5, 500002, "Licenciado en Sistemas", "Informática", "2020-04-15"),   # ID 2 (Ayudante)
+        (6, 500003, "Analista de Sistemas", "Informática", "2022-08-10"),     # ID 3 (JTP)
     ]
 
     query = """
@@ -117,6 +121,28 @@ def seed_cursos():
 
     for curso in cursos:
         execute_query(query, curso, modifica_db=True)
+
+def seed_curso_docentes():
+    # (curso_id, docente_id, nombre)
+    # Solo usamos curso_id 1 y 2, y docente_id 1 (que son los que existen)
+    curso_docentes = [
+        (1, 1, "titular"), 
+        (2, 1, "titular"),
+        (1, 2, "jefe_tp"), 
+        (1, 3, "ayudante") 
+    ]
+
+    query = """
+    INSERT IGNORE INTO curso_docentes(
+        curso_id,
+        docente_id,
+        nombre
+    )
+    VALUES (%s, %s, %s)
+    """
+
+    for cd in curso_docentes:
+        execute_query(query, cd, modifica_db=True)
 
 
 def seed_inscripciones():
@@ -377,6 +403,7 @@ def run_seed():
     seed_estudiantes()
     seed_profesores()
     seed_cursos()
+    seed_curso_docentes()
     seed_inscripciones()
     seed_evaluaciones()
     seed_equipos()
