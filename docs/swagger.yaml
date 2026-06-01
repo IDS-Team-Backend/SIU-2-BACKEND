@@ -17,7 +17,7 @@ tags:
   - name: Evaluaciones
   - name: Equipos
   - name: EquipoIntegrantes
-  - name: CursoUsuarios
+  - name: EstudianteCurso
   - name: Notas
   - name: Clases
   - name: Logs
@@ -675,47 +675,71 @@ components:
         activo:
           type: boolean
 
-    CursoUsuario:
+    EstudianteCurso:
       type: object
       properties:
         id:
           type: integer
-        usuario_id:
+        estudiante_id:
           type: integer
         curso_id:
           type: integer
         estado:
           type: string
-          enum: [activo, suspendido, baja]
+          enum: [activo, abandono]
+        fecha_inscripcion:
+          type: string
+          format: date-time
+        padron:
+          type: integer
+        nombre:
+          type: string
+        apellido:
+          type: string
+        curso_nombre:
+          type: string
 
-    CursoUsuarioCreateRequest:
+    EstudianteCursoCreateRequest:
       type: object
       required:
-        - usuario_id
+        - estudiante_id
         - curso_id
       properties:
-        usuario_id:
+        estudiante_id:
           type: integer
         curso_id:
           type: integer
         estado:
           type: string
-          enum: [activo, suspendido, baja]
+          enum: [activo, abandono]
+          default: activo
 
-    CursoUsuarioUpdateRequest:
+    EstudianteCursoUpdateRequest:
       type: object
       required:
-        - usuario_id
+        - estudiante_id
         - curso_id
         - estado
       properties:
-        usuario_id:
+        estudiante_id:
           type: integer
         curso_id:
           type: integer
         estado:
           type: string
-          enum: [activo, suspendido, baja]
+          enum: [activo, abandono]
+
+    EstudianteCursoPatchRequest:
+      type: object
+      minProperties: 1
+      properties:
+        estudiante_id:
+          type: integer
+        curso_id:
+          type: integer
+        estado:
+          type: string
+          enum: [activo, abandono]
 
     EquipoIntegrante:
       type: object
@@ -2305,12 +2329,12 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /curso_usuarios:
+  /estudiante_curso:
     get:
-      tags: [CursoUsuarios]
-      summary: Listar inscripciones curso-usuario
+      tags: [EstudianteCurso]
+      summary: Listar inscripciones estudiante-curso
       parameters:
-        - name: usuario_id
+        - name: estudiante_id
           in: query
           schema:
             type: integer
@@ -2322,12 +2346,12 @@ paths:
           in: query
           schema:
             type: string
-            enum: [activo, suspendido, baja]
-        - name: page_size
+            enum: [activo, abandono]
+        - name: page
           in: query
           schema:
             type: integer
-        - name: offset
+        - name: page_size
           in: query
           schema:
             type: integer
@@ -2338,13 +2362,19 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [curso_usuarios, total]
+                required: [estudiante_cursos, total]
                 properties:
-                  curso_usuarios:
+                  estudiante_cursos:
                     type: array
                     items:
-                      $ref: '#/components/schemas/CursoUsuario'
+                      $ref: '#/components/schemas/EstudianteCurso'
                   total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+                  total_paginas:
                     type: integer
         '204':
           description: Sin resultados.
@@ -2357,21 +2387,107 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      tags: [CursoUsuarios]
-      summary: Crear una inscripción curso-usuario
+      tags: [EstudianteCurso]
+      summary: Crear una inscripción estudiante-curso
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CursoUsuarioCreateRequest'
+              $ref: '#/components/schemas/EstudianteCursoCreateRequest'
       responses:
         '201':
           description: Inscripción creada correctamente.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CursoUsuario'
+                type: object
+                required: [message, estudiante_curso]
+                properties:
+                  message:
+                    type: string
+                  estudiante_curso:
+                    $ref: '#/components/schemas/EstudianteCurso'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /estudiante_curso/importar-lote:
+    post:
+      tags: [EstudianteCurso]
+      summary: Importar inscripciones por lote desde un CSV
+      description: >-
+        El CSV debe contener las columnas `padron` y `curso_id`. Cada padrón se
+        resuelve al estudiante correspondiente y se inscribe en el curso.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [archivo]
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Procesamiento de lote finalizado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  resultado:
+                    type: object
+                    properties:
+                      procesados_exito:
+                        type: integer
+                      ignorados_duplicados:
+                        type: integer
+                      errores_encontrados:
+                        type: integer
+                      detalles_errores:
+                        type: array
+                        items:
+                          type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /estudiante_curso/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [EstudianteCurso]
+      summary: Obtener una inscripción estudiante-curso por ID
+      responses:
+        '200':
+          description: Inscripción encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstudianteCurso'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2382,23 +2498,39 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
-
-  /curso_usuarios/{id}:
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
     put:
-      tags: [CursoUsuarios]
-      summary: Reemplazar una inscripción curso-usuario
+      tags: [EstudianteCurso]
+      summary: Reemplazar una inscripción estudiante-curso
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CursoUsuarioUpdateRequest'
+              $ref: '#/components/schemas/EstudianteCursoUpdateRequest'
+      responses:
+        '204':
+          description: Inscripción actualizada correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [EstudianteCurso]
+      summary: Modificar parcialmente una inscripción estudiante-curso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstudianteCursoPatchRequest'
       responses:
         '200':
           description: Inscripción actualizada correctamente.
@@ -2406,12 +2538,12 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [message, curso]
+                required: [message, estudiante_curso]
                 properties:
                   message:
                     type: string
-                  curso:
-                    $ref: '#/components/schemas/CursoUsuario'
+                  estudiante_curso:
+                    $ref: '#/components/schemas/EstudianteCurso'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2420,14 +2552,16 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalServerError'
     delete:
-      tags: [CursoUsuarios]
-      summary: Eliminar una inscripción curso-usuario
+      tags: [EstudianteCurso]
+      summary: Eliminar (baja) una inscripción estudiante-curso
       responses:
         '204':
-          description: Inscripción eliminada correctamente.
+          description: Inscripción dada de baja correctamente.
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':

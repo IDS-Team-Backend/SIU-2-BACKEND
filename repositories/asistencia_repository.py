@@ -37,11 +37,11 @@ def obtener_alumnos_inscriptos_de_curso(curso_id):
 			u.apellido,
 			u.email,
 			u.dni
-		FROM curso_usuarios cu
-		INNER JOIN estudiantes e ON e.usuario_id = cu.usuario_id
+		FROM estudiante_curso ec
+		INNER JOIN estudiantes e ON e.id = ec.estudiante_id
 		INNER JOIN usuarios u ON u.id = e.usuario_id
-		WHERE cu.curso_id = %s
-		  AND cu.estado = 'activo'
+		WHERE ec.curso_id = %s
+		  AND ec.estado = 'activo'
 		  AND e.activo = TRUE
 		  AND u.activo = TRUE
 		ORDER BY u.apellido ASC, u.nombre ASC, e.id ASC
@@ -113,14 +113,14 @@ def obtener_asistencias_de_clase(clase_id):
 			u.apellido,
 			a.estado,
 			a.fecha_registro
-		FROM curso_usuarios cu
-		INNER JOIN estudiantes e ON e.usuario_id = cu.usuario_id
+		FROM estudiante_curso ec
+		INNER JOIN estudiantes e ON e.id = ec.estudiante_id
 		INNER JOIN usuarios u ON u.id = e.usuario_id
 		LEFT JOIN asistencias a
 			ON a.clase_id = %s
 		   AND a.alumno_id = e.id
-		INNER JOIN clases c ON c.id = %s AND c.curso_id = cu.curso_id
-		WHERE cu.estado = 'activo'
+		INNER JOIN clases c ON c.id = %s AND c.curso_id = ec.curso_id
+		WHERE ec.estado = 'activo'
 		  AND e.activo = TRUE
 		  AND u.activo = TRUE
 		  AND c.deleted_at IS NULL

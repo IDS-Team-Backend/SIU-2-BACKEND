@@ -4,7 +4,7 @@ from uuid import uuid4
 from clients.email_client import enviar_email_qr
 import repositories.asistencia_repository as db
 from repositories import cursos_repository, estudiantes_repository
-import repositories.curso_usuarios_repository as curso_usuarios_db
+import repositories.estudiante_curso_repository as estudiante_curso_db
 from utils import auth_validator as auth
 from utils.error_handlers import NotFoundError, ValidationError
 
@@ -205,7 +205,7 @@ def obtener_mis_asistencias(curso_id):
 	usuario_id = auth.obtener_usuario_id()
 	estudiante = _obtener_estudiante_por_usuario_id(usuario_id)
 
-	inscripcion = curso_usuarios_db.obtener_por_usuario_curso(usuario_id, curso_id)
+	inscripcion = estudiante_curso_db.obtener_estudiante_curso_por_estudiante_curso(estudiante["id"], curso_id)
 	if not inscripcion or inscripcion.get("estado") != "activo":
 		raise ValidationError("El alumno no está inscripto activamente en este curso.")
 

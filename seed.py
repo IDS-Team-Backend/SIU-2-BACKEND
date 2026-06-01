@@ -120,15 +120,16 @@ def seed_cursos():
 
 
 def seed_inscripciones():
+    # estudiante_id apunta a estudiantes(id): 1 = Ana (usuario 3), 2 = Lucas (usuario 4)
     inscripciones = [
-        (1, 3),
-        (1, 4),
+        (1, 1),
+        (1, 2),
     ]
 
     query = """
-    INSERT IGNORE INTO curso_usuarios(
+    INSERT IGNORE INTO estudiante_curso(
         curso_id,
-        usuario_id
+        estudiante_id
     )
     VALUES (%s, %s)
     """
