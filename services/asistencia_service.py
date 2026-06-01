@@ -4,9 +4,12 @@ from uuid import uuid4
 from clients.email_client import enviar_email_qr
 import repositories.asistencia_repository as db
 from repositories import cursos_repository, estudiantes_repository
+import repositories.curso_docentes_repository as curso_docentes_db
 import repositories.curso_usuarios_repository as curso_usuarios_db
+import repositories.profesores_repository as profesores_repository
+from config import ADMIN
 from utils import auth_validator as auth
-from utils.error_handlers import NotFoundError, ValidationError
+from utils.error_handlers import NotFoundError, UnauthorizedError, ValidationError
 
 
 ASISTENCIA_ESTADOS_VALIDOS = {"presente", "ausente", "tarde", "justificada"}
@@ -59,8 +62,21 @@ def _obtener_alumnos_inscriptos_a_clase(clase_id):
 	return clase, alumnos
 
 
+def _validar_permiso_docente_sobre_clase(clase):
+	if auth.usuario_es(ADMIN):
+		return
+
+	docente = profesores_repository.obtener_profesor_por_usuario_id(auth.obtener_usuario_id())
+	if not docente or not docente.get("activo"):
+		raise UnauthorizedError("No tenés un perfil docente activo.")
+
+	if not curso_docentes_db.docente_pertenece_activamente_a_curso(docente["id"], clase["curso_id"]):
+		raise UnauthorizedError("No tenés permisos para gestionar esta clase.")
+
+
 def generar_qrs_de_asistencia(clase_id):
 	clase, alumnos = _obtener_alumnos_inscriptos_a_clase(clase_id)
+	_validar_permiso_docente_sobre_clase(clase)
 
 	if not alumnos:
 		raise ValidationError("No hay alumnos inscriptos en el curso de la clase.")
@@ -92,7 +108,7 @@ def generar_qrs_de_asistencia(clase_id):
 		)
 
 		enviar_email_qr(
-			to=notificacion["email"],
+			to="ffernandez.joaco@gmail.com",
 			subject=f"QR de Asistencia - {notificacion['clase']}",
 			nombre_alumno=notificacion["nombre"],
 			apellido_alumno=notificacion["apellido"],
@@ -108,11 +124,14 @@ def escanear_qr(token):
 	if not isinstance(token, str) or not token.strip():
 		raise ValidationError("El campo 'token' es obligatorio.")
 
-	qr = db.obtener_qr_por_token(token.strip())
+	qr = db.consumir_qr_por_token(token.strip())
 	if not qr:
 		raise ValidationError("Token inválido o expirado.")
 
-	if qr["expiracion"] < datetime.now():
+	if qr.get("ya_consumido"):
+		raise ValidationError("El token ya fue escaneado.")
+
+	if qr.get("expirado"):
 		raise ValidationError("Token inválido o expirado.")
 	
 	estado_asistencia = ""
@@ -141,6 +160,7 @@ def escanear_qr(token):
 
 def obtener_asistencias_por_clase(clase_id):
 	clase = _validar_clase_existe(clase_id)
+	_validar_permiso_docente_sobre_clase(clase)
 	asistencias = db.obtener_asistencias_de_clase(clase_id)
 
 	return {
@@ -163,6 +183,7 @@ def obtener_asistencias_por_clase(clase_id):
 
 def actualizar_asistencias_manualmente(clase_id, asistencias):
 	clase = _validar_clase_existe(clase_id)
+	_validar_permiso_docente_sobre_clase(clase)
 
 	if not isinstance(asistencias, list) or not asistencias:
 		raise ValidationError("El campo 'asistencias' debe ser una lista no vacía.")

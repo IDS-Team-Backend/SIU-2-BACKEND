@@ -86,6 +86,21 @@ CREATE TABLE IF NOT EXISTS curso_usuarios (
         UNIQUE (curso_id, usuario_id) 
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS curso_docentes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    curso_id INT NOT NULL,
+    docente_id INT NOT NULL,
+    nombre ENUM('titular', 'jefe_tp', 'ayudante') NOT NULL,
+    CONSTRAINT fk_curso_docentes_cursos
+        FOREIGN KEY (curso_id) REFERENCES cursos(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_curso_docentes_profesores
+        FOREIGN KEY (docente_id) REFERENCES profesores(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT uq_curso_docente
+        UNIQUE (curso_id, docente_id)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS evaluaciones (
     id INT AUTO_INCREMENT PRIMARY KEY,
     curso_id INT NOT NULL,
@@ -181,6 +196,7 @@ CREATE TABLE IF NOT EXISTS qr_asistencia (
     alumno_id INT NOT NULL, 
     token VARCHAR(255) NOT NULL UNIQUE,
     expiracion DATETIME NOT NULL,
+    consumido_at DATETIME NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_qr_asistencia_clases 
         FOREIGN KEY (clase_id) REFERENCES clases(id)
