@@ -1261,6 +1261,116 @@
       ]
     },
     {
+      "name": "Reportes",
+      "description": "Endpoints para la emisión de reportes en pantalla (JSON) o descargables (PDF). Requiere rol: ADMIN, DOCENTE o AYUDANTE.",
+      "item": [
+        {
+          "name": "GET /reportes/alumnos (Pantalla - JSON)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/alumnos?curso_id={{curso_id}}&carrera=Ingenieria Informatica&anio_ingreso=2024",
+              "host": ["{{baseUrl}}"],
+              "path": ["reportes", "alumnos"],
+              "query": [
+                { "key": "curso_id", "value": "{{curso_id}}", "description": "Opcional. Filtra por curso" },
+                { "key": "carrera", "value": "Ingenieria Informatica", "description": "Opcional. Filtra por carrera exacta" },
+                { "key": "anio_ingreso", "value": "2024", "description": "Opcional. Filtra por cohorte" },
+                { "key": "nombre_completo", "value": "", "description": "Opcional. Buscador por nombre/apellido", "disabled": true },
+                { "key": "evaluacion_id", "value": "{{evaluacion_id}}", "description": "Opcional. Cruza con examen", "disabled": true },
+                { "key": "condicion", "value": "aprobado", "description": "Opcional. aprobado/desaprobado", "disabled": true }
+              ]
+            },
+            "description": "Devuelve la lista estructurada de alumnos en formato JSON para pintar las tablas en el Frontend del Dashboard."
+          }
+        },
+        {
+          "name": "GET /reportes/alumnos (Descargar PDF)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/alumnos?curso_id={{curso_id}}&export=pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["reportes", "alumnos"],
+              "query": [
+                { "key": "curso_id", "value": "{{curso_id}}" },
+                { "key": "export", "value": "pdf", "description": "Fuerza al backend a emitir el binario del PDF" }
+              ]
+            },
+            "description": "Genera y descarga el archivo PDF oficial con el listado de alumnos aplicando los filtros activos."
+          }
+        },
+        {
+          "name": "GET /reportes/estadisticas (Pantalla - JSON)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/estadisticas?curso_id={{curso_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reportes", "estadisticas"],
+              "query": [
+                { "key": "curso_id", "value": "{{curso_id}}", "description": "Requerido para calcular métricas" }
+              ]
+            },
+            "description": "Retorna aprobados, desaprobados y promedios por evaluación. Estos datos los usará Chart.js en el Front."
+          }
+        },
+        {
+          "name": "GET /reportes/estadisticas (Descargar PDF)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/estadisticas?curso_id={{curso_id}}&export=pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["reportes", "estadisticas"],
+              "query": [
+                { "key": "curso_id", "value": "{{curso_id}}" },
+                { "key": "export", "value": "pdf" }
+              ]
+            },
+            "description": "Descarga el reporte de analíticas en PDF con los gráficos de barras nativos generados por el servidor."
+          }
+        },
+        {
+          "name": "GET /reportes/equipos (Pantalla - JSON)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/equipos?curso_id={{curso_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reportes", "equipos"],
+              "query": [
+                { "key": "curso_id", "value": "{{curso_id}}", "description": "Requerido para listar los grupos del curso" }
+              ]
+            },
+            "description": "Muestra por pantalla la nómina de equipos junto con sus alumnos integrantes concatenados."
+          }
+        },
+        {
+          "name": "GET /reportes/equipos (Descargar PDF)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/equipos?curso_id={{curso_id}}&export=pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["reportes", "equipos"],
+              "query": [
+                { "key": "curso_id", "value": "{{curso_id}}" },
+                { "key": "export", "value": "pdf" }
+              ]
+            },
+            "description": "Emite el documento PDF formal con la división de grupos de trabajo e integrantes para el cuerpo docente."
+          }
+        }
+      ]
+    },
+    {
       "name": "Health checks",
       "description": "Endpoints de health por blueprint. La mayoría requiere cookie por el before_request global.",
       "item": [

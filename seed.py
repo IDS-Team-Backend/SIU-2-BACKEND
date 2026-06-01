@@ -61,8 +61,8 @@ def seed_usuarios():
 
 def seed_estudiantes():
     estudiantes = [
-        (3, 100002, "Ingeniería en Informática", 2024),
-        (4, 100003, "Ingeniería en Informática", 2024),
+        (3, 100002, "Ingeniería Informática", 2024),
+        (4, 100003, "Ingeniería Química", 2024),
     ]
 
     query = """
