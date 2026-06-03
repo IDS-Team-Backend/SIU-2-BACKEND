@@ -40,10 +40,46 @@ def seed_usuarios():
     password = generate_password_hash("123456")
 
     usuarios = [
-        ("admin", "Del Sistema", "admin@fi.uba.ar", 47000000, password, True),
-        ("Juan Carlos", "Perez", "juan@fi.uba.ar", 47000001, password, False),
-        ("Analia", "Gomez", "ana@fi.uba.ar", 47000002, password, False),
-        ("Lucas", "Martinez", "lucas@fi.uba.ar", 47000003, password, False),
+        # sistema y docente
+        ("admin",      "Del Sistema", "admin@fi.uba.ar",        47000000, password, True),
+        ("Juan Carlos","Perez",       "jperez@fi.uba.ar",       47000001, password, False),
+        # integrantes del grupo (primeros)
+        ("Nicolas",    "Martinez",    "nmartinez@fi.uba.ar",    44100001, password, False),
+        ("Franco",     "Dimeola",     "fdimeola@fi.uba.ar",     44100002, password, False),
+        ("Federico",   "Folgar",      "ffolgar@fi.uba.ar",      44100003, password, False),
+        ("Joaquin",    "Fernandez",   "jfernandez@fi.uba.ar",   44100004, password, False),
+        ("Tomas",      "Vargas",      "tvargas@fi.uba.ar",      44215876, password, False),
+        # resto de alumnos
+        ("Sofia",      "Ramirez",     "sramirez@fi.uba.ar",     47000004, password, False),
+        ("Camila",     "Lopez",       "clopez@fi.uba.ar",       47000005, password, False),
+        ("Valentina",  "Torres",      "vtorres@fi.uba.ar",      47000006, password, False),
+        ("Agustin",    "Diaz",        "adiaz@fi.uba.ar",        47000007, password, False),
+        ("Florencia",  "Sanchez",     "fsanchez@fi.uba.ar",     47000008, password, False),
+        ("Matias",     "Morales",     "mmorales@fi.uba.ar",     47000009, password, False),
+        ("Julieta",    "Gutierrez",   "jgutierrez@fi.uba.ar",   47000010, password, False),
+        ("Santiago",   "Romero",      "sromero@fi.uba.ar",      47000011, password, False),
+        ("Micaela",    "Alvarez",     "malvarez@fi.uba.ar",     47000012, password, False),
+        ("Lucia",      "Castro",      "lcastro@fi.uba.ar",      47000013, password, False),
+        ("Ezequiel",   "Ortiz",       "eortiz@fi.uba.ar",       47000014, password, False),
+        ("Martina",    "Ruiz",        "mruiz@fi.uba.ar",        47000015, password, False),
+        ("Ignacio",    "Jimenez",     "ijimenez@fi.uba.ar",     47000016, password, False),
+        ("Rocio",      "Herrera",     "rherrera@fi.uba.ar",     47000017, password, False),
+        ("Leandro",    "Medina",      "lmedina@fi.uba.ar",      47000018, password, False),
+        ("Pilar",      "Silva",       "psilva@fi.uba.ar",       47000019, password, False),
+        ("Facundo",    "Molina",      "fmolina@fi.uba.ar",      47000020, password, False),
+        ("Carla",      "Mendez",      "cmendez@fi.uba.ar",      47000021, password, False),
+        ("Maximo",     "Delgado",     "mdelgado@fi.uba.ar",     47000022, password, False),
+        ("Bianca",     "Reyes",       "breyes@fi.uba.ar",       47000023, password, False),
+        ("Rodrigo",    "Soto",        "rsoto@fi.uba.ar",        47000024, password, False),
+        ("Azul",       "Moran",       "amoran@fi.uba.ar",       47000025, password, False),
+        ("Julian",     "Vega",        "jvega@fi.uba.ar",        47000026, password, False),
+        ("Nadia",      "Pereyra",     "npereyra@fi.uba.ar",     47000027, password, False),
+        ("Bruno",      "Navarro",     "bnavarro@fi.uba.ar",     47000028, password, False),
+        ("Celeste",    "Ibarra",      "cibarra@fi.uba.ar",      47000029, password, False),
+        ("Gino",       "Dominguez",   "gdominguez@fi.uba.ar",   47000030, password, False),
+        ("Aldana",     "Ferreyra",    "aferreyra@fi.uba.ar",    47000031, password, False),
+        ("Thiago",     "Cabrera",     "tcabrera@fi.uba.ar",     47000032, password, False),
+        ("Belen",      "Aguilar",     "baguilar@fi.uba.ar",     47000033, password, False),
     ]
 
     query = """
@@ -62,9 +98,46 @@ def seed_usuarios():
         execute_query(query, usuario, modifica_db=True)
 
 def seed_estudiantes():
+    C = ["Ingeniería en Informática", "Licenciatura en Análisis de Sistemas", "Ingeniería Civil", "Ingeniería Electrónica"]
+    # (usuario_id, padron, carrera, anio_ingreso)
+    # usuario_ids 3-7: integrantes del grupo; 8+ alumnos varios
     estudiantes = [
-        (3, 100002, "Ingeniería en Informática", 2024),
-        (4, 100003, "Ingeniería en Informática", 2024),
+        (3,  100001, C[0], 2024),  # Nicolas Martinez
+        (4,  100002, C[0], 2024),  # Franco Dimeola
+        (5,  100003, C[0], 2024),  # Federico Folgar
+        (6,  100004, C[1], 2024),  # Joaquin Fernandez
+        (7,  100005, C[0], 2024),  # Tomas Vargas
+        (8,  100006, C[0], 2023),
+        (9,  100007, C[1], 2022),
+        (10, 100008, C[2], 2024),
+        (11, 100009, C[0], 2023),
+        (12, 100010, C[0], 2024),
+        (13, 100011, C[1], 2022),
+        (14, 100012, C[3], 2023),
+        (15, 100013, C[0], 2024),
+        (16, 100014, C[1], 2024),
+        (17, 100015, C[0], 2023),
+        (18, 100016, C[2], 2022),
+        (19, 100017, C[0], 2024),
+        (20, 100018, C[1], 2023),
+        (21, 100019, C[0], 2024),
+        (22, 100020, C[3], 2024),
+        (23, 100021, C[0], 2023),
+        (24, 100022, C[1], 2024),
+        (25, 100023, C[0], 2022),
+        (26, 100024, C[2], 2023),
+        (27, 100025, C[0], 2024),
+        (28, 100026, C[1], 2023),
+        (29, 100027, C[0], 2024),
+        (30, 100028, C[3], 2022),
+        (31, 100029, C[0], 2024),
+        (32, 100030, C[1], 2023),
+        (33, 100031, C[0], 2024),
+        (34, 100032, C[2], 2024),
+        (35, 100033, C[0], 2023),
+        (36, 100034, C[1], 2024),
+        (37, 100035, C[0], 2024),
+        (38, 100036, C[3], 2023),
     ]
 
     query = """
@@ -122,11 +195,8 @@ def seed_cursos():
 
 
 def seed_inscripciones():
-    # estudiante_id apunta a estudiantes(id): 1 = Ana (usuario 3), 2 = Lucas (usuario 4)
-    inscripciones = [
-        (1, 1),
-        (1, 2),
-    ]
+    # todos los estudiantes inscriptos en curso_id=1
+    inscripciones = [(1, i) for i in range(1, 37)]
 
     query = """
     INSERT IGNORE INTO estudiante_curso(
