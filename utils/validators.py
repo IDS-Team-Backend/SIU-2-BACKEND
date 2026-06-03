@@ -51,8 +51,8 @@ def validar_fecha_hora(fecha_hora_str: str) -> None:
     if dt.hour == 0 and dt.minute == 0:
         raise ValidationError("Debe especificar una hora válida para la clase. No se permiten las 00:00 hs.")
     
-    if dt < datetime.now():
-        raise ValidationError("La fecha y hora de la clase no puede ser en el pasado.")
+    # if dt < datetime.now():
+    #     raise ValidationError("La fecha y hora de la clase no puede ser en el pasado.")
     
 def validar_rango_fecha(fecha_hora_inicio: str, fecha_hora_fin: str) -> None:
     """

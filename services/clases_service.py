@@ -163,8 +163,8 @@ def actualizar_clase(clase_id, parametros):
     if not auth.usuario_es(ADMIN) and auth.obtener_usuario_id() != clase_por_actualizarse["profesor_id"]:
         raise ValidationError("Los docentes solo pueden modificar sus propias clases.")
     
-    if clase_por_actualizarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
-        raise ValidationError("No se pueden modificar ni eliminar clases que ya finalizaron.")
+    # if clase_por_actualizarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
+    #     raise ValidationError("No se pueden modificar ni eliminar clases que ya finalizaron.")
     
     validar_clase(parametros, CLASE_PARAMS_OBLIGATORIOS, estado_default=clase_por_actualizarse["status"], clase_por_actualizarse=clase_id)
     
@@ -200,9 +200,9 @@ def actualizar_clase_parcial(clase_id, parametros):
     if clase_por_actualizarse["deleted_at"] is not None:
         raise ValidationError("No se puede modificar una clase eliminada.")
     
-    if clase_por_actualizarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
-        raise ValidationError("No se pueden modificar ni eliminar clases que ya finalizaron.")
-    
+    # if clase_por_actualizarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
+    #     raise ValidationError("No se pueden modificar ni eliminar clases que ya finalizaron.")
+
     # validar que no vengan campos que no existen o estan prohibidos (como deleted_at o id )
     for campo in (parametros.keys()):
         if campo not in CLASE_PARAMS_OBLIGATORIOS + CLASE_PARAMS_OPCIONALES:
