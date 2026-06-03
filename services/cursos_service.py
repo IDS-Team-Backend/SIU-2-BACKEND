@@ -1,4 +1,5 @@
 import repositories.cursos_repository as db
+import services.clases_service as clases_service
 from utils.error_handlers import NotFoundError, ValidationError, DuplicateError
 import mysql.connector
 
@@ -7,6 +8,9 @@ curso_update_params = ["materia_id", "nombre", "anio", "cuatrimestre"]
 
 def obtener_cursos(materia_id=None, nombre=None, anio=None, cuatrimestre=None, page_size=20, offset=0):
     return db.obtener_cursos(materia_id, nombre, anio, cuatrimestre, page_size, offset)
+
+def get_cronograma(curso_id):
+    return clases_service.get_cronograma(curso_id)
 
 def crear_cursos(parametros):
     if not parametros or not isinstance(parametros, dict):
