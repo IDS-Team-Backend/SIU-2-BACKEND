@@ -1,5 +1,6 @@
 import db
 
+
 def get_clases(filtros):
     if 'activa' in filtros and filtros['activa'] is False:
         query_base = " FROM clases WHERE 1=1 AND deleted_at IS NOT NULL"
@@ -45,7 +46,7 @@ def get_clase_by_id(clase_id, incluir_eliminadas=False):
 
     return clase
 
-def crear_clase(nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema=None, status="pendiente"):
+def crear_clase(nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema=None, status="pendiente", tipo=None, modalidad=None, tags=None):
     query = """
     INSERT INTO clases (
         nombre,
@@ -54,16 +55,19 @@ def crear_clase(nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin
         fecha_hora_inicio,
         fecha_hora_fin,
         tema,
-        status
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+        status,
+        tipo,
+        modalidad,
+        tags
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    params = (nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema, status)
-    
+    params = (nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema, status, tipo, modalidad, tags)
+
     new_clase_id = db.execute_query(query, params, modifica_db=True)
-    
+
     return get_clase_by_id(new_clase_id)
 
-def actualizar_clase(clase_id, nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema=None, status="pendiente"):
+def actualizar_clase(clase_id, nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema=None, status="pendiente", tipo=None, modalidad=None, tags=None):
     query = """
     UPDATE clases SET
         nombre = %s,
@@ -72,13 +76,16 @@ def actualizar_clase(clase_id, nombre, profesor_id, curso_id, fecha_hora_inicio,
         fecha_hora_inicio = %s,
         fecha_hora_fin = %s,
         tema = %s,
-        status = %s
+        status = %s,
+        tipo = %s,
+        modalidad = %s,
+        tags = %s
     WHERE id = %s
     """
-    params = (nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema, status, clase_id)
-    
+    params = (nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema, status, tipo, modalidad, tags, clase_id)
+
     db.execute_query(query, params, modifica_db=True)
-    
+
     return get_clase_by_id(clase_id)
 
 def eliminar_clase(clase_id): # esto es un soft delete, con delete_at = datetime. mucho mejor que un boolean 
@@ -114,7 +121,7 @@ def actualizar_clase_parcial(clase_id, parametros):
     campos = []
     valores = []
 
-    # query dinamica en base a los campos 
+    # query dinamica en base a los campos
     for columna, valor in parametros.items():
         campos.append(f"{columna} = %s")
         valores.append(valor)
