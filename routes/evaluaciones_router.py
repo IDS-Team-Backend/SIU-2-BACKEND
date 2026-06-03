@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 import services.evaluaciones_service as logic
-from config import ADMIN, DOCENTE, AYUDANTE, ALUMNO
+from constants import ADMIN, DOCENTE, AYUDANTE, ALUMNO
 from utils.error_handlers import (
     created_response,
     ValidationError

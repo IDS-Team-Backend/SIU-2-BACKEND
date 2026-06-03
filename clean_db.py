@@ -10,7 +10,7 @@ TABLAS = [
     "notas",
     "equipos",
     "evaluaciones",
-    "curso_usuarios",
+    "estudiante_curso",
     "cursos",
     "profesores",
     "estudiantes",

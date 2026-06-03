@@ -1,15 +1,16 @@
 from flask import Blueprint, jsonify, make_response, request
 
-from config import ADMIN, DOCENTE, ALUMNO
+from constants import ADMIN, DOCENTE, ALUMNO
 import services.auth_service as logic
 import repositories.perfiles_repository as perfiles_db
 from utils import auth_validator as auth
 
 
-auth_bp = Blueprint("auth", __name__)
+auth_public_bp  = Blueprint("auth_public",  __name__)
+auth_private_bp = Blueprint("auth_private", __name__)
 
 
-@auth_bp.post("/login")  # iniciar sesion
+@auth_public_bp.post("/login")  # iniciar sesion
 def login():
     args = request.get_json()
 
@@ -34,7 +35,7 @@ def login():
     return respuesta, 200
 
 
-@auth_bp.post("/signup")  # crear cuenta
+@auth_public_bp.post("/signup")  # crear cuenta
 def signup(): 
     args = request.get_json()
 
@@ -55,10 +56,8 @@ def signup():
     return respuesta, 200
 
 
-@auth_bp.get("/me/perfiles")  # perfiles del usuario logueado, recalculados desde DB
+@auth_private_bp.get("/me/perfiles")  # perfiles del usuario logueado, recalculados desde DB
 def get_mis_perfiles():
-    auth.validar_token()
-    # En /auth no corre la validación global; por eso se valida explícitamente aquí antes de obtener el usuario.
     usuario_id = auth.obtener_usuario_id()
     perfiles = perfiles_db.obtener_perfiles_de_usuario(usuario_id)
     return jsonify({"perfiles": perfiles}), 200

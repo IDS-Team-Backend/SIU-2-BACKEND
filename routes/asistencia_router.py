@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from config import DOCENTE, AYUDANTE, ALUMNO
+from constants import DOCENTE, AYUDANTE, ALUMNO
 from utils.error_handlers import ValidationError
 from utils import auth_validator as auth
 import services.asistencia_service as logic

@@ -1,5 +1,5 @@
 from flask import request, jsonify, Blueprint
-from config import ADMIN, AYUDANTE, DOCENTE
+from constants import ADMIN, AYUDANTE, DOCENTE
 import services.notas_service as logic
 from utils.error_handlers import (
     created_response,

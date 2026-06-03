@@ -23,7 +23,7 @@ def obtener_alumnos_reporte(
             n.nota AS nota_evaluacion
         FROM estudiantes e
         INNER JOIN usuarios u ON e.usuario_id = u.id
-        LEFT JOIN curso_usuarios cu ON u.id = cu.usuario_id
+        LEFT JOIN estudiante_curso ec ON e.id = ec.estudiante_id
         LEFT JOIN notas n ON e.id = n.alumno_id
         WHERE e.activo = TRUE
     """
@@ -31,7 +31,7 @@ def obtener_alumnos_reporte(
     
     # filtros estructurales
     if curso_id:
-        query += " AND cu.curso_id = %s AND cu.estado = 'activo'"
+        query += " AND ec.curso_id = %s AND ec.estado = 'activo'"
         params.append(curso_id)
     if carrera:
         query += " AND e.carrera = %s"

@@ -2,7 +2,7 @@ import mysql.connector
 
 import repositories.estudiantes_repository as db
 import repositories.usuarios_repository as usuarios_db
-from config import ADMIN
+from constants import ADMIN
 from utils import auth_validator as auth
 from utils.error_handlers import NotFoundError, DuplicateError, ForbiddenError
 

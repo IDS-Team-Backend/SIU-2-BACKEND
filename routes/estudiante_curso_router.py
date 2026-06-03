@@ -1,0 +1,123 @@
+import math
+
+from flask import request, jsonify, Blueprint
+
+import services.estudiante_curso_service as logic
+from constants import ADMIN, ALUMNO, AYUDANTE, DOCENTE
+from utils.error_handlers import created_response, NotFoundError, ValidationError
+from utils import auth_validator as auth
+from utils import paginacion
+from validators import estudiante_curso_validator
+
+
+estudiante_curso_bp = Blueprint("estudiante_curso", __name__)
+
+FILTROS_PERMITIDOS = ("estudiante_id", "curso_id", "estado")
+
+
+def _parsear_filtros():
+    for key in request.args.keys():
+        if key in ("page", "page_size"):
+            continue
+        if key not in FILTROS_PERMITIDOS:
+            raise ValidationError(
+                f"Filtro '{key}' no permitido. Permitidos: {', '.join(FILTROS_PERMITIDOS)}."
+            )
+
+    return {
+        "estudiante_id": request.args.get("estudiante_id", type=int),
+        "curso_id": request.args.get("curso_id", type=int),
+        "estado": request.args.get("estado"),
+    }
+
+
+@estudiante_curso_bp.route("/", methods=["GET"])
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
+def obtener_estudiante_cursos():
+    filtros = _parsear_filtros()
+    page, page_size, offset = paginacion.desde_request()
+
+    estudiante_cursos, total = logic.obtener_estudiante_cursos(
+        **filtros,
+        page_size=page_size,
+        offset=offset,
+    )
+
+    if not estudiante_cursos:
+        return "", 204
+
+    total_paginas = math.ceil(total / page_size) if page_size else 0
+    return jsonify({
+        "estudiante_cursos": estudiante_cursos,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_paginas": total_paginas,
+    }), 200
+
+
+@estudiante_curso_bp.route("/", methods=["POST"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def crear_estudiante_curso():
+    parametros = estudiante_curso_validator.validar_body_crear_estudiante_curso(request.get_json())
+    nueva_inscripcion = logic.crear_estudiante_curso(parametros)
+    return created_response(
+        {"message": "Inscripción creada exitosamente", "estudiante_curso": nueva_inscripcion},
+        f"/estudiante_curso/{nueva_inscripcion['id']}"
+    )
+
+
+@estudiante_curso_bp.route("/importar-lote", methods=["POST"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def importar_lote_estudiante_curso():
+    if 'archivo' not in request.files:
+        return jsonify({"error": "No se encontró la parte del archivo en la petición con la clave 'archivo'"}), 400
+
+    archivo = request.files['archivo']
+    if archivo.filename == '':
+        return jsonify({"error": "No se seleccionó ningún archivo"}), 400
+
+    resultado_proceso = logic.importar_inscripciones_por_lote(archivo)
+    return jsonify({
+        "mensaje": "Procesamiento de lote finalizado",
+        "resultado": resultado_proceso
+    }), 200
+
+
+@estudiante_curso_bp.route("/<int:id>", methods=["GET"])
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+def obtener_estudiante_curso_por_id(id):
+    estudiante_curso = logic.obtener_estudiante_curso_por_id(id)
+    return jsonify(estudiante_curso), 200
+
+
+@estudiante_curso_bp.route("/<int:id>", methods=["PUT"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def reemplazar_estudiante_curso(id):
+    parametros = estudiante_curso_validator.validar_body_reemplazar_estudiante_curso(request.get_json())
+    if not logic.reemplazar_estudiante_curso(id, parametros):
+        raise NotFoundError("No se encontró la inscripción.")
+    return "", 204
+
+
+@estudiante_curso_bp.route("/<int:id>", methods=["PATCH"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def modificar_estudiante_curso_parcial(id):
+    parametros = estudiante_curso_validator.validar_body_modificar_estudiante_curso(request.get_json())
+    estudiante_curso = logic.modificar_estudiante_curso_parcial(id, parametros)
+    return jsonify({
+        "message": "Inscripción actualizada exitosamente",
+        "estudiante_curso": estudiante_curso,
+    }), 200
+
+
+@estudiante_curso_bp.route("/<int:id>", methods=["DELETE"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def eliminar_estudiante_curso(id):
+    logic.eliminar_estudiante_curso(id)
+    return "", 204
+
+
+@estudiante_curso_bp.route("/<id>", methods=["GET", "PUT", "PATCH", "DELETE"])
+def estudiante_curso_id_invalido(id):
+    raise ValidationError("El ID debe ser un número entero positivo.")

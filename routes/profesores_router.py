@@ -3,7 +3,7 @@ import math
 from flask import request, jsonify, Blueprint
 
 import services.profesores_service as logic
-from config import ADMIN, DOCENTE
+from constants import ADMIN, DOCENTE
 from utils.error_handlers import created_response, NotFoundError, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion

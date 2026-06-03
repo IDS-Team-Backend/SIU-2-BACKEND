@@ -1,6 +1,7 @@
 import repositories.cursos_repository as db
 import repositories.profesores_repository as profesores_db
-from config import ALUMNO, DOCENTE
+from constants import ALUMNO, DOCENTE
+import services.clases_service as clases_service
 from utils.error_handlers import NotFoundError, ValidationError, DuplicateError, ForbiddenError
 import mysql.connector
 
@@ -48,6 +49,9 @@ def obtener_cursos(materia_id=None, nombre=None, anio=None, cuatrimestre=None, p
         ]
 
     return cursos, total
+
+def get_cronograma(curso_id):
+    return clases_service.get_cronograma(curso_id)
 
 def crear_cursos(parametros):
     if not parametros or not isinstance(parametros, dict):

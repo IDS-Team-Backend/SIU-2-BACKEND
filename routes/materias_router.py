@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 import services.materias_service as logic
-from config import ADMIN, DOCENTE, ALUMNO
+from constants import ADMIN, DOCENTE, ALUMNO
 from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion

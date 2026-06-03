@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint
 import services.cursos_service as logic
 from utils import auth_validator as auth
-from config import ADMIN, ALUMNO, DOCENTE
+from constants import ADMIN, ALUMNO, DOCENTE
 from utils.error_handlers import created_response, ValidationError
 from utils import paginacion
 
@@ -68,6 +68,12 @@ def crear_cursos():
 def obtener_curso(curso_id):
     curso = logic.obtener_curso(curso_id)
     return jsonify(curso), 200
+
+# ─── GET /cursos/{id}/cronograma ───────────────────────────────────────────────
+@cursos_bp.get("/<int:curso_id>/cronograma")
+def get_cronograma(curso_id):
+    semanas = logic.get_cronograma(curso_id)
+    return jsonify({"semanas": semanas}), 200
 
 @cursos_bp.route("/<int:curso_id>", methods=["PUT"])
 @auth.requiere_roles(ADMIN)

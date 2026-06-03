@@ -3,42 +3,13 @@
     "_postman_id": "siu2-api-collection",
     "name": "SIU2 API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Colección con todos los endpoints del backend Flask del TP Integrador.\n\n## Cómo usar\n\n1. Importá tambien el environment 'SIU2 API' que viene en el mismo directorio.\n2. Seleccioná el environment 'SIU2 API' en el dropdown superior derecho.\n3. Levantá el backend: `python backend/app.py` (necesita MySQL corriendo via `docker-compose up -d mysql` y `.env` con `JWT_SECRET_KEY`).\n4. Empezá por la carpeta '0. Setup' para crear un admin y loguearte.\n5. El cookie jar de Postman maneja la auth automáticamente. El script post-response del login también guarda el token en `{{access_token}}`.\n\n## Auth\n\nCada blueprint aplica `before_request(validar_token)` individualmente. `auth_bp` NO lo aplica, así que `/auth/login` y `/auth/signup` se pueden usar sin cookie. El resto requiere cookie + (a veces) rol.\n\n## Variables\n\n- `{{baseUrl}}` — URL del backend (default `http://localhost:5000`)\n- `{{admin_dni}}`, `{{admin_email}}`, `{{admin_password}}`, `{{admin_nombre}}`, `{{admin_apellido}}` — datos del admin para el setup\n- `{{access_token}}` — JWT que se setea automáticamente tras el login\n- `{{usuario_id}}`, `{{estudiante_id}}`, `{{profesor_id}}`, `{{clase_id}}`, `{{curso_id}}`, `{{materia_id}}`, `{{evaluacion_id}}`, `{{tipo_evaluacion_id}}`, `{{equipo_id}}`, `{{nota_id}}`, `{{curso_usuario_id}}` — IDs de recursos. Los POST tienen scripts que los actualizan automáticamente tras crear el recurso.\n\n## Convenciones\n\n- Los requests marcados con ❌ en el nombre son intencionalmente inválidos: devuelven 400/409 con `{\"errors\": [{\"code\": \"...\", \"message\": \"...\"}]}`.\n- Roles según `config.py` y los decoradores `@auth.requiere_roles(...)`: `admin`, `docente`, `alumno`, `ayudante`, `profesor`. Cada endpoint indica en su descripción qué rol(es) requiere."
+    "description": "Colección con todos los endpoints del backend Flask del TP Integrador.\n\n## Cómo usar\n\n1. Importá tambien el environment 'SIU2 API' que viene en el mismo directorio.\n2. Seleccioná el environment 'SIU2 API' en el dropdown superior derecho.\n3. Levantá el backend: `python backend/app.py` (necesita MySQL corriendo via `docker-compose up -d mysql` y `.env` con `JWT_SECRET_KEY`).\n4. Sembrá la DB con `python seed.py` y empezá por la carpeta '0. Setup' para loguearte como el admin sembrado (dni 47000000 / pass 123456). El admin no se crea por API.\n5. El cookie jar de Postman maneja la auth automáticamente. El script post-response del login también guarda el token en `{{access_token}}`.\n\n## Auth\n\nCada blueprint aplica `before_request(validar_token)` individualmente. `auth_bp` NO lo aplica, así que `/auth/login` y `/auth/signup` se pueden usar sin cookie. El resto requiere cookie + (a veces) rol.\n\n## Variables\n\n- `{{baseUrl}}` — URL del backend (default `http://localhost:5000`)\n- `{{admin_dni}}`, `{{admin_email}}`, `{{admin_password}}`, `{{admin_nombre}}`, `{{admin_apellido}}` — datos del admin para el setup\n- `{{access_token}}` — JWT que se setea automáticamente tras el login\n- `{{usuario_id}}`, `{{estudiante_id}}`, `{{profesor_id}}`, `{{clase_id}}`, `{{curso_id}}`, `{{materia_id}}`, `{{evaluacion_id}}`, `{{tipo_evaluacion_id}}`, `{{equipo_id}}`, `{{nota_id}}`, `{{estudiante_curso_id}}` — IDs de recursos. Los POST tienen scripts que los actualizan automáticamente tras crear el recurso.\n\n## Convenciones\n\n- Los requests marcados con ❌ en el nombre son intencionalmente inválidos: devuelven 400/409 con `{\"errors\": [{\"code\": \"...\", \"message\": \"...\"}]}`.\n- Roles según `config.py` y los decoradores `@auth.requiere_roles(...)`: `admin`, `docente`, `alumno`, `ayudante`, `profesor`. Cada endpoint indica en su descripción qué rol(es) requiere."
   },
   "item": [
     {
       "name": "0. Setup",
-      "description": "Secuencia inicial: crear admin y loguearse. Ejecutar en orden.",
+      "description": "Login como el admin **sembrado** por `python seed.py` (dni `47000000` / password `123456`).\n\nIMPORTANTE: el admin NO se crea por API. `/auth/signup` siempre crea usuarios comunes (`es_admin=FALSE`); los perfiles (`admin`/`docente`/`alumno`) se derivan de la DB (ver `perfiles_repository`). Para tener sesión admin: sembrá la DB y ejecutá este login.",
       "item": [
-        {
-          "name": "POST /auth/signup (crear admin)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200 || pm.response.code === 201) {",
-                  "  const json = pm.response.json();",
-                  "  if (json && json.usuario && json.usuario.id) {",
-                  "    pm.environment.set('usuario_id', json.usuario.id);",
-                  "  }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/signup", "host": ["{{baseUrl}}"], "path": ["auth", "signup"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nombre\": \"{{admin_nombre}}\",\n  \"apellido\": \"{{admin_apellido}}\",\n  \"dni\": {{admin_dni}},\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
-            },
-            "description": "Crea el primer usuario. Setea cookie httpOnly. Postman la guarda automáticamente."
-          }
-        },
         {
           "name": "POST /auth/login (admin)",
           "event": [
@@ -1176,29 +1147,29 @@
       ]
     },
     {
-      "name": "Curso Usuarios",
+      "name": "Estudiante Curso",
       "item": [
         {
-          "name": "GET /curso_usuarios",
+          "name": "GET /estudiante_curso",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/curso_usuarios/?page_size=20&offset=0",
+              "raw": "{{baseUrl}}/estudiante_curso/?page=1&page_size=20",
               "host": ["{{baseUrl}}"],
-              "path": ["curso_usuarios", ""],
+              "path": ["estudiante_curso", ""],
               "query": [
+                { "key": "page", "value": "1" },
                 { "key": "page_size", "value": "20" },
-                { "key": "offset", "value": "0" },
-                { "key": "usuario_id", "value": "{{usuario_id}}", "disabled": true },
+                { "key": "estudiante_id", "value": "{{estudiante_id}}", "disabled": true },
                 { "key": "curso_id", "value": "{{curso_id}}", "disabled": true },
                 { "key": "estado", "value": "activo", "disabled": true }
               ]
             },
-            "description": "Lista inscripciones. Filtros opcionales. Requiere ADMIN, PROFESOR, AYUDANTE o ALUMNO."
+            "description": "Lista inscripciones estudiante-curso. Filtros opcionales. Requiere ADMIN, DOCENTE, AYUDANTE o ALUMNO."
           }
         },
         {
-          "name": "POST /curso_usuarios",
+          "name": "POST /estudiante_curso",
           "event": [
             {
               "listen": "test",
@@ -1206,7 +1177,7 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "  const json = pm.response.json();",
-                  "  if (json && json.id) pm.environment.set('curso_usuario_id', json.id);",
+                  "  if (json && json.estudiante_curso && json.estudiante_curso.id) pm.environment.set('estudiante_curso_id', json.estudiante_curso.id);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -1216,46 +1187,67 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/curso_usuarios/", "host": ["{{baseUrl}}"], "path": ["curso_usuarios", ""] },
+            "url": { "raw": "{{baseUrl}}/estudiante_curso/", "host": ["{{baseUrl}}"], "path": ["estudiante_curso", ""] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"curso_id\": {{curso_id}},\n  \"estado\": \"activo\"\n}"
+              "raw": "{\n  \"estudiante_id\": {{estudiante_id}},\n  \"curso_id\": {{curso_id}},\n  \"estado\": \"activo\"\n}"
             },
-            "description": "Inscribe un usuario a un curso. `estado` ∈ {activo, suspendido, baja}, default `activo`. Requiere ADMIN o PROFESOR."
+            "description": "Inscribe un estudiante a un curso. `estado` ∈ {activo, abandono}, default `activo`. Requiere ADMIN o DOCENTE."
           }
         },
         {
-          "name": "POST /curso_usuarios (estado inválido) ❌",
+          "name": "POST /estudiante_curso (estado inválido) ❌",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/curso_usuarios/", "host": ["{{baseUrl}}"], "path": ["curso_usuarios", ""] },
+            "url": { "raw": "{{baseUrl}}/estudiante_curso/", "host": ["{{baseUrl}}"], "path": ["estudiante_curso", ""] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"curso_id\": {{curso_id}},\n  \"estado\": \"vacaciones\"\n}"
+              "raw": "{\n  \"estudiante_id\": {{estudiante_id}},\n  \"curso_id\": {{curso_id}},\n  \"estado\": \"vacaciones\"\n}"
             },
             "description": "→ 400. `estado` no permitido."
           }
         },
         {
-          "name": "PUT /curso_usuarios/{id}",
+          "name": "GET /estudiante_curso/{id}",
           "request": {
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/curso_usuarios/{{curso_usuario_id}}", "host": ["{{baseUrl}}"], "path": ["curso_usuarios", "{{curso_usuario_id}}"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"usuario_id\": {{usuario_id}},\n  \"curso_id\": {{curso_id}},\n  \"estado\": \"baja\"\n}"
-            },
-            "description": "Reemplazo total. Requiere ADMIN o PROFESOR."
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/estudiante_curso/{{estudiante_curso_id}}", "host": ["{{baseUrl}}"], "path": ["estudiante_curso", "{{estudiante_curso_id}}"] },
+            "description": "Obtiene una inscripción por ID. Requiere ADMIN, DOCENTE o AYUDANTE."
           }
         },
         {
-          "name": "DELETE /curso_usuarios/{id}",
+          "name": "PUT /estudiante_curso/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/estudiante_curso/{{estudiante_curso_id}}", "host": ["{{baseUrl}}"], "path": ["estudiante_curso", "{{estudiante_curso_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estudiante_id\": {{estudiante_id}},\n  \"curso_id\": {{curso_id}},\n  \"estado\": \"abandono\"\n}"
+            },
+            "description": "Reemplazo total → 204. Requiere ADMIN o DOCENTE."
+          }
+        },
+        {
+          "name": "PATCH /estudiante_curso/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/estudiante_curso/{{estudiante_curso_id}}", "host": ["{{baseUrl}}"], "path": ["estudiante_curso", "{{estudiante_curso_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"abandono\"\n}"
+            },
+            "description": "Modificación parcial → 200. Requiere ADMIN o DOCENTE."
+          }
+        },
+        {
+          "name": "DELETE /estudiante_curso/{id}",
           "request": {
             "method": "DELETE",
-            "url": { "raw": "{{baseUrl}}/curso_usuarios/{{curso_usuario_id}}", "host": ["{{baseUrl}}"], "path": ["curso_usuarios", "{{curso_usuario_id}}"] },
-            "description": "Requiere ADMIN o PROFESOR."
+            "url": { "raw": "{{baseUrl}}/estudiante_curso/{{estudiante_curso_id}}", "host": ["{{baseUrl}}"], "path": ["estudiante_curso", "{{estudiante_curso_id}}"] },
+            "description": "Baja (soft delete: estado='abandono') → 204. Requiere ADMIN o DOCENTE."
           }
         }
       ]

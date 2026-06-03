@@ -70,20 +70,20 @@ CREATE TABLE IF NOT EXISTS cursos (
 ) ENGINE=InnoDB;
 
 
-CREATE TABLE IF NOT EXISTS curso_usuarios (
+CREATE TABLE IF NOT EXISTS estudiante_curso (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    estudiante_id INT NOT NULL,
     curso_id INT NOT NULL,
-    usuario_id INT NOT NULL,
     estado ENUM('activo', 'abandono') NOT NULL DEFAULT 'activo',
     fecha_inscripcion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_curso_usuarios_cursos 
+    CONSTRAINT fk_estudiante_curso_estudiantes
+        FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_estudiante_curso_cursos
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_curso_usuarios_usuarios 
-        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT uq_curso_usuario 
-        UNIQUE (curso_id, usuario_id) 
+    CONSTRAINT uq_estudiante_curso
+        UNIQUE (estudiante_id, curso_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS curso_docentes (
@@ -177,7 +177,10 @@ CREATE TABLE IF NOT EXISTS clases (
     fecha_hora_inicio DATETIME NOT NULL,
     fecha_hora_fin DATETIME NOT NULL,
     tema VARCHAR(255) NULL,
-    status ENUM('pendiente', 'suspendida', 'en curso', 'finalizada') NOT NULL DEFAULT 'pendiente', -- CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN CONFIG.PY 
+    tipo ENUM('teorica', 'practica') NULL, -- distingue clase teorica de practica en el cronograma
+    modalidad VARCHAR(20) NULL, -- 'Virtual' | 'Presencial'
+    tags JSON NULL, -- etiquetas del cronograma (ej: ["Obligatoria", "Parcialito"])
+    status ENUM('pendiente', 'suspendida', 'en curso', 'finalizada') NOT NULL DEFAULT 'pendiente', -- CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN CONSTANTS.PY
     deleted_at TIMESTAMP NULL DEFAULT NULL, -- soft delete. mucho mejor que activo: boolean
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_clases_cursos

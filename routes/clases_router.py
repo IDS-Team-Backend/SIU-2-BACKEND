@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from utils import auth_validator as auth
 import services.clases_service as logic
-from config import ADMIN, DOCENTE, ESTADOS_CLASE
+from constants import ADMIN, DOCENTE, ESTADOS_CLASE
 from utils.error_handlers import ValidationError
 
 

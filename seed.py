@@ -1,3 +1,5 @@
+import json
+
 from db import execute_query
 from werkzeug.security import generate_password_hash
 
@@ -38,12 +40,46 @@ def seed_usuarios():
     password = generate_password_hash("123456")
 
     usuarios = [
-        ("admin", "Del Sistema", "admin@fi.uba.ar", 47000000, password, True),
-        ("Juan Carlos", "Perez", "juan@fi.uba.ar", 47000001, password, False),
-        ("Analia", "Gomez", "ana@fi.uba.ar", 47000002, password, False),
-        ("Lucas", "Martinez", "lucas@fi.uba.ar", 47000003, password, False),
-        ("mateo", "Martinez", "mateo@fi.uba.ar", 47000004, password, False),
-        ("thiago", "Martinez", "thiago@fi.uba.ar", 47000005, password, False),
+        # sistema y docente
+        ("admin",      "Del Sistema", "admin@fi.uba.ar",        47000000, password, True),
+        ("Juan Carlos","Perez",       "jperez@fi.uba.ar",       47000001, password, False),
+        # integrantes del grupo (primeros)
+        ("Nicolas",    "Martinez",    "nmartinez@fi.uba.ar",    44100001, password, False),
+        ("Franco",     "Dimeola",     "fdimeola@fi.uba.ar",     44100002, password, False),
+        ("Federico",   "Folgar",      "ffolgar@fi.uba.ar",      44100003, password, False),
+        ("Joaquin",    "Fernandez",   "jfernandez@fi.uba.ar",   44100004, password, False),
+        ("Tomas",      "Vargas",      "tvargas@fi.uba.ar",      44215876, password, False),
+        # resto de alumnos
+        ("Sofia",      "Ramirez",     "sramirez@fi.uba.ar",     47000004, password, False),
+        ("Camila",     "Lopez",       "clopez@fi.uba.ar",       47000005, password, False),
+        ("Valentina",  "Torres",      "vtorres@fi.uba.ar",      47000006, password, False),
+        ("Agustin",    "Diaz",        "adiaz@fi.uba.ar",        47000007, password, False),
+        ("Florencia",  "Sanchez",     "fsanchez@fi.uba.ar",     47000008, password, False),
+        ("Matias",     "Morales",     "mmorales@fi.uba.ar",     47000009, password, False),
+        ("Julieta",    "Gutierrez",   "jgutierrez@fi.uba.ar",   47000010, password, False),
+        ("Santiago",   "Romero",      "sromero@fi.uba.ar",      47000011, password, False),
+        ("Micaela",    "Alvarez",     "malvarez@fi.uba.ar",     47000012, password, False),
+        ("Lucia",      "Castro",      "lcastro@fi.uba.ar",      47000013, password, False),
+        ("Ezequiel",   "Ortiz",       "eortiz@fi.uba.ar",       47000014, password, False),
+        ("Martina",    "Ruiz",        "mruiz@fi.uba.ar",        47000015, password, False),
+        ("Ignacio",    "Jimenez",     "ijimenez@fi.uba.ar",     47000016, password, False),
+        ("Rocio",      "Herrera",     "rherrera@fi.uba.ar",     47000017, password, False),
+        ("Leandro",    "Medina",      "lmedina@fi.uba.ar",      47000018, password, False),
+        ("Pilar",      "Silva",       "psilva@fi.uba.ar",       47000019, password, False),
+        ("Facundo",    "Molina",      "fmolina@fi.uba.ar",      47000020, password, False),
+        ("Carla",      "Mendez",      "cmendez@fi.uba.ar",      47000021, password, False),
+        ("Maximo",     "Delgado",     "mdelgado@fi.uba.ar",     47000022, password, False),
+        ("Bianca",     "Reyes",       "breyes@fi.uba.ar",       47000023, password, False),
+        ("Rodrigo",    "Soto",        "rsoto@fi.uba.ar",        47000024, password, False),
+        ("Azul",       "Moran",       "amoran@fi.uba.ar",       47000025, password, False),
+        ("Julian",     "Vega",        "jvega@fi.uba.ar",        47000026, password, False),
+        ("Nadia",      "Pereyra",     "npereyra@fi.uba.ar",     47000027, password, False),
+        ("Bruno",      "Navarro",     "bnavarro@fi.uba.ar",     47000028, password, False),
+        ("Celeste",    "Ibarra",      "cibarra@fi.uba.ar",      47000029, password, False),
+        ("Gino",       "Dominguez",   "gdominguez@fi.uba.ar",   47000030, password, False),
+        ("Aldana",     "Ferreyra",    "aferreyra@fi.uba.ar",    47000031, password, False),
+        ("Thiago",     "Cabrera",     "tcabrera@fi.uba.ar",     47000032, password, False),
+        ("Belen",      "Aguilar",     "baguilar@fi.uba.ar",     47000033, password, False),
     ]
 
     query = """
@@ -62,9 +98,16 @@ def seed_usuarios():
         execute_query(query, usuario, modifica_db=True)
 
 def seed_estudiantes():
+    C = ["Ingeniería en Informática", "Licenciatura en Análisis de Sistemas", "Ingeniería Civil", "Ingeniería Electrónica"]
+    # (usuario_id, padron, carrera, anio_ingreso)
+    # alumnos = todos los usuarios menos admin (id 1) y profesores (ids 2, 5, 6).
+    # padron sigue el patron de los originales: usuario_id 3 -> 100002, 4 -> 100003, etc.
+    ADMIN_ID = 1
+    PROFESORES_IDS = {2, 5, 6}
+    estudiante_uids = [uid for uid in range(1, 38) if uid != ADMIN_ID and uid not in PROFESORES_IDS]
     estudiantes = [
-        (3, 100002, "Ingeniería Informática", 2024),
-        (4, 100003, "Ingeniería Química", 2024),
+        (uid, 100000 + uid - 1, C[i % len(C)], 2024)
+        for i, uid in enumerate(estudiante_uids)
     ]
 
     query = """
@@ -146,15 +189,14 @@ def seed_curso_docentes():
 
 
 def seed_inscripciones():
-    inscripciones = [
-        (1, 3),
-        (1, 4),
-    ]
+    # todos los estudiantes inscriptos en curso_id=1
+    estudiante_ids = [r["id"] for r in execute_query("SELECT id FROM estudiantes ORDER BY id")]
+    inscripciones = [(1, eid) for eid in estudiante_ids]
 
     query = """
-    INSERT IGNORE INTO curso_usuarios(
+    INSERT IGNORE INTO estudiante_curso(
         curso_id,
-        usuario_id
+        estudiante_id
     )
     VALUES (%s, %s)
     """
@@ -256,49 +298,182 @@ def seed_equipo_integrantes():
 
 
 def seed_clases():
-    # (nombre, profesor_id, curso_id, fecha_hora_inicio, fecha_hora_fin, tema, status)
-    # profesor_id apunta a profesores(id), no a usuarios(id). 1 = Juan (usuario_id=2).
+    # profesor_id=1 apunta a profesores(id), no a usuarios(id). 1 = Juan (usuario_id=2).
+    # temas múltiples se separan con " | " — el service los parte en bullets al armar el cronograma.
+    # status: finalizada si la fecha ya pasó (hoy ~ 2026-06-03), pendiente si es futura.
+    # feriados: tipo=practica, tema=None, tags=["Feriado"], modalidad=None.
+
+    # borra las clases del curso 1 para que el seed sea idempotente
+    execute_query("DELETE FROM clases WHERE curso_id = 1", (), modifica_db=True)
+
     clases = [
-        (
-            "Clase 1", 1, 1,
-            "2026-05-15 09:00:00", "2026-05-15 11:00:00",
-            "Introducción a la materia", "finalizada"
-        ),
-        (
-            "Clase 2", 1, 1,
-            "2026-05-20 14:30:00", "2026-05-20 16:30:00",
-            "Listas enlazadas y estructuras", "finalizada"
-        ),
-        (
-            "Clase 3", 1, 2,
-            "2026-05-22 18:00:00", "2026-05-22 20:00:00",
-            "Consultas avanzadas en SQL", "finalizada"
-        ),
-        (
-            "Clase 4", 1, 2,
-            "2026-05-25 10:00:00", "2026-05-25 12:00:00",
-            "Arquitectura en 3 Capas", "pendiente"
-        ),
-        (
-            "Clase 5", 1, 1,
-            "2026-06-01 16:00:00", "2026-06-01 18:00:00",
-            "Optimización de Bases de Datos", "pendiente"
-        )
+        # ── Semana 1 ──────────────────────────────────────────────────────────────
+        ("Semana 1 - Teórica", 1, 1, "2026-03-10 10:00:00", "2026-03-10 12:00:00",
+         "Presentación de la materia | Introducción a Linux: historia y usos"
+         " | FileSystem y carpetas principales"
+         " | Terminal y comandos básicos: cd, ls, cat, pwd, cp, mv, rm, mkdir, sudo",
+         "finalizada", "teorica", "Virtual", json.dumps([])),
+        ("Semana 1 - Práctica", 1, 1, "2026-03-12 14:00:00", "2026-03-12 16:00:00",
+         "Opciones de instalación: WSL, VM, Dual Boot | ¿Qué es Bash?"
+         " | Editores de terminal | Variables de entorno | Mi primer Script",
+         "finalizada", "practica", "Virtual", json.dumps([])),
+
+        # ── Semana 2 ──────────────────────────────────────────────────────────────
+        ("Semana 2 - Teórica", 1, 1, "2026-03-17 10:00:00", "2026-03-17 12:00:00",
+         "Bash: continuación | Estructuras condicionales e iterativas"
+         " | Pipelines y redirecciones | Scripts: búsqueda, reemplazo, manejo de archivos",
+         "finalizada", "teorica", "Virtual", json.dumps([])),
+        ("Semana 2 - Práctica", 1, 1, "2026-03-19 14:00:00", "2026-03-19 16:00:00",
+         "Ejercitación integral de comandos | Consultas Linux | Ejercicios de Scripting",
+         "finalizada", "practica", "Presencial", json.dumps(["Obligatoria"])),
+
+        # ── Semana 3 ──────────────────────────────────────────────────────────────
+        ("Semana 3 - Teórica", 1, 1, "2026-03-24 10:00:00", "2026-03-24 12:00:00",
+         "Introducción a Front End | Intro a Flask | Intro a HTML"
+         " | Intro a CSS | Intro a JavaScript | Mi primer código en Flask",
+         "finalizada", "teorica", "Virtual", json.dumps([])),
+        ("Semana 3 - Práctica", 1, 1, "2026-03-26 14:00:00", "2026-03-26 16:00:00",
+         "Flask con HTML + CSS (ejemplo asistido)",
+         "finalizada", "practica", "Virtual", json.dumps([])),
+
+        # ── Semana 4 ──────────────────────────────────────────────────────────────
+        ("Semana 4 - Teórica", 1, 1, "2026-03-31 10:00:00", "2026-03-31 12:00:00",
+         "HTML: estructura básica | Etiquetas: div, p, a, img, ul/ol, table, form, input, button"
+         " | CSS: clases e IDs | Atributos de estilo: color, display, font, margin, padding, border"
+         " | Flexbox",
+         "finalizada", "teorica", "Virtual", json.dumps([])),
+        ("Semana 4 - Práctica", 1, 1, "2026-04-02 14:00:00", "2026-04-02 16:00:00",
+         "JavaScript + HTML | Ejercitación",
+         "finalizada", "practica", "Virtual", json.dumps([])),
+
+        # ── Semana 5 ──────────────────────────────────────────────────────────────
+        ("Semana 5 - Teórica", 1, 1, "2026-04-07 10:00:00", "2026-04-07 12:00:00",
+         "JavaScript",
+         "finalizada", "teorica", "Virtual", json.dumps([])),
+        ("Semana 5 - Práctica", 1, 1, "2026-04-09 14:00:00", "2026-04-09 16:00:00",
+         "Ejercitación integral Flask + JavaScript + HTML",
+         "finalizada", "practica", "Presencial", json.dumps(["Obligatoria"])),
+
+        # ── Semana 6 ──────────────────────────────────────────────────────────────
+        ("Semana 6 - Teórica", 1, 1, "2026-04-14 10:00:00", "2026-04-14 12:00:00",
+         "API RESTful (Python): qué es una API, qué es REST | Ejemplo de API",
+         "finalizada", "teorica", "Virtual", json.dumps(["Parcialito"])),
+        ("Semana 6 - Feriado", 1, 1, "2026-04-16 14:00:00", "2026-04-16 16:00:00",
+         None,
+         "finalizada", "practica", None, json.dumps(["Feriado"])),
+
+        # ── Semana 7 ──────────────────────────────────────────────────────────────
+        ("Semana 7 - Teórica", 1, 1, "2026-04-21 10:00:00", "2026-04-21 12:00:00",
+         "Testing",
+         "finalizada", "teorica", "Virtual", json.dumps([])),
+        ("Semana 7 - Práctica", 1, 1, "2026-04-23 14:00:00", "2026-04-23 16:00:00",
+         "Depuración (debugging) | Ejercitación de debugging",
+         "finalizada", "practica", "Virtual", json.dumps([])),
+
+        # ── Semana 8 ──────────────────────────────────────────────────────────────
+        ("Semana 8 - Teórica", 1, 1, "2026-04-28 10:00:00", "2026-04-28 12:00:00",
+         "Introducción a la agilidad | Kanban"
+         " | Herramientas: Jira, Trello, Asana, Basecamp | CI/CD",
+         "finalizada", "teorica", "Virtual", json.dumps([])),
+        ("Semana 8 - Feriado", 1, 1, "2026-04-30 14:00:00", "2026-04-30 16:00:00",
+         None,
+         "finalizada", "practica", None, json.dumps(["Feriado"])),
+
+        # ── Semana 9 ──────────────────────────────────────────────────────────────
+        ("Semana 9 - Teórica", 1, 1, "2026-05-05 10:00:00", "2026-05-05 12:00:00",
+         "Consultas previas al 1er parcial",
+         "finalizada", "teorica", "Virtual", json.dumps([])),
+        ("Semana 9 - 1er Parcial", 1, 1, "2026-05-07 14:00:00", "2026-05-07 16:00:00",
+         "1er Parcial: todo lo visto hasta el momento, incluye Backend",
+         "finalizada", "practica", "Presencial", json.dumps(["1er Parcial", "Obligatoria"])),
+
+        # ── Semana 10 ─────────────────────────────────────────────────────────────
+        ("Semana 10 - Teórica", 1, 1, "2026-05-12 10:00:00", "2026-05-12 12:00:00",
+         "SQL: qué es una BDD, qué es SQL | Estructura de BDD relacionales"
+         " | CREATE / DROP TABLE | SELECT - FROM - WHERE",
+         "finalizada", "teorica", "Virtual", json.dumps(["Armado de grupos TP"])),
+        ("Semana 10 - Práctica", 1, 1, "2026-05-14 14:00:00", "2026-05-14 16:00:00",
+         "SQL: tipos de datos | INSERT, UPDATE, DELETE | AUTO_INCREMENT, Primary Key",
+         "finalizada", "practica", "Virtual", json.dumps([])),
+
+        # ── Semana 11 ─────────────────────────────────────────────────────────────
+        ("Semana 11 - Teórica", 1, 1, "2026-05-19 10:00:00", "2026-05-19 12:00:00",
+         "Ejercitación integral Front + Backend"
+         " | Crear API consumiendo datos de una base | SQL Joins",
+         "finalizada", "teorica", "Presencial", json.dumps(["Obligatoria"])),
+        ("Semana 11 - Práctica", 1, 1, "2026-05-21 14:00:00", "2026-05-21 16:00:00",
+         "Git: qué es y para qué sirve | Repositorio y estados"
+         " | Comandos: status, add, commit, push, pull, clone"
+         " | GitHub: diferencia con Git, SSH",
+         "finalizada", "practica", "Virtual", json.dumps(["Entrega parcial TP"])),
+
+        # ── Semana 12 ─────────────────────────────────────────────────────────────
+        ("Semana 12 - Teórica", 1, 1, "2026-05-26 10:00:00", "2026-05-26 12:00:00",
+         "Git: ramas (checkout, branch) | git restore, staging | git log y git diff",
+         "finalizada", "teorica", "Virtual", json.dumps(["Entrega parcial TP"])),
+        ("Semana 12 - Práctica", 1, 1, "2026-05-28 14:00:00", "2026-05-28 16:00:00",
+         "Docker: qué es, para qué se usa | Diferencia con VM | Containers e imágenes"
+         " | Comandos: run, ps, exec, start, stop, rm, images, pull",
+         "finalizada", "practica", "Virtual", json.dumps([])),
+
+        # ── Semana 13 ─────────────────────────────────────────────────────────────
+        ("Semana 13 - Teórica", 1, 1, "2026-06-02 10:00:00", "2026-06-02 12:00:00",
+         "Consultas TP | Presentación de ramas a utilizar | Vistas HTML, avances en API",
+         "finalizada", "teorica", "Virtual", json.dumps(["Entrega parcial TP"])),
+        ("Semana 13 - Práctica", 1, 1, "2026-06-04 14:00:00", "2026-06-04 16:00:00",
+         "Docker: Dockerfile | Volúmenes y puertos | docker build"
+         " | Docker Compose: compose.yaml, build, up, stop, down",
+         "pendiente", "practica", "Virtual", json.dumps([])),
+
+        # ── Semana 14 ─────────────────────────────────────────────────────────────
+        ("Semana 14 - Teórica", 1, 1, "2026-06-09 10:00:00", "2026-06-09 12:00:00",
+         "Consultas | Integración Front y Back",
+         "pendiente", "teorica", "Virtual", json.dumps(["Entrega documentación de endpoints"])),
+        ("Semana 14 - 1er Recuperatorio", 1, 1, "2026-06-11 14:00:00", "2026-06-11 16:00:00",
+         "1er Recuperatorio",
+         "pendiente", "practica", "Presencial", json.dumps(["1er Recuperatorio", "Obligatoria"])),
+
+        # ── Semana 15 ─────────────────────────────────────────────────────────────
+        ("Semana 15 - Teórica", 1, 1, "2026-06-16 10:00:00", "2026-06-16 12:00:00",
+         "Consultas finales TP",
+         "pendiente", "teorica", "Virtual", json.dumps(["Entrega +80% TP"])),
+        ("Semana 15 - Entrega TP", 1, 1, "2026-06-18 14:00:00", "2026-06-18 16:00:00",
+         "1er Entrega TP Integrador y Defensa",
+         "pendiente", "practica", "Presencial", json.dumps(["Entrega TP", "Obligatoria"])),
+
+        # ── Semana 16 ─────────────────────────────────────────────────────────────
+        ("Semana 16 - Teórica", 1, 1, "2026-06-23 10:00:00", "2026-06-23 12:00:00",
+         "Defensas presenciales | Consultas TP",
+         "pendiente", "teorica", "Presencial", json.dumps(["Obligatoria"])),
+        ("Semana 16 - 2da Entrega TP", 1, 1, "2026-06-25 14:00:00", "2026-06-25 16:00:00",
+         "2da Entrega TP Integrador y Defensa",
+         "pendiente", "practica", "Presencial", json.dumps(["Entrega TP", "Obligatoria"])),
+
+        # ── Semana 17 ─────────────────────────────────────────────────────────────
+        ("Semana 17 - Teórica", 1, 1, "2026-06-30 10:00:00", "2026-06-30 12:00:00",
+         "Cierre de la materia | Defensas presenciales",
+         "pendiente", "teorica", "Presencial", json.dumps(["Obligatoria"])),
+        ("Semana 17 - Final", 1, 1, "2026-07-02 14:00:00", "2026-07-02 16:00:00",
+         "2do Recuperatorio | 1er Fecha Final",
+         "pendiente", "practica", "Presencial", json.dumps(["2do Recuperatorio", "Final", "Obligatoria"])),
     ]
 
     query = """
-    INSERT IGNORE INTO clases (
+    INSERT INTO clases (
         nombre,
         profesor_id,
         curso_id,
         fecha_hora_inicio,
         fecha_hora_fin,
         tema,
-        status
+        status,
+        tipo,
+        modalidad,
+        tags
     )
-    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    
+
     for clase in clases:
         execute_query(query, clase, modifica_db=True)
 
