@@ -2,6 +2,30 @@ import db
 from utils import paginacion
 
 
+# SELECT base con los JOINs de la inscripción (datos del alumno, usuario y curso).
+# Lo comparten el listado y la búsqueda por id; cada uno agrega su propio WHERE.
+_SELECT_ESTUDIANTE_CURSO = """
+    SELECT
+        ec.id,
+        ec.estudiante_id,
+        ec.curso_id,
+        ec.estado,
+        ec.fecha_inscripcion,
+        e.padron,
+        e.carrera,
+        e.anio_ingreso,
+        u.nombre,
+        u.apellido,
+        u.email,
+        u.dni,
+        c.nombre AS curso_nombre
+    FROM estudiante_curso ec
+    INNER JOIN estudiantes e ON e.id = ec.estudiante_id
+    INNER JOIN usuarios u ON u.id = e.usuario_id
+    INNER JOIN cursos c ON c.id = ec.curso_id
+"""
+
+
 def obtener_estudiante_cursos(
     estudiante_id=None,
     curso_id=None,
@@ -10,27 +34,7 @@ def obtener_estudiante_cursos(
     offset=0
 ):
 
-    query = """
-        SELECT
-            ec.id,
-            ec.estudiante_id,
-            ec.curso_id,
-            ec.estado,
-            ec.fecha_inscripcion,
-            e.padron,
-            e.carrera,
-            e.anio_ingreso,
-            u.nombre,
-            u.apellido,
-            u.email,
-            u.dni,
-            c.nombre AS curso_nombre
-        FROM estudiante_curso ec
-        INNER JOIN estudiantes e ON e.id = ec.estudiante_id
-        INNER JOIN usuarios u ON u.id = e.usuario_id
-        INNER JOIN cursos c ON c.id = ec.curso_id
-        WHERE 1=1
-    """
+    query = _SELECT_ESTUDIANTE_CURSO + " WHERE 1=1 "
     params = []
 
     if estudiante_id:
@@ -73,27 +77,7 @@ def crear_estudiante_curso(estudiante_id, curso_id, estado):
 
 
 def obtener_estudiante_curso_por_id(id):
-    query = """
-        SELECT
-            ec.id,
-            ec.estudiante_id,
-            ec.curso_id,
-            ec.estado,
-            ec.fecha_inscripcion,
-            e.padron,
-            e.carrera,
-            e.anio_ingreso,
-            u.nombre,
-            u.apellido,
-            u.email,
-            u.dni,
-            c.nombre AS curso_nombre
-        FROM estudiante_curso ec
-        INNER JOIN estudiantes e ON e.id = ec.estudiante_id
-        INNER JOIN usuarios u ON u.id = e.usuario_id
-        INNER JOIN cursos c ON c.id = ec.curso_id
-        WHERE ec.id = %s
-    """
+    query = _SELECT_ESTUDIANTE_CURSO + " WHERE ec.id = %s"
     resultado = db.execute_query(query, (id,), un_solo_valor=True)
     return resultado
 
