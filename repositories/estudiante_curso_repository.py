@@ -18,8 +18,12 @@ def obtener_estudiante_cursos(
             ec.estado,
             ec.fecha_inscripcion,
             e.padron,
+            e.carrera,
+            e.anio_ingreso,
             u.nombre,
             u.apellido,
+            u.email,
+            u.dni,
             c.nombre AS curso_nombre
         FROM estudiante_curso ec
         INNER JOIN estudiantes e ON e.id = ec.estudiante_id
@@ -77,8 +81,12 @@ def obtener_estudiante_curso_por_id(id):
             ec.estado,
             ec.fecha_inscripcion,
             e.padron,
+            e.carrera,
+            e.anio_ingreso,
             u.nombre,
             u.apellido,
+            u.email,
+            u.dni,
             c.nombre AS curso_nombre
         FROM estudiante_curso ec
         INNER JOIN estudiantes e ON e.id = ec.estudiante_id
@@ -164,6 +172,6 @@ def modificar_estudiante_curso_parcial(id, parametros):
 
 
 def eliminar_estudiante_curso(id):
-    query = "UPDATE estudiante_curso SET estado = 'abandono' WHERE id = %s"
+    query = "DELETE FROM estudiante_curso WHERE id = %s"
     filas_afectadas = db.execute_query(query, (id,), modifica_db=True)
     return filas_afectadas > 0
