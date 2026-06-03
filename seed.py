@@ -80,8 +80,6 @@ def seed_usuarios():
         ("Aldana",     "Ferreyra",    "aferreyra@fi.uba.ar",    47000031, password, False),
         ("Thiago",     "Cabrera",     "tcabrera@fi.uba.ar",     47000032, password, False),
         ("Belen",      "Aguilar",     "baguilar@fi.uba.ar",     47000033, password, False),
-        ("mateo", "Martinez", "mateo@fi.uba.ar", 47000004, password, False),
-        ("thiago", "Martinez", "thiago@fi.uba.ar", 47000005, password, False),
     ]
 
     query = """
@@ -102,10 +100,14 @@ def seed_usuarios():
 def seed_estudiantes():
     C = ["Ingeniería en Informática", "Licenciatura en Análisis de Sistemas", "Ingeniería Civil", "Ingeniería Electrónica"]
     # (usuario_id, padron, carrera, anio_ingreso)
-    # usuario_ids 3-7: integrantes del grupo; 8+ alumnos varios
+    # alumnos = todos los usuarios menos admin (id 1) y profesores (ids 2, 5, 6).
+    # padron sigue el patron de los originales: usuario_id 3 -> 100002, 4 -> 100003, etc.
+    ADMIN_ID = 1
+    PROFESORES_IDS = {2, 5, 6}
+    estudiante_uids = [uid for uid in range(1, 38) if uid != ADMIN_ID and uid not in PROFESORES_IDS]
     estudiantes = [
-        (3, 100002, "Ingeniería en Informática", 2024),
-        (4, 100003, "Ingeniería en Informática", 2024),
+        (uid, 100000 + uid - 1, C[i % len(C)], 2024)
+        for i, uid in enumerate(estudiante_uids)
     ]
 
     query = """
@@ -188,7 +190,8 @@ def seed_curso_docentes():
 
 def seed_inscripciones():
     # todos los estudiantes inscriptos en curso_id=1
-    inscripciones = [(1, i) for i in range(1, 37)]
+    estudiante_ids = [r["id"] for r in execute_query("SELECT id FROM estudiantes ORDER BY id")]
+    inscripciones = [(1, eid) for eid in estudiante_ids]
 
     query = """
     INSERT IGNORE INTO estudiante_curso(

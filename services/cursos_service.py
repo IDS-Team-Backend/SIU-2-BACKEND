@@ -53,9 +53,6 @@ def obtener_cursos(materia_id=None, nombre=None, anio=None, cuatrimestre=None, p
 def get_cronograma(curso_id):
     return clases_service.get_cronograma(curso_id)
 
-def get_cronograma(curso_id):
-    return clases_service.get_cronograma(curso_id)
-
 def crear_cursos(parametros):
     if not parametros or not isinstance(parametros, dict):
         raise ValidationError("El cuerpo de la solicitud debe ser un JSON válido.")

@@ -43,7 +43,8 @@ def crear_pdf_alumnos(data_alumnos):
         pdf.cell(45, 8, alu['email'][:28], 1, 0, "L", fill)
         pdf.ln()
         fill = not fill
-    return pdf.output(dest="S")
+    # fpdf (clasico) devuelve un str latin-1; el router necesita bytes para io.BytesIO
+    return pdf.output(dest="S").encode("latin-1")
 
 def crear_pdf_estadisticas(data_stats):
     pdf = FPDF()
@@ -106,7 +107,8 @@ def crear_pdf_estadisticas(data_stats):
                 "F"
             )
             pdf.ln(15)
-    return pdf.output(dest="S")
+    # fpdf (clasico) devuelve un str latin-1; el router necesita bytes para io.BytesIO
+    return pdf.output(dest="S").encode("latin-1")
 
 def crear_pdf_equipos(data_equipos):
     pdf = FPDF("P", "mm", "A4")
@@ -183,4 +185,5 @@ def crear_pdf_equipos(data_equipos):
             "C",
             True
         )
-    return pdf.output(dest="S")
+    # fpdf (clasico) devuelve un str latin-1; el router necesita bytes para io.BytesIO
+    return pdf.output(dest="S").encode("latin-1")
