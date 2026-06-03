@@ -37,15 +37,6 @@ def crear_clase():
 
     return jsonify({"clase": new_clase}), 201
 
-# ─── GET /clases/cronograma ────────────────────────────────────────────────────
-@clases_bp.get("/cronograma")
-def get_cronograma():
-    curso_id = request.args.get("curso_id", type=int)
-
-    semanas = logic.get_cronograma(curso_id)
-
-    return jsonify({"semanas": semanas}), 200
-
 # ─── GET /clases/estados ────────────────────────────────────────────────────────
 @clases_bp.get("/estados")
 def get_estados_clase():
