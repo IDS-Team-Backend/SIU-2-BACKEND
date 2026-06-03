@@ -80,6 +80,8 @@ def seed_usuarios():
         ("Aldana",     "Ferreyra",    "aferreyra@fi.uba.ar",    47000031, password, False),
         ("Thiago",     "Cabrera",     "tcabrera@fi.uba.ar",     47000032, password, False),
         ("Belen",      "Aguilar",     "baguilar@fi.uba.ar",     47000033, password, False),
+        ("mateo", "Martinez", "mateo@fi.uba.ar", 47000004, password, False),
+        ("thiago", "Martinez", "thiago@fi.uba.ar", 47000005, password, False),
     ]
 
     query = """
@@ -102,42 +104,8 @@ def seed_estudiantes():
     # (usuario_id, padron, carrera, anio_ingreso)
     # usuario_ids 3-7: integrantes del grupo; 8+ alumnos varios
     estudiantes = [
-        (3,  100001, C[0], 2024),  # Nicolas Martinez
-        (4,  100002, C[0], 2024),  # Franco Dimeola
-        (5,  100003, C[0], 2024),  # Federico Folgar
-        (6,  100004, C[1], 2024),  # Joaquin Fernandez
-        (7,  100005, C[0], 2024),  # Tomas Vargas
-        (8,  100006, C[0], 2023),
-        (9,  100007, C[1], 2022),
-        (10, 100008, C[2], 2024),
-        (11, 100009, C[0], 2023),
-        (12, 100010, C[0], 2024),
-        (13, 100011, C[1], 2022),
-        (14, 100012, C[3], 2023),
-        (15, 100013, C[0], 2024),
-        (16, 100014, C[1], 2024),
-        (17, 100015, C[0], 2023),
-        (18, 100016, C[2], 2022),
-        (19, 100017, C[0], 2024),
-        (20, 100018, C[1], 2023),
-        (21, 100019, C[0], 2024),
-        (22, 100020, C[3], 2024),
-        (23, 100021, C[0], 2023),
-        (24, 100022, C[1], 2024),
-        (25, 100023, C[0], 2022),
-        (26, 100024, C[2], 2023),
-        (27, 100025, C[0], 2024),
-        (28, 100026, C[1], 2023),
-        (29, 100027, C[0], 2024),
-        (30, 100028, C[3], 2022),
-        (31, 100029, C[0], 2024),
-        (32, 100030, C[1], 2023),
-        (33, 100031, C[0], 2024),
-        (34, 100032, C[2], 2024),
-        (35, 100033, C[0], 2023),
-        (36, 100034, C[1], 2024),
-        (37, 100035, C[0], 2024),
-        (38, 100036, C[3], 2023),
+        (3, 100002, "Ingeniería en Informática", 2024),
+        (4, 100003, "Ingeniería en Informática", 2024),
     ]
 
     query = """
@@ -157,6 +125,8 @@ def seed_estudiantes():
 def seed_profesores():
     profesores = [
         (2, 500001, "Ingeniero en Informática", "Informática", "2018-03-01"),
+        (5, 500002, "Licenciado en Sistemas", "Informática", "2020-04-15"),   # ID 2 (Ayudante)
+        (6, 500003, "Analista de Sistemas", "Informática", "2022-08-10"),     # ID 3 (JTP)
     ]
 
     query = """
@@ -192,6 +162,28 @@ def seed_cursos():
 
     for curso in cursos:
         execute_query(query, curso, modifica_db=True)
+
+def seed_curso_docentes():
+    # (curso_id, docente_id, nombre)
+    # Solo usamos curso_id 1 y 2, y docente_id 1 (que son los que existen)
+    curso_docentes = [
+        (1, 1, "titular"), 
+        (2, 1, "titular"),
+        (1, 2, "jefe_tp"), 
+        (1, 3, "ayudante") 
+    ]
+
+    query = """
+    INSERT IGNORE INTO curso_docentes(
+        curso_id,
+        docente_id,
+        nombre
+    )
+    VALUES (%s, %s, %s)
+    """
+
+    for cd in curso_docentes:
+        execute_query(query, cd, modifica_db=True)
 
 
 def seed_inscripciones():
@@ -583,6 +575,7 @@ def run_seed():
     seed_estudiantes()
     seed_profesores()
     seed_cursos()
+    seed_curso_docentes()
     seed_inscripciones()
     seed_evaluaciones()
     seed_equipos()
