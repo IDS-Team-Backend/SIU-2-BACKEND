@@ -1,13 +1,15 @@
+import json
+
 import repositories.clases_repository as db
 import repositories.profesores_repository as profesores_db
 from services import cursos_service
-from config import ADMIN, ESTADOS_CLASE
+from constants import ADMIN, ESTADOS_CLASE, TIPOS_CLASE, MODALIDADES_CLASE
 from utils.error_handlers import NotFoundError, ValidationError
 import utils.validators as validator
 import utils.auth_validator as auth
 
 CLASE_PARAMS_OBLIGATORIOS = ["nombre", "profesor_id", "curso_id", "fecha_hora_inicio", "fecha_hora_fin"]
-CLASE_PARAMS_OPCIONALES = ["tema", "status"]
+CLASE_PARAMS_OPCIONALES = ["tema", "status", "tipo", "modalidad", "tags"]
 CLASE_FILTROS_PERMITIDOS = ["status", "profesor_id", "curso_id", "fecha", "activa"]
 
 
@@ -79,6 +81,24 @@ def validar_clase(parametros, parametros_obligatorios, estado_default=ESTADOS_CL
     if not validator.es_estado_clase_valido(status):
         raise ValidationError(f"Estado de clase inválido. Estados válidos: {', '.join(ESTADOS_CLASE)}")
 
+    validar_campos_cronograma(parametros)
+
+
+def validar_campos_cronograma(parametros):
+    """Valida los campos opcionales que alimentan el cronograma: tipo, modalidad y tags."""
+    tipo = parametros.get("tipo")
+    if tipo and tipo not in TIPOS_CLASE:
+        raise ValidationError(f"Tipo de clase inválido. Tipos válidos: {', '.join(TIPOS_CLASE)}")
+
+    modalidad = parametros.get("modalidad")
+    if modalidad and modalidad not in MODALIDADES_CLASE:
+        raise ValidationError(f"Modalidad inválida. Modalidades válidas: {', '.join(MODALIDADES_CLASE)}")
+
+    tags = parametros.get("tags")
+    if tags is not None:
+        if not isinstance(tags, list) or any(not isinstance(t, str) for t in tags):
+            raise ValidationError("El campo 'tags' debe ser una lista de strings.")
+
 # ─── GET /clases ───────────────────────────────────────────────────────────────
 def get_clases(filtros):
     # valida que los filtros enviados son correctos 
@@ -124,7 +144,12 @@ def get_clase_by_id(clase_id):
 def crear_clase(parametros):
     validar_clase(parametros, CLASE_PARAMS_OBLIGATORIOS)
 
-    new_clase = db.crear_clase(parametros["nombre"], parametros["profesor_id"], parametros["curso_id"], parametros["fecha_hora_inicio"], parametros["fecha_hora_fin"], parametros.get("tema"), parametros.get("status", ESTADOS_CLASE[0]))
+    new_clase = db.crear_clase(
+        parametros["nombre"], parametros["profesor_id"], parametros["curso_id"],
+        parametros["fecha_hora_inicio"], parametros["fecha_hora_fin"],
+        parametros.get("tema"), parametros.get("status", ESTADOS_CLASE[0]),
+        parametros.get("tipo"), parametros.get("modalidad"), parametros.get("tags"),
+    )
 
     return new_clase
 
@@ -152,6 +177,9 @@ def actualizar_clase(clase_id, parametros):
         parametros["fecha_hora_fin"],
         parametros.get("tema", clase_por_actualizarse["tema"]),
         parametros.get("status", clase_por_actualizarse["status"]),
+        parametros.get("tipo", clase_por_actualizarse["tipo"]),
+        parametros.get("modalidad", clase_por_actualizarse["modalidad"]),
+        parametros.get("tags", clase_por_actualizarse["tags"]),
     )
 
     return clase_actualizada
@@ -191,7 +219,11 @@ def actualizar_clase_parcial(clase_id, parametros):
         "status": parametros.get("status", clase_por_actualizarse["status"])
     }
 
-
+    # los campos del cronograma se validan solo si vienen en el PATCH (el valor guardado
+    # en la BD ya es válido y 'tags' se almacena como JSON, no como lista de Python)
+    for campo in ("tipo", "modalidad", "tags"):
+        if campo in parametros:
+            clase_actualizada_temporalmente[campo] = parametros[campo]
 
     # En PATCH validamos solo el payload final combinado, no campos obligatorios.
     validar_clase(clase_actualizada_temporalmente, [], clase_por_actualizarse=clase_id)
@@ -219,3 +251,62 @@ def eliminar_clase(clase_id):
     db.eliminar_clase(clase_id)
 
     return
+
+# ─── GET /cronograma ───────────────────────────────────────────────────────────
+def _parsear_tags(raw):
+    """Las columnas JSON pueden llegar como lista ya parseada, como str/bytes JSON o None."""
+    if not raw:
+        return []
+    if isinstance(raw, (bytes, bytearray)):
+        raw = raw.decode("utf-8")
+    if isinstance(raw, str):
+        try:
+            valor = json.loads(raw)
+            return valor if isinstance(valor, list) else []
+        except (ValueError, TypeError):
+            return []
+    if isinstance(raw, list):
+        return raw
+    return []
+
+
+def _celda_desde_clase(clase):
+    tema = clase.get("tema") or ""
+    # los temas se almacenan unidos por " | " para permitir múltiples bullets con una sola columna
+    temas = [t.strip() for t in tema.split(" | ") if t.strip()] if tema else []
+    return {
+        "fecha": clase["fecha_hora_inicio"].strftime("%d/%m"),
+        "modalidad": clase.get("modalidad") or "",
+        "temas": temas,
+        "tags": _parsear_tags(clase.get("tags")),
+    }
+
+
+def get_cronograma(curso_id):
+    """Construye la grilla semanal (Teórica/Práctica) del cronograma a partir de la tabla clases."""
+    if not curso_id:
+        raise ValidationError("El parámetro 'curso_id' es obligatorio.")
+
+    clases, _ = db.get_clases({"curso_id": curso_id})
+    if not clases:
+        return []
+
+    # el inicio del cuatrimestre es la clase más temprana del curso; las semanas se cuentan desde ahí
+    inicio = min(c["fecha_hora_inicio"] for c in clases)
+
+    semanas = {}  # numero -> {"semana": n, "teorica": {...}, "practica": {...}}
+    for clase in sorted(clases, key=lambda c: c["fecha_hora_inicio"]):
+        numero = (clase["fecha_hora_inicio"] - inicio).days // 7 + 1
+        semana = semanas.setdefault(numero, {"semana": numero, "teorica": {}, "practica": {}})
+
+        tipo = clase.get("tipo") or "teorica"  # fallback si la clase no tiene tipo cargado
+        celda = _celda_desde_clase(clase)
+
+        if semana[tipo]:
+            # ya hay una clase de este tipo en la semana: se fusionan temas y tags
+            semana[tipo]["temas"].extend(celda["temas"])
+            semana[tipo]["tags"].extend(t for t in celda["tags"] if t not in semana[tipo]["tags"])
+        else:
+            semana[tipo] = celda
+
+    return [semanas[n] for n in sorted(semanas)]

@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from utils import auth_validator as auth
 import services.clases_service as logic
-from config import ADMIN, DOCENTE, ESTADOS_CLASE
+from constants import ADMIN, DOCENTE, ESTADOS_CLASE
 from utils.error_handlers import ValidationError
 
 
@@ -36,6 +36,15 @@ def crear_clase():
     new_clase = logic.crear_clase(args)
 
     return jsonify({"clase": new_clase}), 201
+
+# ─── GET /clases/cronograma ────────────────────────────────────────────────────
+@clases_bp.get("/cronograma")
+def get_cronograma():
+    curso_id = request.args.get("curso_id", type=int)
+
+    semanas = logic.get_cronograma(curso_id)
+
+    return jsonify({"semanas": semanas}), 200
 
 # ─── GET /clases/estados ────────────────────────────────────────────────────────
 @clases_bp.get("/estados")
