@@ -15,18 +15,6 @@ def _get_env(nombre, required=True, default=None):
         return None
     return valor
 
-ADMIN = "admin"
-DOCENTE = "docente"
-ALUMNO = "alumno"
-AYUDANTE = "ayudante"
-
-ESTADOS_CLASE = [ # caso default: ESTADOS_CLASE[0]
-    "pendiente",
-    "suspendida",
-    "en curso",
-    "finalizada"
-] # CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN EL SCHEMA.SQL TAMBIEN
-
 EMAIL_CONFIG = {
     "HOST": _get_env("SMTP_HOST", required=False, default=""),
     "PORT": int(_get_env("SMTP_PORT", required=False) or 587),

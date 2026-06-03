@@ -1,5 +1,5 @@
 import db
-from config import ADMIN, DOCENTE, ALUMNO
+from constants import ADMIN, DOCENTE, ALUMNO
 
 
 def obtener_perfiles_de_usuario(usuario_id):

@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
-from config import DOMINIOS_EMAIL_PERMITIDOS, ESTADOS_CLASE
+from config import DOMINIOS_EMAIL_PERMITIDOS
+from constants import ESTADOS_CLASE
 from utils.error_handlers import ValidationError
 
 

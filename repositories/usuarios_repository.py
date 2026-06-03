@@ -1,4 +1,4 @@
-from config import ADMIN, ALUMNO, DOCENTE
+from constants import ADMIN, ALUMNO, DOCENTE
 import db
 from werkzeug.security import generate_password_hash
 

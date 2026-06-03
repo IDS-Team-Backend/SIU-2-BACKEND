@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, Blueprint
-from config import ADMIN
+from constants import ADMIN
 import services.usuarios_service as logic
 from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth

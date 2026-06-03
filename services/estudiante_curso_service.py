@@ -1,5 +1,7 @@
+import csv
+import io
+
 import mysql.connector
-import pandas as pd
 
 import repositories.estudiante_curso_repository as db
 import repositories.estudiantes_repository as estudiantes_repo
@@ -103,24 +105,26 @@ def importar_inscripciones_por_lote(archivo_file):
         raise ValidationError("No se proporcionó ningún archivo")
 
     try:
-        df = pd.read_csv(archivo_file)
+        stream = io.TextIOWrapper(archivo_file.stream, encoding="utf-8-sig", newline="")
+        lector = csv.DictReader(stream)
+        columnas = set(lector.fieldnames or [])
     except Exception as e:
         raise ValidationError(f"Error al leer el archivo CSV: {str(e)}")
 
     columnas_requeridas = {'padron', 'curso_id'}
-    if not columnas_requeridas.issubset(df.columns):
+    if not columnas_requeridas.issubset(columnas):
         raise ValidationError("El archivo debe contener las columnas 'padron' y 'curso_id'")
 
     guardados = 0
     ignorados_duplicados = 0
     errores = []
 
-    for index, fila in df.iterrows():
-        nro_linea = index + 2
+    for index, fila in enumerate(lector):
+        nro_linea = index + 2  # +1 por el encabezado, +1 porque enumerate arranca en 0
 
         try:
-            padron = int(fila['padron'])
-            curso_id = int(fila['curso_id'])
+            padron = int(str(fila['padron']).strip())
+            curso_id = int(str(fila['curso_id']).strip())
         except (ValueError, TypeError):
             errores.append({
                 "linea": nro_linea,

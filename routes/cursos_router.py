@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint
 import services.cursos_service as logic
 from utils import auth_validator as auth
-from config import ADMIN
+from constants import ADMIN
 from utils.error_handlers import created_response, ValidationError
 from utils import paginacion
 

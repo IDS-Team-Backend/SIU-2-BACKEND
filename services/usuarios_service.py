@@ -2,7 +2,7 @@ import mysql.connector
 
 import repositories.usuarios_repository as db
 from utils import auth_validator as auth
-from config import ADMIN, DOCENTE, ALUMNO
+from constants import ADMIN, DOCENTE, ALUMNO
 from utils.error_handlers import NotFoundError, ValidationError, DuplicateError, ForbiddenError
 from .auth_service import validar_datos_usuario
 
