@@ -148,7 +148,7 @@ def crear_clase(parametros):
         parametros["nombre"], parametros["profesor_id"], parametros["curso_id"],
         parametros["fecha_hora_inicio"], parametros["fecha_hora_fin"],
         parametros.get("tema"), parametros.get("status", ESTADOS_CLASE[0]),
-        parametros.get("tipo"), parametros.get("modalidad"), parametros.get("tags"),
+        parametros.get("tipo"), parametros.get("modalidad"), _serializar_tags(parametros.get("tags")),
     )
 
     return new_clase
@@ -179,7 +179,7 @@ def actualizar_clase(clase_id, parametros):
         parametros.get("status", clase_por_actualizarse["status"]),
         parametros.get("tipo", clase_por_actualizarse["tipo"]),
         parametros.get("modalidad", clase_por_actualizarse["modalidad"]),
-        parametros.get("tags", clase_por_actualizarse["tags"]),
+        _serializar_tags(parametros.get("tags", clase_por_actualizarse["tags"])),
     )
 
     return clase_actualizada
@@ -228,6 +228,10 @@ def actualizar_clase_parcial(clase_id, parametros):
     # En PATCH validamos solo el payload final combinado, no campos obligatorios.
     validar_clase(clase_actualizada_temporalmente, [], clase_por_actualizarse=clase_id)
 
+    # tags viaja como JSON a la columna (el connector no acepta una lista cruda)
+    if "tags" in parametros:
+        parametros["tags"] = _serializar_tags(parametros["tags"])
+
     clase_actualizada = db.actualizar_clase_parcial(clase_id, parametros)
 
     return clase_actualizada
@@ -252,7 +256,17 @@ def eliminar_clase(clase_id):
 
     return
 
-# ─── GET /cronograma ───────────────────────────────────────────────────────────
+# ─── (de)serialización de la columna JSON `tags` ────────────────────────────────
+def _serializar_tags(tags):
+    """El connector no convierte una lista de Python a la columna JSON: hay que pasar
+    texto JSON. None se respeta; un str ya serializado (ej. el valor de la BD) pasa igual."""
+    if tags is None:
+        return None
+    if isinstance(tags, str):
+        return tags
+    return json.dumps(tags)
+
+
 def _parsear_tags(raw):
     """Las columnas JSON pueden llegar como lista ya parseada, como str/bytes JSON o None."""
     if not raw:
