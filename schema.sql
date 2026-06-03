@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS clases (
     tipo ENUM('teorica', 'practica') NULL, -- distingue clase teorica de practica en el cronograma
     modalidad VARCHAR(20) NULL, -- 'Virtual' | 'Presencial'
     tags JSON NULL, -- etiquetas del cronograma (ej: ["Obligatoria", "Parcialito"])
-    status ENUM('pendiente', 'suspendida', 'en curso', 'finalizada') NOT NULL DEFAULT 'pendiente', -- CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN CONFIG.PY
+    status ENUM('pendiente', 'suspendida', 'en curso', 'finalizada') NOT NULL DEFAULT 'pendiente', -- CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN CONSTANTS.PY
     deleted_at TIMESTAMP NULL DEFAULT NULL, -- soft delete. mucho mejor que activo: boolean
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_clases_cursos
