@@ -145,21 +145,14 @@ def obtener_asistencia_por_clase(curso_id):
         SELECT
             c.nombre,
             ROUND(
-                SUM(
-                    CASE
-                        WHEN a.estado IN ('presente','tarde')
-                        THEN 1
-                        ELSE 0
-                    END
-                ) * 100.0 /
-                COUNT(a.id),
+                COUNT(a.alumno_id) * 100.0 /
+                (SELECT COUNT(*) FROM estudiante_curso WHERE curso_id = c.curso_id),
             2) AS porcentaje
         FROM clases c
-        LEFT JOIN asistencias a
-            ON a.clase_id = c.id
+        LEFT JOIN asistencias a ON a.clase_id = c.id
         WHERE c.curso_id = %s
-          AND c.deleted_at IS NULL
-        GROUP BY c.id, c.nombre
+        AND c.deleted_at IS NULL
+        GROUP BY c.id, c.nombre, c.curso_id
         ORDER BY c.fecha_hora_inicio
     """
     return db.execute_query(query, (curso_id,))

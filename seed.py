@@ -1,5 +1,6 @@
 import json
-
+import random
+from datetime import datetime, timedelta
 from db import execute_query
 from werkzeug.security import generate_password_hash
 
@@ -99,9 +100,6 @@ def seed_usuarios():
 
 def seed_estudiantes():
     C = ["Ingeniería en Informática", "Licenciatura en Análisis de Sistemas", "Ingeniería Civil", "Ingeniería Electrónica"]
-    # (usuario_id, padron, carrera, anio_ingreso)
-    # alumnos = todos los usuarios menos admin (id 1) y profesores (ids 2, 5, 6).
-    # padron sigue el patron de los originales: usuario_id 3 -> 100002, 4 -> 100003, etc.
     ADMIN_ID = 1
     PROFESORES_IDS = {2, 5, 6}
     estudiante_uids = [uid for uid in range(1, 38) if uid != ADMIN_ID and uid not in PROFESORES_IDS]
@@ -127,8 +125,8 @@ def seed_estudiantes():
 def seed_profesores():
     profesores = [
         (2, 500001, "Ingeniero en Informática", "Informática", "2018-03-01"),
-        (5, 500002, "Licenciado en Sistemas", "Informática", "2020-04-15"),   # ID 2 (Ayudante)
-        (6, 500003, "Analista de Sistemas", "Informática", "2022-08-10"),     # ID 3 (JTP)
+        (5, 500002, "Licenciado en Sistemas", "Informática", "2020-04-15"),
+        (6, 500003, "Analista de Sistemas", "Informática", "2022-08-10"),
     ]
 
     query = """
@@ -166,13 +164,11 @@ def seed_cursos():
         execute_query(query, curso, modifica_db=True)
 
 def seed_curso_docentes():
-    # (curso_id, docente_id, nombre)
-    # Solo usamos curso_id 1 y 2, y docente_id 1 (que son los que existen)
     curso_docentes = [
-        (1, 1, "titular"), 
+        (1, 1, "titular"),
         (2, 1, "titular"),
-        (1, 2, "jefe_tp"), 
-        (1, 3, "ayudante") 
+        (1, 2, "jefe_tp"),
+        (1, 3, "ayudante")
     ]
 
     query = """
@@ -189,7 +185,6 @@ def seed_curso_docentes():
 
 
 def seed_inscripciones():
-    # todos los estudiantes inscriptos en curso_id=1
     estudiante_ids = [r["id"] for r in execute_query("SELECT id FROM estudiantes ORDER BY id")]
     inscripciones = [(1, eid) for eid in estudiante_ids]
 
@@ -207,20 +202,10 @@ def seed_inscripciones():
 
 def seed_evaluaciones():
     evaluaciones = [
-        (
-            1,
-            1,
-            "Primer Parcial",
-            "Parcial de estructuras",
-            "2026-05-10",
-        ),
-        (
-            1,
-            2,
-            "TP Integrador",
-            "Trabajo práctico grupal",
-            "2026-06-15",
-        ),
+        (1, 1, "Primer Parcial",   "Parcial de estructuras",    "2026-05-10"),
+        (1, 2, "TP Integrador",    "Trabajo práctico grupal",   "2026-06-15"),
+        (1, 1, "Segundo Parcial",  "Parcial de bases de datos", "2026-06-20"),
+        (1, 3, "Final",            "Examen final integrador",   "2026-07-02"),
     ]
 
     query = """
@@ -238,31 +223,15 @@ def seed_evaluaciones():
         execute_query(query, evaluacion, modifica_db=True)
 
 
-def seed_notas():
-    # alumno_id apunta a estudiantes(id): 1 = Ana (usuario 3), 2 = Lucas (usuario 4)
-    notas = [
-        (1, 1, None, 8),
-        (1, 2, None, 6),
-        (2, None, 1, 9),
-    ]
-
-    query = """
-    INSERT IGNORE INTO notas(
-        evaluacion_id,
-        alumno_id,
-        equipo_id,
-        nota
-    )
-    VALUES (%s, %s, %s, %s)
-    """
-
-    for nota in notas:
-        execute_query(query, nota, modifica_db=True)
-
-
 def seed_equipos():
+    # 6 grupos de ~5 alumnos para el TP Integrador (evaluacion_id=2)
     equipos = [
         (1, 2, "Grupo 1"),
+        (1, 2, "Grupo 2"),
+        (1, 2, "Grupo 3"),
+        (1, 2, "Grupo 4"),
+        (1, 2, "Grupo 5"),
+        (1, 2, "Grupo 6"),
     ]
 
     query = """
@@ -279,11 +248,14 @@ def seed_equipos():
 
 
 def seed_equipo_integrantes():
-    # alumno_id apunta a estudiantes(id), no a usuarios(id)
-    integrantes = [
-        (1, 1),
-        (1, 2),
-    ]
+    # Obtenemos todos los estudiante_ids inscritos en curso 1
+    estudiante_ids = [r["id"] for r in execute_query("SELECT id FROM estudiantes ORDER BY id")]
+
+    # Distribuimos los estudiantes en 6 grupos de ~5
+    integrantes = []
+    for idx, eid in enumerate(estudiante_ids):
+        equipo_id = (idx % 6) + 1
+        integrantes.append((equipo_id, eid))
 
     query = """
     INSERT IGNORE INTO equipo_integrantes(
@@ -297,13 +269,101 @@ def seed_equipo_integrantes():
         execute_query(query, integrante, modifica_db=True)
 
 
-def seed_clases():
-    # profesor_id=1 apunta a profesores(id), no a usuarios(id). 1 = Juan (usuario_id=2).
-    # temas múltiples se separan con " | " — el service los parte en bullets al armar el cronograma.
-    # status: finalizada si la fecha ya pasó (hoy ~ 2026-06-03), pendiente si es futura.
-    # feriados: tipo=practica, tema=None, tags=["Feriado"], modalidad=None.
+def seed_notas():
+    """
+    Genera notas realistas para los 34 estudiantes:
+    - Evaluacion 1 (Parcial):      notas individuales, distribución normal centrada en 6.5
+    - Evaluacion 2 (TP grupal):    notas por equipo, más altas (7-10)
+    - Evaluacion 3 (2do Parcial):  notas individuales, distribución normal centrada en 7
+    - Evaluacion 4 (Final):        solo aprox. la mitad rinde, notas más variadas
 
-    # borra las clases del curso 1 para que el seed sea idempotente
+    Además, ~4 estudiantes "abandonan" (no tienen notas en las últimas evaluaciones).
+    """
+    random.seed(42)  # reproducible
+
+    estudiante_ids = [r["id"] for r in execute_query("SELECT id FROM estudiantes ORDER BY id")]
+    total = len(estudiante_ids)
+
+    # Los últimos 4 se marcan como "abandono" — solo tienen nota del primer parcial
+    abandonan = set(estudiante_ids[-4:])
+    activos = [eid for eid in estudiante_ids if eid not in abandonan]
+
+    query = """
+    INSERT IGNORE INTO notas(
+        evaluacion_id,
+        alumno_id,
+        equipo_id,
+        nota
+    )
+    VALUES (%s, %s, %s, %s)
+    """
+
+    def nota_clamp(valor):
+        return max(1, min(10, round(valor)))
+
+    # ── Evaluacion 1: Primer Parcial (individual) ──────────────────────────────
+    # Distribución: mayoría entre 5-8, algunos aplazados (1-3), pocos sobresalientes (9-10)
+    perfiles_parcial1 = {
+        "excelente":  (list(estudiante_ids[:5]),  lambda: nota_clamp(random.gauss(9.2, 0.5))),
+        "bueno":      (list(estudiante_ids[5:18]), lambda: nota_clamp(random.gauss(7.0, 0.8))),
+        "regular":    (list(estudiante_ids[18:28]),lambda: nota_clamp(random.gauss(5.5, 0.9))),
+        "bajo":       (list(estudiante_ids[28:]),  lambda: nota_clamp(random.gauss(3.5, 1.0))),
+    }
+    for _, (eids, gen_nota) in perfiles_parcial1.items():
+        for eid in eids:
+            execute_query(query, (1, eid, None, gen_nota()), modifica_db=True)
+
+    # ── Evaluacion 2: TP Integrador (grupal) ──────────────────────────────────
+    # Nota por equipo: grupos buenos 8-10, grupos regulares 6-7
+    notas_por_equipo = {
+        1: nota_clamp(random.gauss(9.0, 0.4)),
+        2: nota_clamp(random.gauss(8.5, 0.4)),
+        3: nota_clamp(random.gauss(7.5, 0.5)),
+        4: nota_clamp(random.gauss(7.0, 0.5)),
+        5: nota_clamp(random.gauss(8.0, 0.4)),
+        6: nota_clamp(random.gauss(6.5, 0.6)),
+    }
+    integrantes_rows = execute_query(
+        "SELECT equipo_id, alumno_id FROM equipo_integrantes ORDER BY equipo_id"
+    )
+    for row in integrantes_rows:
+        eid = row["alumno_id"]
+        if eid in abandonan:
+            continue
+        equipo_id = row["equipo_id"]
+        nota = notas_por_equipo[equipo_id]
+        execute_query(query, (2, None, equipo_id, nota), modifica_db=True)
+
+    # ── Evaluacion 3: Segundo Parcial (individual, solo activos) ──────────────
+    # Mejora leve respecto al primero (aprendieron)
+    for eid in activos:
+        # Heredamos el "perfil" aproximado del alumno según su posición
+        idx = estudiante_ids.index(eid)
+        if idx < 5:
+            nota = nota_clamp(random.gauss(9.3, 0.5))
+        elif idx < 18:
+            nota = nota_clamp(random.gauss(7.5, 0.7))
+        elif idx < 28:
+            nota = nota_clamp(random.gauss(6.2, 0.9))
+        else:
+            nota = nota_clamp(random.gauss(4.5, 1.0))
+        execute_query(query, (3, eid, None, nota), modifica_db=True)
+
+    # ── Evaluacion 4: Final (solo los que aprobaron ambos parciales) ──────────
+    # Rinden ~60% de los activos
+    rinden_final = random.sample(activos, k=int(len(activos) * 0.60))
+    for eid in rinden_final:
+        idx = estudiante_ids.index(eid)
+        if idx < 5:
+            nota = nota_clamp(random.gauss(9.0, 0.6))
+        elif idx < 18:
+            nota = nota_clamp(random.gauss(7.0, 1.0))
+        else:
+            nota = nota_clamp(random.gauss(6.0, 1.2))
+        execute_query(query, (4, eid, None, nota), modifica_db=True)
+
+
+def seed_clases():
     execute_query("DELETE FROM clases WHERE curso_id = 1", (), modifica_db=True)
 
     clases = [
@@ -478,13 +538,60 @@ def seed_clases():
         execute_query(query, clase, modifica_db=True)
 
 
+def seed_asistencias():
+    """
+    Genera asistencias realistas para todas las clases finalizadas del curso 1.
+
+    Perfiles de asistencia por alumno (mismo seed que notas para consistencia):
+    - Muy constante (top 5):    85-100% de presencia
+    - Regular (siguientes 20):  60-85%
+    - Irregular (siguientes 5): 30-60%
+    - Abandonadores (últimos 4): solo primeras 4 clases (~30%)
+    """
+    random.seed(42)
+
+    clases_rows = execute_query(
+        "SELECT id FROM clases WHERE curso_id = 1 AND status = 'finalizada' ORDER BY fecha_hora_inicio"
+    )
+    clase_ids = [r["id"] for r in clases_rows]
+
+    estudiante_ids = [r["id"] for r in execute_query("SELECT id FROM estudiantes ORDER BY id")]
+
+    # Definimos probabilidad de asistir por alumno
+    probs = {}
+    for idx, eid in enumerate(estudiante_ids):
+        if idx < 5:
+            probs[eid] = 0.92       # muy constantes
+        elif idx < 25:
+            probs[eid] = 0.72       # regulares
+        elif idx < 30:
+            probs[eid] = 0.45       # irregulares
+        else:
+            probs[eid] = 0.25       # abandonadores (van poco desde el principio)
+
+    # Los "abandonadores" solo pueden asistir a las primeras 4 clases
+    abandonadores = set(estudiante_ids[-4:])
+
+    query = """
+    INSERT IGNORE INTO asistencias(
+        clase_id,
+        alumno_id
+    )
+    VALUES (%s, %s)
+    """
+
+    for clase_idx, clase_id in enumerate(clase_ids):
+        for eid in estudiante_ids:
+            # Abandonadores solo asisten a las primeras 4 clases
+            if eid in abandonadores and clase_idx >= 4:
+                continue
+            if random.random() < probs[eid]:
+                execute_query(query, (clase_id, eid), modifica_db=True)
+
+
 def seed_qr_asistencia():
     qr = [
-        (
-            1,
-            "token-demo-123",
-            "2026-12-31 23:59:59",
-        ),
+        (1, "token-demo-123", "2026-12-31 23:59:59"),
     ]
 
     query = """
@@ -500,33 +607,9 @@ def seed_qr_asistencia():
         execute_query(query, item, modifica_db=True)
 
 
-def seed_asistencias():
-    # alumno_id apunta a estudiantes(id), no a usuarios(id)
-    asistencias = [
-        (1, 1),
-        (1, 2),
-    ]
-
-    query = """
-    INSERT IGNORE INTO asistencias(
-        clase_id,
-        alumno_id
-    )
-    VALUES (%s, %s)
-    """
-
-    for asistencia in asistencias:
-        execute_query(query, asistencia, modifica_db=True)
-
-
 def seed_materiales():
     materiales = [
-        (
-            1,
-            "Clase 1 PDF",
-            "https://storage.com/clase1.pdf",
-            2,
-        ),
+        (1, "Clase 1 PDF", "https://storage.com/clase1.pdf", 2),
     ]
 
     query = """
@@ -545,13 +628,7 @@ def seed_materiales():
 
 def seed_logs():
     logs = [
-        (
-            1,
-            "LOGIN",
-            "/auth/login",
-            "POST",
-            "Inicio de sesión correcto",
-        ),
+        (1, "LOGIN", "/auth/login", "POST", "Inicio de sesión correcto"),
     ]
 
     query = """
