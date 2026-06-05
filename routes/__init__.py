@@ -17,6 +17,7 @@ from utils import auth_validator as auth
 from .equipo_integrantes_router import equipo_integrantes_bp
 from .notas_router import notas_bp
 from .clases_router import clases_bp
+from .tipo_evaluaciones import tipos_evaluacion_bp
 
 BLUEPRINTS_PUBLICOS = [
     ("/auth",       auth_public_bp),
@@ -40,6 +41,7 @@ BLUEPRINTS_PRIVADOS = [
     ("/equipo_integrantes", equipo_integrantes_bp),
     ("/notas",             notas_bp),
     ("/clases",            clases_bp),
+    ("/tipos_evaluacion",   tipos_evaluacion_bp),
 ]
 
 
