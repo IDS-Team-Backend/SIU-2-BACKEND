@@ -7,51 +7,76 @@ from utils.pdf_generator import (
 from utils.validaciones import validar_entero, validar_string_no_vacio
 
 def obtener_reporte_alumnos(
-    curso_id=None, 
-    carrera=None, 
-    anio_ingreso=None, 
-    nombre_completo=None, 
-    padron=None, 
+    curso_id=None,
+    carrera=None,
+    anio_ingreso=None,
+    nombre_completo=None,
+    padron=None,
     evaluacion_id=None,
     condicion=None,
     nota_mayor_a=None,
-    exportar_pdf=False
+    exportar_pdf=False,
+    page_size=20,
+    offset=0
 ):
-    if curso_id: validar_entero(curso_id, "curso_id")
-    if anio_ingreso: validar_entero(anio_ingreso, "anio_ingreso")
-    if padron: validar_entero(padron, "padron")
-    if carrera: validar_string_no_vacio(carrera, "carrera")
-    if nombre_completo: validar_string_no_vacio(nombre_completo, "nombre_completo")
-        
+    if curso_id:
+        validar_entero(curso_id, "curso_id")
+    if anio_ingreso:
+        validar_entero(anio_ingreso, "anio_ingreso")
+    if padron:
+        validar_entero(padron, "padron")
+    if carrera:
+        validar_string_no_vacio(carrera, "carrera")
+    if nombre_completo:
+        validar_string_no_vacio(nombre_completo, "nombre_completo")
     if evaluacion_id:
         validar_entero(evaluacion_id, "evaluacion_id")
     if condicion:
         validar_string_no_vacio(condicion, "condicion")
         if condicion.lower() not in ["aprobado", "desaprobado"]:
             from utils.error_handlers import ValidationError
-            raise ValidationError("El parámetro 'condicion' debe ser 'aprobado' o 'desaprobado'.")
+            raise ValidationError(
+                "El parámetro 'condicion' debe ser 'aprobado' o 'desaprobado'."
+            )
     if nota_mayor_a:
         try:
             float(nota_mayor_a)
         except ValueError:
             from utils.error_handlers import ValidationError
-            raise ValidationError("El parámetro 'nota_mayor_a' debe ser un número decimal o entero.")
+            raise ValidationError(
+                "El parámetro 'nota_mayor_a' debe ser un número decimal o entero."
+            )
 
-    alumnos = db.obtener_alumnos_reporte(
-        curso_id=curso_id, 
-        carrera=carrera, 
-        anio_ingreso=anio_ingreso, 
-        nombre_completo=nombre_completo, 
+    if exportar_pdf:
+        alumnos, _ = db.obtener_alumnos_reporte(
+            curso_id=curso_id,
+            carrera=carrera,
+            anio_ingreso=anio_ingreso,
+            nombre_completo=nombre_completo,
+            padron=padron,
+            evaluacion_id=evaluacion_id,
+            condicion=condicion,
+            nota_mayor_a=nota_mayor_a,
+            page_size=100000,
+            offset=0
+        )
+
+        return crear_pdf_alumnos(alumnos)
+
+    alumnos, total = db.obtener_alumnos_reporte(
+        curso_id=curso_id,
+        carrera=carrera,
+        anio_ingreso=anio_ingreso,
+        nombre_completo=nombre_completo,
         padron=padron,
         evaluacion_id=evaluacion_id,
         condicion=condicion,
-        nota_mayor_a=nota_mayor_a
+        nota_mayor_a=nota_mayor_a,
+        page_size=page_size,
+        offset=offset
     )
-    
-    if exportar_pdf:
-        return crear_pdf_alumnos(alumnos)
-        
-    return alumnos
+
+    return alumnos, total
 
 
 def obtener_reporte_estadisticas(curso_id, exportar_pdf=False):
