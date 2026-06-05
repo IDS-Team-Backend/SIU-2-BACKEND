@@ -1,14 +1,17 @@
 import db
+from utils import paginacion
 
 def obtener_alumnos_reporte(
-    curso_id=None, 
-    carrera=None, 
-    anio_ingreso=None, 
-    nombre_completo=None, 
+    curso_id=None,
+    carrera=None,
+    anio_ingreso=None,
+    nombre_completo=None,
     padron=None,
     evaluacion_id=None,
     condicion=None,
-    nota_mayor_a=None
+    nota_mayor_a=None,
+    page_size=paginacion.PAGE_SIZE_DEFAULT,
+    offset=0
 ):
     query = """
         SELECT 
@@ -62,21 +65,26 @@ def obtener_alumnos_reporte(
         query += " AND n.nota > %s"
         params.append(float(nota_mayor_a))
 
-    query += """ 
-        GROUP BY 
-            e.id, 
-            e.padron, 
-            e.carrera, 
-            e.anio_ingreso, 
-            u.nombre, 
-            u.apellido, 
-            u.email, 
-            u.dni, 
-            n.nota 
-        ORDER BY u.apellido ASC, u.nombre ASC
+    query += """
+        GROUP BY
+            e.id,
+            e.padron,
+            e.carrera,
+            e.anio_ingreso,
+            u.nombre,
+            u.apellido,
+            u.email,
+            u.dni,
+            n.nota
     """
     
-    return db.execute_query(query, tuple(params))
+    return paginacion.ejecutar(
+        query,
+        params,
+        order_by="u.apellido ASC, u.nombre ASC",
+        page_size=page_size,
+        offset=offset,
+    )
 
 
 def obtener_promedio_por_evaluacion(curso_id):

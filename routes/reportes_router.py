@@ -2,7 +2,9 @@ from flask import Blueprint, jsonify, request, send_file
 import io
 import services.reportes_service as logic
 from config import ADMIN, DOCENTE, AYUDANTE
-from utils import auth_validator as auth
+from utils import auth_validator as auth, paginacion
+import math
+
 
 reportes_bp = Blueprint("reportes", __name__)
 reportes_bp.before_request(auth.validar_token)
@@ -21,8 +23,30 @@ def obtener_reporte_alumnos():
     nota_mayor_a = request.args.get("nota_mayor_a")
     
     exportar_pdf = request.args.get("export", "").lower() == "pdf"
+    page, page_size, offset = paginacion.desde_request()
 
-    resultado = logic.obtener_reporte_alumnos(
+
+    if exportar_pdf:
+        pdf = logic.obtener_reporte_alumnos(
+            curso_id=curso_id,
+            carrera=carrera,
+            anio_ingreso=anio_ingreso,
+            nombre_completo=nombre_completo,
+            padron=padron,
+            evaluacion_id=evaluacion_id,
+            condicion=condicion,
+            nota_mayor_a=nota_mayor_a,
+            exportar_pdf=True
+        )
+
+        return send_file(
+            io.BytesIO(pdf),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name="reporte_alumnos_rendimiento.pdf"
+        )
+
+    resultado, total = logic.obtener_reporte_alumnos(
         curso_id=curso_id,
         carrera=carrera,
         anio_ingreso=anio_ingreso,
@@ -31,18 +55,22 @@ def obtener_reporte_alumnos():
         evaluacion_id=evaluacion_id,
         condicion=condicion,
         nota_mayor_a=nota_mayor_a,
-        exportar_pdf=exportar_pdf
+        page_size=page_size,
+        offset=offset
     )
-    
-    if exportar_pdf:
-        return send_file(
-            io.BytesIO(resultado),
-            mimetype="application/pdf",
-            as_attachment=True,
-            download_name="reporte_alumnos_rendimiento.pdf"
-        )
         
-    return jsonify({"resultados": resultado}), 200
+    if not resultado:
+        return "", 204
+     
+    total_paginas = math.ceil(total / page_size) if page_size else 0
+
+    return jsonify({
+        "resultados": resultado,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_paginas": total_paginas,
+    }), 200
 
 
 @reportes_bp.route("/estadisticas", methods=["GET"])
