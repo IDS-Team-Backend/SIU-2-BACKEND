@@ -79,7 +79,7 @@ def obtener_alumnos_reporte(
     return db.execute_query(query, tuple(params))
 
 
-def obtener_estadisticas_aprobacion(curso_id):
+def obtener_promedio_por_evaluacion(curso_id):
     query = """
         SELECT 
             ev.id AS evaluacion_id,
@@ -97,6 +97,73 @@ def obtener_estadisticas_aprobacion(curso_id):
         ORDER BY ev.fecha ASC
     """
     return db.execute_query(query, (curso_id,))
+
+def obtener_distribucion_notas(curso_id):
+    query = """
+        SELECT
+            FLOOR(n.nota) AS rango,
+            COUNT(*) AS cantidad
+        FROM notas n
+        INNER JOIN evaluaciones ev
+            ON ev.id = n.evaluacion_id
+        WHERE ev.curso_id = %s
+          AND ev.activo = TRUE
+        GROUP BY FLOOR(n.nota)
+        ORDER BY rango
+    """
+    return db.execute_query(query, (curso_id,))
+
+def obtener_promedio_por_tipo(curso_id):
+    query = """
+        SELECT
+            te.nombre,
+            ROUND(AVG(n.nota),2) AS promedio
+        FROM notas n
+        INNER JOIN evaluaciones ev
+            ON ev.id = n.evaluacion_id
+        INNER JOIN tipos_evaluacion te
+            ON te.id = ev.tipo_evaluacion_id
+        WHERE ev.curso_id = %s
+          AND ev.activo = TRUE
+        GROUP BY te.id, te.nombre
+    """
+    return db.execute_query(query, (curso_id,))
+
+def obtener_estado_cursada(curso_id):
+    query = """
+        SELECT
+            estado,
+            COUNT(*) cantidad
+        FROM estudiante_curso
+        WHERE curso_id = %s
+        GROUP BY estado
+    """
+    return db.execute_query(query, (curso_id,))
+
+def obtener_asistencia_por_clase(curso_id):
+    query = """
+        SELECT
+            c.nombre,
+            ROUND(
+                SUM(
+                    CASE
+                        WHEN a.estado IN ('presente','tarde')
+                        THEN 1
+                        ELSE 0
+                    END
+                ) * 100.0 /
+                COUNT(a.id),
+            2) AS porcentaje
+        FROM clases c
+        LEFT JOIN asistencias a
+            ON a.clase_id = c.id
+        WHERE c.curso_id = %s
+          AND c.deleted_at IS NULL
+        GROUP BY c.id, c.nombre
+        ORDER BY c.fecha_hora_inicio
+    """
+    return db.execute_query(query, (curso_id,))
+
 
 
 def obtener_equipos_reporte(curso_id):

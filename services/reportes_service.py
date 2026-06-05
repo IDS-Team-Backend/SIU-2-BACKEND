@@ -56,19 +56,29 @@ def obtener_reporte_alumnos(
 
 def obtener_reporte_estadisticas(curso_id, exportar_pdf=False):
     validar_entero(curso_id, "curso_id")
-    
-    stats = db.obtener_estadisticas_aprobacion(curso_id)
-    
-    for row in stats:
-        row['total_notas'] = int(row['total_notas']) if row['total_notas'] else 0
-        row['aprobados'] = int(row['aprobados']) if row['aprobados'] else 0
-        row['desaprobados'] = int(row['desaprobados']) if row['desaprobados'] else 0
-        row['nota_promedio'] = float(row['nota_promedio']) if row['nota_promedio'] else 0.0
-        
+
+    promedio_por_evaluacion = db.obtener_promedio_por_evaluacion(curso_id)
+
+    promedio_por_tipo = db.obtener_promedio_por_tipo(curso_id)
+
+    distribucion_notas = db.obtener_distribucion_notas(curso_id)
+
+    estado_cursada = db.obtener_estado_cursada(curso_id)
+
+    asistencia_por_clase = db.obtener_asistencia_por_clase(curso_id)
+
+    resultado = {
+        "promedio_por_evaluacion": promedio_por_evaluacion,
+        "promedio_por_tipo": promedio_por_tipo,
+        "distribucion_notas": distribucion_notas,
+        "estado_cursada": estado_cursada,
+        "asistencia_por_clase": asistencia_por_clase
+    }
+
     if exportar_pdf:
-        return crear_pdf_estadisticas(stats)
-        
-    return stats
+        return crear_pdf_estadisticas(resultado)
+
+    return resultado
 
 
 def obtener_reporte_equipos(curso_id, exportar_pdf=False):
