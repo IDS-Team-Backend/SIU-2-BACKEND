@@ -94,10 +94,12 @@ def reemplazar_nota(id, parametros):
         raise ValidationError(
             "El campo 'nota' es requerido."
         )
-    actualizado = db.reemplazar_nota(
-        id,
-        parametros["nota"]
-    )
+
+    campos = {"nota": parametros["nota"]}
+    if "observaciones" in parametros:
+        campos["observaciones"] = parametros.get("observaciones")
+
+    actualizado = db.actualizar_nota(id, campos)
     if not actualizado:
         raise NotFoundError(
             "No se encontró la nota"

@@ -114,15 +114,31 @@ def obtener_nota_por_id(id):
         un_solo_valor=True
     )
 
-def reemplazar_nota(id,nota):
-    query = """
+CAMPOS_ACTUALIZABLES = [
+    "nota",
+    "observaciones",
+]
+
+def actualizar_nota(id, campos):
+    set_clauses = []
+    params = []
+    for campo in CAMPOS_ACTUALIZABLES:
+        if campo in campos:
+            set_clauses.append(f"{campo} = %s")
+            params.append(campos[campo])
+
+    if not set_clauses:
+        return False
+
+    params.append(id)
+    query = f"""
         UPDATE notas
-        SET nota = %s
+        SET {", ".join(set_clauses)}
         WHERE id = %s
     """
     filas = db.execute_query(
         query,
-        (nota, id),
+        tuple(params),
         modifica_db=True
     )
     return filas > 0
