@@ -1,91 +1,108 @@
 import db
 
-def obtener_notas(evaluacion_id=None,alumno_id=None,equipo_id=None):
+CAMPOS_ACTUALIZABLES = [
+    "fecha_entrega",
+    "estado",
+    "archivo_url",
+    "observaciones",
+]
+
+def obtener_entregas(evaluacion_id=None, alumno_id=None, equipo_id=None):
     query = """
-        FROM notas n
+        FROM entregas e
         WHERE 1=1
     """
     params = []
     if evaluacion_id:
-        query += " AND n.evaluacion_id = %s"
+        query += " AND e.evaluacion_id = %s"
         params.append(evaluacion_id)
     if alumno_id:
-        query += " AND n.alumno_id = %s"
+        query += " AND e.alumno_id = %s"
         params.append(alumno_id)
     if equipo_id:
-        query += " AND n.equipo_id = %s"
+        query += " AND e.equipo_id = %s"
         params.append(equipo_id)
     count_query = """
         SELECT COUNT(*) as total
     """ + query
-    count_notas = db.execute_query(
+    count_entregas = db.execute_query(
         count_query,
         tuple(params),
         un_solo_valor=True
     )
     total = (
-        count_notas["total"]
-        if count_notas
+        count_entregas["total"]
+        if count_entregas
         else 0
     )
     select_query = """
         SELECT
-            n.id,
-            n.evaluacion_id,
-            n.alumno_id,
-            n.equipo_id,
-            n.nota,
-            n.observaciones,
-            n.created_at
-    """ + query + " ORDER BY n.id ASC"
+            e.id,
+            e.evaluacion_id,
+            e.alumno_id,
+            e.equipo_id,
+            e.fecha_entrega,
+            e.estado,
+            e.archivo_url,
+            e.observaciones,
+            e.created_at
+    """ + query + " ORDER BY e.id ASC"
 
-    notas = db.execute_query(
+    entregas = db.execute_query(
         select_query,
         tuple(params)
     )
 
-    return notas, total
+    return entregas, total
 
-def crear_nota_individual(evaluacion_id, alumno_id, nota, observaciones=None):
+def crear_entrega_individual(evaluacion_id, alumno_id, fecha_entrega, estado, archivo_url=None, observaciones=None):
     query = """
-        INSERT INTO notas
+        INSERT INTO entregas
         (
             evaluacion_id,
             alumno_id,
-            nota,
+            fecha_entrega,
+            estado,
+            archivo_url,
             observaciones
         )
-        VALUES (%s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s)
     """
     params = (
         evaluacion_id,
         alumno_id,
-        nota,
-        observaciones 
+        fecha_entrega,
+        estado,
+        archivo_url,
+        observaciones
     )
     new_id = db.execute_query(
         query,
         params,
         modifica_db=True
     )
-    return obtener_nota_por_id(new_id)
+    return obtener_entrega_por_id(new_id)
 
-def crear_nota_grupal(evaluacion_id, equipo_id, nota, observaciones=None):
+def crear_entrega_grupal(evaluacion_id, equipo_id, fecha_entrega, estado, archivo_url=None, observaciones=None):
     query = """
-        INSERT INTO notas
+        INSERT INTO entregas
         (
             evaluacion_id,
             equipo_id,
-            nota,
+            fecha_entrega,
+            estado,
+            archivo_url,
             observaciones
         )
-        VALUES (%s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s)
     """
     params = (
         evaluacion_id,
         equipo_id,
-        nota,
-        observaciones 
+        fecha_entrega,
+        estado,
+        archivo_url,
+        observaciones
     )
     new_id = db.execute_query(
         query,
@@ -93,20 +110,22 @@ def crear_nota_grupal(evaluacion_id, equipo_id, nota, observaciones=None):
         modifica_db=True
     )
 
-    return obtener_nota_por_id(new_id)
+    return obtener_entrega_por_id(new_id)
 
-def obtener_nota_por_id(id):
+def obtener_entrega_por_id(id):
     query = """
         SELECT
-            n.id,
-            n.evaluacion_id,
-            n.alumno_id,
-            n.equipo_id,
-            n.nota,
-            n.observaciones,
-            n.created_at
-        FROM notas n
-        WHERE n.id = %s
+            e.id,
+            e.evaluacion_id,
+            e.alumno_id,
+            e.equipo_id,
+            e.fecha_entrega,
+            e.estado,
+            e.archivo_url,
+            e.observaciones,
+            e.created_at
+        FROM entregas e
+        WHERE e.id = %s
     """
     return db.execute_query(
         query,
@@ -114,12 +133,7 @@ def obtener_nota_por_id(id):
         un_solo_valor=True
     )
 
-CAMPOS_ACTUALIZABLES = [
-    "nota",
-    "observaciones",
-]
-
-def actualizar_nota(id, campos):
+def actualizar_entrega(id, campos):
     set_clauses = []
     params = []
     for campo in CAMPOS_ACTUALIZABLES:
@@ -132,7 +146,7 @@ def actualizar_nota(id, campos):
 
     params.append(id)
     query = f"""
-        UPDATE notas
+        UPDATE entregas
         SET {", ".join(set_clauses)}
         WHERE id = %s
     """
@@ -143,9 +157,9 @@ def actualizar_nota(id, campos):
     )
     return filas > 0
 
-def eliminar_nota(id):
+def eliminar_entrega(id):
     query = """
-        DELETE FROM notas
+        DELETE FROM entregas
         WHERE id = %s
     """
     filas = db.execute_query(
@@ -155,10 +169,10 @@ def eliminar_nota(id):
     )
     return filas > 0
 
-def existe_nota_alumno(evaluacion_id,alumno_id):
+def existe_entrega_alumno(evaluacion_id, alumno_id):
     query = """
         SELECT COUNT(*) as total
-        FROM notas
+        FROM entregas
         WHERE evaluacion_id = %s
         AND alumno_id = %s
     """
@@ -169,13 +183,10 @@ def existe_nota_alumno(evaluacion_id,alumno_id):
     )
     return result["total"] > 0 if result else False
 
-def existe_nota_equipo(
-    evaluacion_id,
-    equipo_id
-):
+def existe_entrega_equipo(evaluacion_id, equipo_id):
     query = """
         SELECT COUNT(*) as total
-        FROM notas
+        FROM entregas
         WHERE evaluacion_id = %s
         AND equipo_id = %s
     """

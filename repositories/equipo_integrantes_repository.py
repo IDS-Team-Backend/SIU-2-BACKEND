@@ -33,6 +33,7 @@ def obtener_integrantes(equipo_id=None,alumno_id=None):
         SELECT
             ei.equipo_id,
             ei.alumno_id,
+            e.padron,
             u.nombre,
             u.apellido,
             u.email,

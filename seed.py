@@ -331,6 +331,10 @@ def seed_notas():
         if eid in abandonan:
             continue
         equipo_id = row["equipo_id"]
+        # Equipos 5 y 6 quedan sin nota para mostrar los estados de entrega
+        # "Entregado (sin corregir)" y "No entregado" en la record page.
+        if equipo_id in (5, 6):
+            continue
         nota = notas_por_equipo[equipo_id]
         execute_query(query, (2, None, equipo_id, nota), modifica_db=True)
 
@@ -361,6 +365,38 @@ def seed_notas():
         else:
             nota = nota_clamp(random.gauss(6.0, 1.2))
         execute_query(query, (4, eid, None, nota), modifica_db=True)
+
+
+def seed_entregas():
+    """
+    Entregas del TP Integrador (evaluacion_id=2, grupal), una por equipo.
+    Combinadas con las notas, ejercitan los estados de la record page:
+      - equipos 1-4: entrega + nota   -> Corregido (con badge entregado/tarde/rehacer)
+      - equipo 5:    entrega sin nota  -> Entregado (sin corregir)
+      - equipo 6:    sin entrega       -> No entregado
+    """
+    entregas = [
+        # evaluacion_id, equipo_id, fecha_entrega, estado, archivo_url
+        (2, 1, "2026-06-18 14:05:00", "entregado", "https://drive.example.com/tp/grupo1.pdf"),
+        (2, 2, "2026-06-18 13:50:00", "entregado", "https://drive.example.com/tp/grupo2.pdf"),
+        (2, 3, "2026-06-19 09:20:00", "tarde",     "https://drive.example.com/tp/grupo3.pdf"),
+        (2, 4, "2026-06-18 14:00:00", "rehacer",   "https://drive.example.com/tp/grupo4.pdf"),
+        (2, 5, "2026-06-18 14:10:00", "entregado", "https://drive.example.com/tp/grupo5.pdf"),
+    ]
+
+    query = """
+    INSERT IGNORE INTO entregas(
+        evaluacion_id,
+        equipo_id,
+        fecha_entrega,
+        estado,
+        archivo_url
+    )
+    VALUES (%s, %s, %s, %s, %s)
+    """
+
+    for entrega in entregas:
+        execute_query(query, entrega, modifica_db=True)
 
 
 def seed_clases():
@@ -661,6 +697,7 @@ def run_seed():
     seed_equipos()
     seed_equipo_integrantes()
     seed_notas()
+    seed_entregas()
     seed_clases()
     seed_qr_asistencia()
     seed_asistencias()

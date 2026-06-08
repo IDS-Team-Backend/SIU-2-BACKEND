@@ -30,3 +30,12 @@ MODALIDADES_CLASE = [
     "Virtual",
     "Presencial",
 ]
+
+# ── Dominio de entregas ───────────────────────────────────────────────────────
+# ATENCIÓN: cualquier cambio aquí debe reflejarse en schema.sql también.
+
+ESTADOS_ENTREGA = [   # índice 0 = default
+    "entregado",
+    "tarde",
+    "rehacer",
+]

@@ -151,9 +151,34 @@ CREATE TABLE IF NOT EXISTS notas (
     CONSTRAINT fk_notas_equipos 
         FOREIGN KEY (equipo_id) REFERENCES equipos(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT uq_evaluacion_alumno 
+    CONSTRAINT uq_evaluacion_alumno
     UNIQUE (evaluacion_id, alumno_id),
     CONSTRAINT uq_evaluacion_equipo
+        UNIQUE (evaluacion_id, equipo_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS entregas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    evaluacion_id INT NOT NULL,
+    alumno_id INT NULL,
+    equipo_id INT NULL,
+    fecha_entrega DATETIME NOT NULL,
+    estado ENUM('entregado', 'tarde', 'rehacer') NOT NULL DEFAULT 'entregado', -- CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN CONSTANTS.PY
+    archivo_url VARCHAR(255) NULL,
+    observaciones TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_entregas_evaluaciones
+        FOREIGN KEY (evaluacion_id) REFERENCES evaluaciones(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_entregas_estudiantes
+        FOREIGN KEY (alumno_id) REFERENCES estudiantes(id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_entregas_equipos
+        FOREIGN KEY (equipo_id) REFERENCES equipos(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT uq_entrega_evaluacion_alumno
+        UNIQUE (evaluacion_id, alumno_id),
+    CONSTRAINT uq_entrega_evaluacion_equipo
         UNIQUE (evaluacion_id, equipo_id)
 ) ENGINE=InnoDB;
 
