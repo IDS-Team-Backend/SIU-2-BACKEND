@@ -24,8 +24,7 @@ evaluacion_update_params = [
     "curso_id",
     "tipo_evaluacion_id",
     "titulo",
-    "fecha",
-    "activo"
+    "fecha"
 ]
 
 
@@ -34,15 +33,13 @@ def obtener_evaluaciones(
     tipo_evaluacion_id=None,
     titulo=None,
     fecha=None,
-    activo=None
 ):
 
     return db.obtener_evaluaciones(
         curso_id,
         tipo_evaluacion_id,
         titulo,
-        fecha,
-        activo
+        fecha
     )
 
 def crear_evaluacion(parametros):
@@ -81,31 +78,21 @@ def crear_evaluacion(parametros):
 def obtener_evaluacion_por_id(id):
     evaluacion = db.obtener_evaluacion_por_id(id)
     if not evaluacion:
-        raise NotFoundError(
-            "No se encontró la evaluación"
-        )
-
+        raise NotFoundError("No se encontró la evaluación")
     return evaluacion
 
 def reemplazar_evaluacion(id, parametros):
     validar_body_presente(parametros)
     for campo in evaluacion_update_params:
         if campo not in parametros:
-            raise ValidationError(
-                f"El campo '{campo}' es requerido."
-            )
+            raise ValidationError(f"El campo '{campo}' es requerido.")
         
-    curso_id = validar_entero(parametros["curso_id"],"curso_id")
-    tipo_evaluacion_id = validar_entero(parametros["tipo_evaluacion_id"],"tipo_evaluacion_id")
-    titulo = validar_string_no_vacio(parametros["titulo"],"titulo")
-    fecha = validar_string_no_vacio(parametros["fecha"],"fecha")
-    activo = parametros["activo"]
+    curso_id = validar_entero(parametros["curso_id"], "curso_id")
+    tipo_evaluacion_id = validar_entero(parametros["tipo_evaluacion_id"], "tipo_evaluacion_id")
+    titulo = validar_string_no_vacio(parametros["titulo"], "titulo")
+    fecha = validar_string_no_vacio(parametros["fecha"], "fecha")
     descripcion = parametros.get("descripcion")
-
     curso = cursos_logic.obtener_curso(curso_id)
-
-    # se tendria que validar que si no es admin, el curso tenga de profesor al usuario ejecutando esta request. 
-    # pero tendria que existir la tabla cursos_docentes 
 
     actualizado = db.reemplazar_evaluacion(
         id,
@@ -113,17 +100,14 @@ def reemplazar_evaluacion(id, parametros):
         tipo_evaluacion_id,
         titulo,
         descripcion,
-        fecha,
-        activo
+        fecha
     )
     if not actualizado:
-        raise NotFoundError(
-            "No se encontró la evaluación"
-        )
+        raise NotFoundError("No se encontró la evaluación")
     return actualizado
 
-def eliminar_evaluacion(id):
-    eliminado = db.eliminar_evaluacion(id)
+def eliminar_evaluacion(id, hard_delete=False):
+    eliminado = db.eliminar_evaluacion(id, hard=hard_delete)
     if not eliminado:
         raise NotFoundError(
             "No se encontró la evaluación"
