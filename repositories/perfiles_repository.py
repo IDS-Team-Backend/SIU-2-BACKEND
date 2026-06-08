@@ -17,7 +17,7 @@ def obtener_perfiles_de_usuario(usuario_id):
     # 2. Profesores: Lo dejo con 'activo = TRUE' hasta que migremos la tabla
     # (Si ya corriste el ALTER TABLE en tu base, cambialo a 'deleted_at IS NULL')
     fila = db.execute_query(
-        "SELECT COUNT(*) AS total FROM profesores WHERE usuario_id = %s AND activo = TRUE",
+        "SELECT COUNT(*) AS total FROM profesores WHERE usuario_id = %s AND deleted_at IS NULL",
         (usuario_id,),
         un_solo_valor=True,
     )

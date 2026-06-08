@@ -144,21 +144,19 @@ def existe_estudiante_para_usuario(usuario_id):
     return result['total'] > 0 if result else False
 
 
-def reemplazar_estudiante(id, padron, carrera, anio_ingreso, activo):
+def reemplazar_estudiante(id, padron, carrera, anio_ingreso):
     query = """
         UPDATE estudiantes
         SET
             padron = %s,
             carrera = %s,
-            anio_ingreso = %s,
-            activo = %s
+            anio_ingreso = %s
         WHERE id = %s
     """
     params = (
         padron,
         carrera,
         anio_ingreso,
-        activo,
         id
     )
     filas = db.execute_query(

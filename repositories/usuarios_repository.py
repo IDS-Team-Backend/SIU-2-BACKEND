@@ -36,13 +36,13 @@ def obtener_usuarios(
         query += " AND EXISTS (SELECT 1 FROM estudiantes e WHERE e.usuario_id = u.id AND e.deleted_at IS NULL)"
 
     if rol == DOCENTE:
-        query += " AND EXISTS (SELECT 1 FROM profesores p WHERE p.usuario_id = u.id AND p.activo = TRUE)"
+        query += " AND EXISTS (SELECT 1 FROM profesores p WHERE p.usuario_id = u.id AND p.deleted_at IS NULL)"
 
     if rol == "pendiente": 
         query += """ 
                     AND u.es_admin = FALSE 
-                    AND NOT EXISTS (SELECT 1 FROM estudiantes e WHERE e.usuario_id = u.id AND e.activo = TRUE)
-                    AND NOT EXISTS (SELECT 1 FROM profesores p WHERE p.usuario_id = u.id AND p.activo = TRUE)
+                    AND NOT EXISTS (SELECT 1 FROM estudiantes e WHERE e.usuario_id = u.id AND e.deleted_at IS NULL)
+                    AND NOT EXISTS (SELECT 1 FROM profesores p WHERE p.usuario_id = u.id AND p.deleted_at IS NULL)
                 """
 
     count_query = "SELECT COUNT(*) as total " + query

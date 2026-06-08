@@ -15,10 +15,10 @@ def _es_propio_profesor(profesor):
     return bool(profesor) and profesor["usuario_id"] == auth.obtener_usuario_id()
 
 
-def obtener_profesores(departamento=None, titulo=None, activo=None,
+def obtener_profesores(departamento=None, titulo=None,
                        usuario_id=None, page_size=20, offset=0):
     return db.obtener_profesores(
-        departamento, titulo, activo, usuario_id,
+        departamento, titulo, usuario_id,
         page_size=page_size, offset=offset,
     )
 

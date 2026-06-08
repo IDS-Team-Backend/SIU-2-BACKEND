@@ -12,7 +12,7 @@ from validators import profesores_validator
 
 profesores_bp = Blueprint("profesores", __name__)
 
-FILTROS_PERMITIDOS = ("departamento", "titulo", "activo", "usuario_id")
+FILTROS_PERMITIDOS = ("departamento", "titulo", "usuario_id")
 
 
 def _parsear_filtros():
@@ -23,14 +23,9 @@ def _parsear_filtros():
             raise ValidationError(
                 f"Filtro '{key}' no permitido. Permitidos: {', '.join(FILTROS_PERMITIDOS)}."
             )
-
-    activo_arg = request.args.get("activo")
-    activo = activo_arg.lower() in ("true", "1") if activo_arg is not None else None
-
     return {
         "departamento": request.args.get("departamento"),
         "titulo": request.args.get("titulo"),
-        "activo": activo,
         "usuario_id": request.args.get("usuario_id", type=int),
     }
 
@@ -106,7 +101,8 @@ def modificar_profesor_parcial(id):
 @profesores_bp.route("/<int:id>", methods=["DELETE"])
 @auth.requiere_roles(ADMIN)
 def eliminar_profesor(id: int):
-    logic.eliminar_profesor(id)
+    param_hard = request.args.get("hard", "false").lower() == "true"
+    logic.eliminar_profesor(id, hard_delete=param_hard)
     return "", 204
 
 
