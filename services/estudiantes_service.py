@@ -15,10 +15,10 @@ def _es_propio_estudiante(estudiante):
     return bool(estudiante) and estudiante["usuario_id"] == auth.obtener_usuario_id()
 
 
-def obtener_estudiantes(carrera=None, anio_ingreso=None, activo=None,
+def obtener_estudiantes(carrera=None, anio_ingreso=None,
                         usuario_id=None, page_size=20, offset=0):
     return db.obtener_estudiantes(
-        carrera, anio_ingreso, activo, usuario_id,
+        carrera, anio_ingreso, usuario_id,
         page_size=page_size, offset=offset
     )
 
@@ -115,8 +115,8 @@ def modificar_estudiante_parcial(id, parametros):
     return actualizado
 
 
-def eliminar_estudiante(id: int):
-    if not db.eliminar_estudiante(id):
+def eliminar_estudiante(id: int, hard_delete=False):
+    if not db.eliminar_estudiante(id, hard=hard_delete):
         raise NotFoundError("No se encontró el estudiante")
 
     return
