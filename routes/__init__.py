@@ -19,10 +19,13 @@ from .notas_router import notas_bp
 from .entregas_router import entregas_bp
 from .clases_router import clases_bp
 from .tipo_evaluaciones import tipos_evaluacion_bp
+from .password_router import password_bp
+
 
 BLUEPRINTS_PUBLICOS = [
     ("/auth",       auth_public_bp),
     ("/materiales", materiales_bp),
+    ("/password",          password_bp)  
 ]
 
 BLUEPRINTS_PRIVADOS = [
