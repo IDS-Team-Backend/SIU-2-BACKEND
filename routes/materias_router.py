@@ -68,7 +68,9 @@ def reemplazar_materia(materia_id):
 @materias_bp.route("/<int:materia_id>", methods=["DELETE"])
 @auth.requiere_roles(ADMIN)
 def eliminar_materia(materia_id: int):
-    logic.eliminar_materia(materia_id)
+    param_hard = request.args.get("hard", "false").lower() == "true"
+    
+    logic.eliminar_materia(materia_id, hard_delete=param_hard)
     return "", 204
 
 @materias_bp.route("/<int:materia_id>/cursos", methods=["GET"])

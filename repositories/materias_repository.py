@@ -5,7 +5,7 @@ def obtener_materias(nombre=None, codigo=None, page_size=20, offset=0):
     query = """
         SELECT m.id, m.nombre, m.codigo
         FROM materias m
-        WHERE 1=1
+        WHERE m.deleted_at IS NULL
     """
     params = []
 
@@ -29,11 +29,15 @@ def crear_materia(nombre, codigo):
     return obtener_materia_por_id(nuevo_id)
 
 def obtener_materia_por_id(materia_id):
-    query = "SELECT * FROM materias WHERE id = %s"
+    query = "SELECT * FROM materias WHERE id = %s AND deleted_at IS NULL"
     return db.execute_query(query, (materia_id,), un_solo_valor=True)
 
-def eliminar_materia(materia_id):
-    query = "DELETE FROM materias WHERE id = %s"
+def eliminar_materia(materia_id, hard=False):
+    if hard:
+        query = "DELETE FROM materias WHERE id = %s"
+    else:
+        query = "UPDATE materias SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s"
+        
     db.execute_query(query, (materia_id,), modifica_db=True)
     return True
 
@@ -58,6 +62,7 @@ def existe_codigo(codigo, excluir_id=None):
             FROM materias
             WHERE codigo = %s
               AND id != %s
+              AND deleted_at IS NULL
         """
         params = (codigo.strip(), excluir_id)
     else:
@@ -65,6 +70,7 @@ def existe_codigo(codigo, excluir_id=None):
             SELECT COUNT(*) as total
             FROM materias
             WHERE codigo = %s
+              AND deleted_at IS NULL
         """
         params = (codigo.strip(),)
 
@@ -75,7 +81,7 @@ def obtener_cursos_de_materia(materia_id, page_size=20, offset=0):
     query = """
         SELECT c.id, c.materia_id, c.nombre, c.anio, c.cuatrimestre
         FROM cursos c
-        WHERE c.materia_id = %s
+        WHERE c.materia_id = %s AND c.deleted_at IS NULL
     """
     params = [materia_id]
     return paginacion.ejecutar(query, params, "id ASC", page_size, offset)
@@ -84,7 +90,7 @@ def contar_cursos_de_materia(materia_id):
     query = """
         SELECT COUNT(*) as total
         FROM cursos
-        WHERE materia_id = %s
+        WHERE materia_id = %s AND deleted_at IS NULL
     """
     result = db.execute_query(query, (materia_id,), un_solo_valor=True)
     return result["total"] if result else 0
