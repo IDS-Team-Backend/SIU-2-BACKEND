@@ -14,6 +14,7 @@ _SELECT_ESTUDIANTE_CURSO = """
         e.padron,
         e.carrera,
         e.anio_ingreso,
+         e.usuario_id,
         u.nombre,
         u.apellido,
         u.email,
