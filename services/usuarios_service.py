@@ -77,8 +77,6 @@ def reemplazar_usuario(id, parametros):
 
     usuario_existente = obtener_usuario_por_id(id)
 
-    if not activo and usuario_existente["activo"]:
-        raise ValidationError("El usuario no se puede dar de baja aca, debe eliminarse con el endpoint DELETE /usuarios/{id}")
 
     if es_admin and not auth.usuario_es(ADMIN):
         raise ForbiddenError("Solo un admin puede asignar el flag es_admin.")
@@ -93,6 +91,6 @@ def reemplazar_usuario(id, parametros):
     
 
     try:
-        db.reemplazar_usuario(id, nombre, apellido, email, dni, es_admin, activo)
+        db.reemplazar_usuario(id, nombre, apellido, email, dni, es_admin)
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe otro usuario con ese email.")
