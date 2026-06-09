@@ -93,7 +93,8 @@ def reemplazar_curso(curso_id):
 @cursos_bp.route("/<int:curso_id>", methods=["DELETE"])
 @auth.requiere_roles(ADMIN)
 def eliminar_curso(curso_id: int):
-    logic.eliminar_curso(curso_id)
+    param_hard = request.args.get("hard", "false").lower() == "true"
+    logic.eliminar_curso(curso_id, hard_delete=param_hard)
     return "", 204
 
 @cursos_bp.route("/<curso_id>", methods=["GET", "PUT", "DELETE"])
