@@ -156,7 +156,7 @@ def reemplazar_usuario(id, nombre, apellido, email, dni, es_admin):
             apellido = %s,
             email = %s,
             dni = %s,
-            es_admin = %s,
+            es_admin = %s
         WHERE id = %s
     """
     params = (
