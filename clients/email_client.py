@@ -25,9 +25,16 @@ def send(to, subject, body, html=False):
         mensaje.set_content(body)
 
     with smtplib.SMTP(EMAIL_CONFIG["HOST"], EMAIL_CONFIG["PORT"]) as smtp:
+        smtp.ehlo()
         if EMAIL_CONFIG["USE_TLS"]:
             smtp.starttls()
-        smtp.login(EMAIL_CONFIG["USERNAME"], EMAIL_CONFIG["PASSWORD"])
+            smtp.ehlo()
+        # Solo autenticar si hay credenciales reales configuradas
+        if EMAIL_CONFIG["USERNAME"] and EMAIL_CONFIG["PASSWORD"]:
+            try:
+                smtp.login(EMAIL_CONFIG["USERNAME"], EMAIL_CONFIG["PASSWORD"])
+            except smtplib.SMTPNotSupportedError:
+                pass  # servidor sin auth (ej: Mailpit)
         smtp.send_message(mensaje)
 
 def enviar_email_qr(to, subject, nombre_alumno, apellido_alumno, clase_nombre, token, expiracion):
@@ -76,9 +83,15 @@ def enviar_email_qr(to, subject, nombre_alumno, apellido_alumno, clase_nombre, t
             filename="codigo_qr.png",
             disposition="inline"
         )
-
     with smtplib.SMTP(EMAIL_CONFIG["HOST"], EMAIL_CONFIG["PORT"]) as smtp:
+        smtp.ehlo()
         if EMAIL_CONFIG["USE_TLS"]:
             smtp.starttls()
-        smtp.login(EMAIL_CONFIG["USERNAME"], EMAIL_CONFIG["PASSWORD"])
+            smtp.ehlo()
+        # Solo autenticar si hay credenciales reales configuradas
+        if EMAIL_CONFIG["USERNAME"] and EMAIL_CONFIG["PASSWORD"]:
+            try:
+                smtp.login(EMAIL_CONFIG["USERNAME"], EMAIL_CONFIG["PASSWORD"])
+            except smtplib.SMTPNotSupportedError:
+                pass  # servidor sin auth (ej: Mailpit)
         smtp.send_message(mensaje)
