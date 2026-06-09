@@ -8,7 +8,8 @@ USE siu2_db;
 CREATE TABLE IF NOT EXISTS materias (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
-    codigo VARCHAR(50) NULL UNIQUE
+    codigo VARCHAR(50) NULL UNIQUE,
+    deleted_at TIMESTAMP NULL DEFAULT NULL
 ) ENGINE=InnoDB;
 
 
@@ -27,7 +28,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     dni BIGINT NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     es_admin BOOLEAN NOT NULL DEFAULT FALSE,
-    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -37,7 +38,7 @@ CREATE TABLE IF NOT EXISTS estudiantes (
     padron BIGINT NOT NULL UNIQUE,
     carrera VARCHAR(150) NOT NULL,
     anio_ingreso INT NOT NULL,
-    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_estudiantes_usuarios
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
@@ -51,7 +52,7 @@ CREATE TABLE IF NOT EXISTS profesores (
     titulo VARCHAR(150) NOT NULL,
     departamento VARCHAR(100) NOT NULL,
     fecha_ingreso DATE NOT NULL,
-    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_profesores_usuarios
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
@@ -64,6 +65,7 @@ CREATE TABLE IF NOT EXISTS cursos (
     nombre VARCHAR(100) NOT NULL,
     anio INT NOT NULL,
     cuatrimestre INT NOT NULL,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     CONSTRAINT fk_cursos_materias 
         FOREIGN KEY (materia_id) REFERENCES materias(id)
         ON DELETE RESTRICT ON UPDATE CASCADE
@@ -108,7 +110,7 @@ CREATE TABLE IF NOT EXISTS evaluaciones (
     titulo VARCHAR(150) NOT NULL,
     descripcion TEXT NULL,
     fecha DATE NOT NULL,
-    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_evaluaciones_cursos 
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
@@ -123,7 +125,7 @@ CREATE TABLE IF NOT EXISTS equipos (
     curso_id INT NOT NULL,
     evaluacion_id INT NOT NULL,
     nombre VARCHAR(100) NOT NULL,
-    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_equipos_cursos 
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
@@ -255,6 +257,7 @@ CREATE TABLE IF NOT EXISTS materiales (
     titulo VARCHAR(255) NOT NULL,
     archivo_url VARCHAR(255) NOT NULL,
     subido_por INT NULL,
+    deleted_at TIMESTAMP NULL DEFAULT NULL.
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_materiales_cursos 
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
