@@ -5,12 +5,10 @@ from utils import paginacion
 def obtener_estudiantes(
     carrera=None,
     anio_ingreso=None,
-    activo=None,
     usuario_id=None,
     page_size=paginacion.PAGE_SIZE_DEFAULT,
     offset=0
 ):
-
     query = """
         SELECT
             e.id,
@@ -18,7 +16,6 @@ def obtener_estudiantes(
             e.padron,
             e.carrera,
             e.anio_ingreso,
-            e.activo,
             e.created_at,
             u.nombre,
             u.apellido,
@@ -26,7 +23,7 @@ def obtener_estudiantes(
             u.dni
         FROM estudiantes e
         INNER JOIN usuarios u ON u.id = e.usuario_id
-        WHERE 1=1
+        WHERE e.deleted_at IS NULL
     """
     params = []
 
@@ -38,13 +35,10 @@ def obtener_estudiantes(
         query += " AND e.anio_ingreso = %s"
         params.append(anio_ingreso)
 
-    if activo is not None:
-        query += " AND e.activo = %s"
-        params.append(activo)
-
     if usuario_id:
         query += " AND e.usuario_id = %s"
         params.append(usuario_id)
+        
 
     return paginacion.ejecutar(
         query,
@@ -82,7 +76,6 @@ def obtener_estudiante_por_id(id):
             e.padron,
             e.carrera,
             e.anio_ingreso,
-            e.activo,
             e.created_at,
             u.nombre,
             u.apellido,
@@ -90,10 +83,9 @@ def obtener_estudiante_por_id(id):
             u.dni
         FROM estudiantes e
         INNER JOIN usuarios u ON u.id = e.usuario_id
-        WHERE e.id = %s
+        WHERE e.id = %s AND e.deleted_at IS NULL
     """
-    resultado = db.execute_query(query, (id,), un_solo_valor=True)
-    return resultado
+    return db.execute_query(query, (id,), un_solo_valor=True)
 
 
 def obtener_estudiante_por_usuario_id(usuario_id):
@@ -104,7 +96,6 @@ def obtener_estudiante_por_usuario_id(usuario_id):
             e.padron,
             e.carrera,
             e.anio_ingreso,
-            e.activo,
             e.created_at,
             u.nombre,
             u.apellido,
@@ -112,10 +103,9 @@ def obtener_estudiante_por_usuario_id(usuario_id):
             u.dni
         FROM estudiantes e
         INNER JOIN usuarios u ON u.id = e.usuario_id
-        WHERE e.usuario_id = %s
+        WHERE e.usuario_id = %s AND e.deleted_at IS NULL
     """
-    resultado = db.execute_query(query, (usuario_id,), un_solo_valor=True)
-    return resultado
+    return db.execute_query(query, (usuario_id,), un_solo_valor=True)
 
 
 def obtener_estudiante_por_padron(padron):
@@ -126,7 +116,6 @@ def obtener_estudiante_por_padron(padron):
             e.padron,
             e.carrera,
             e.anio_ingreso,
-            e.activo,
             e.created_at,
             u.nombre,
             u.apellido,
@@ -134,42 +123,40 @@ def obtener_estudiante_por_padron(padron):
             u.dni
         FROM estudiantes e
         INNER JOIN usuarios u ON u.id = e.usuario_id
-        WHERE e.padron = %s AND e.activo = TRUE
+        WHERE e.padron = %s AND e.deleted_at IS NULL
     """
     return db.execute_query(query, (padron,), un_solo_valor=True)
 
 
 def existe_padron(padron, excluir_id=None):
     if excluir_id is not None:
-        query = "SELECT COUNT(*) as total FROM estudiantes WHERE padron = %s AND id != %s"
+        query = "SELECT COUNT(*) as total FROM estudiantes WHERE padron = %s AND id != %s AND deleted_at IS NULL"
         result = db.execute_query(query, (padron, excluir_id), un_solo_valor=True)
     else:
-        query = "SELECT COUNT(*) as total FROM estudiantes WHERE padron = %s"
+        query = "SELECT COUNT(*) as total FROM estudiantes WHERE padron = %s AND deleted_at IS NULL"
         result = db.execute_query(query, (padron,), un_solo_valor=True)
     return result['total'] > 0 if result else False
 
 
 def existe_estudiante_para_usuario(usuario_id):
-    query = "SELECT COUNT(*) as total FROM estudiantes WHERE usuario_id = %s"
+    query = "SELECT COUNT(*) as total FROM estudiantes WHERE usuario_id = %s AND deleted_at IS NULL"
     result = db.execute_query(query, (usuario_id,), un_solo_valor=True)
     return result['total'] > 0 if result else False
 
 
-def reemplazar_estudiante(id, padron, carrera, anio_ingreso, activo):
+def reemplazar_estudiante(id, padron, carrera, anio_ingreso):
     query = """
         UPDATE estudiantes
         SET
             padron = %s,
             carrera = %s,
-            anio_ingreso = %s,
-            activo = %s
+            anio_ingreso = %s
         WHERE id = %s
     """
     params = (
         padron,
         carrera,
         anio_ingreso,
-        activo,
         id
     )
     filas = db.execute_query(
@@ -200,7 +187,10 @@ def modificar_estudiante_parcial(id, parametros):
     return obtener_estudiante_por_id(id)
 
 
-def eliminar_estudiante(id: int):
-    query = "UPDATE estudiantes SET activo = FALSE WHERE id = %s"
+def eliminar_estudiante(id: int, hard=False):
+    if hard:
+        query = "DELETE FROM usuarios WHERE id = %s"
+    else:
+        query = "UPDATE usuarios SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s"
     filas_afectadas = db.execute_query(query, (id,), modifica_db=True)
     return filas_afectadas > 0

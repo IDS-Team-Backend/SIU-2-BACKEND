@@ -15,10 +15,10 @@ def _es_propio_profesor(profesor):
     return bool(profesor) and profesor["usuario_id"] == auth.obtener_usuario_id()
 
 
-def obtener_profesores(departamento=None, titulo=None, activo=None,
+def obtener_profesores(departamento=None, titulo=None,
                        usuario_id=None, page_size=20, offset=0):
     return db.obtener_profesores(
-        departamento, titulo, activo, usuario_id,
+        departamento, titulo, usuario_id,
         page_size=page_size, offset=offset,
     )
 
@@ -65,13 +65,12 @@ def reemplazar_profesor(id, parametros):
     titulo = parametros["titulo"]
     departamento = parametros["departamento"]
     fecha_ingreso = parametros["fecha_ingreso"]
-    activo = parametros["activo"]
 
     if db.existe_legajo(legajo, excluir_id=id):
         raise DuplicateError("Ya existe otro profesor con ese legajo.")
 
     try:
-        return db.reemplazar_profesor(id, legajo, titulo, departamento, fecha_ingreso, activo)
+        return db.reemplazar_profesor(id, legajo, titulo, departamento, fecha_ingreso)
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe otro profesor con esos datos.")
 
@@ -108,7 +107,7 @@ def modificar_profesor_parcial(id, parametros):
     return actualizado
 
 
-def eliminar_profesor(id: int):
-    if not db.eliminar_profesor(id):
+def eliminar_profesor(id: int, hard_delete=False):
+    if not db.eliminar_profesor(id, hard=hard_delete):
         raise NotFoundError("No se encontró el profesor")
     return

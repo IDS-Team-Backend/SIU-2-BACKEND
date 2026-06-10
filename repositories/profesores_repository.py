@@ -5,7 +5,6 @@ from utils import paginacion
 def obtener_profesores(
     departamento=None,
     titulo=None,
-    activo=None,
     usuario_id=None,
     page_size=paginacion.PAGE_SIZE_DEFAULT,
     offset=0,
@@ -19,7 +18,6 @@ def obtener_profesores(
             p.titulo,
             p.departamento,
             p.fecha_ingreso,
-            p.activo,
             p.created_at,
             u.nombre,
             u.apellido,
@@ -27,7 +25,7 @@ def obtener_profesores(
             u.dni
         FROM profesores p
         INNER JOIN usuarios u ON u.id = p.usuario_id
-        WHERE 1=1
+        WHERE p.deleted_at IS NULL
     """
     params = []
 
@@ -38,10 +36,6 @@ def obtener_profesores(
     if titulo:
         query += " AND p.titulo LIKE %s"
         params.append(f"%{titulo}%")
-
-    if activo is not None:
-        query += " AND p.activo = %s"
-        params.append(activo)
 
     if usuario_id:
         query += " AND p.usuario_id = %s"
@@ -76,7 +70,6 @@ def obtener_profesor_por_id(id):
             p.titulo,
             p.departamento,
             p.fecha_ingreso,
-            p.activo,
             p.created_at,
             u.nombre,
             u.apellido,
@@ -84,7 +77,7 @@ def obtener_profesor_por_id(id):
             u.dni
         FROM profesores p
         INNER JOIN usuarios u ON u.id = p.usuario_id
-        WHERE p.id = %s
+        WHERE p.id = %s AND p.deleted_at IS NULL
     """
     return db.execute_query(query, (id,), un_solo_valor=True)
 
@@ -98,7 +91,6 @@ def obtener_profesor_por_usuario_id(usuario_id):
             p.titulo,
             p.departamento,
             p.fecha_ingreso,
-            p.activo,
             p.created_at,
             u.nombre,
             u.apellido,
@@ -106,28 +98,28 @@ def obtener_profesor_por_usuario_id(usuario_id):
             u.dni
         FROM profesores p
         INNER JOIN usuarios u ON u.id = p.usuario_id
-        WHERE p.usuario_id = %s
+        WHERE p.usuario_id = %s AND p.deleted_at IS NULL
     """
     return db.execute_query(query, (usuario_id,), un_solo_valor=True)
 
 
 def existe_legajo(legajo, excluir_id=None):
     if excluir_id is not None:
-        query = "SELECT COUNT(*) as total FROM profesores WHERE legajo = %s AND id != %s"
+        query = "SELECT COUNT(*) as total FROM profesores WHERE legajo = %s AND id != %s AND deleted_at IS NULL"
         result = db.execute_query(query, (legajo, excluir_id), un_solo_valor=True)
     else:
-        query = "SELECT COUNT(*) as total FROM profesores WHERE legajo = %s"
+        query = "SELECT COUNT(*) as total FROM profesores WHERE legajo = %s AND deleted_at IS NULL"
         result = db.execute_query(query, (legajo,), un_solo_valor=True)
     return result['total'] > 0 if result else False
 
 
 def existe_profesor_para_usuario(usuario_id):
-    query = "SELECT COUNT(*) as total FROM profesores WHERE usuario_id = %s"
+    query = "SELECT COUNT(*) as total FROM profesores WHERE usuario_id = %s AND deleted_at IS NULL"
     result = db.execute_query(query, (usuario_id,), un_solo_valor=True)
     return result['total'] > 0 if result else False
 
 
-def reemplazar_profesor(id, legajo, titulo, departamento, fecha_ingreso, activo):
+def reemplazar_profesor(id, legajo, titulo, departamento, fecha_ingreso):
     query = """
         UPDATE profesores
         SET
@@ -135,10 +127,9 @@ def reemplazar_profesor(id, legajo, titulo, departamento, fecha_ingreso, activo)
             titulo = %s,
             departamento = %s,
             fecha_ingreso = %s,
-            activo = %s
         WHERE id = %s
     """
-    params = (legajo, titulo, departamento, fecha_ingreso, activo, id)
+    params = (legajo, titulo, departamento, fecha_ingreso, id)
     filas = db.execute_query(query, params, modifica_db=True)
     return filas > 0
 
@@ -162,7 +153,10 @@ def modificar_profesor_parcial(id, parametros):
     return obtener_profesor_por_id(id)
 
 
-def eliminar_profesor(id: int):
-    query = "UPDATE profesores SET activo = FALSE WHERE id = %s"
+def eliminar_profesor(id: int, hard=False):
+    if hard:
+        query = "DELETE FROM usuarios WHERE id = %s"
+    else:
+        query = "UPDATE usuarios SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s"
     filas_afectadas = db.execute_query(query, (id,), modifica_db=True)
     return filas_afectadas > 0

@@ -15,24 +15,16 @@ equipo_params = [
     "evaluacion_id",
     "nombre"
 ]
-equipo_update_params = [
-    "curso_id",
-    "evaluacion_id",
-    "nombre",
-    "activo"
-]
 
 def obtener_equipos(
     curso_id=None,
     evaluacion_id=None,
-    nombre=None,
-    activo=None
+    nombre=None
 ):
     return db.obtener_equipos(
         curso_id,
         evaluacion_id,
-        nombre,
-        activo
+        nombre
     )
 
 def crear_equipo(parametros):
@@ -82,7 +74,7 @@ def obtener_equipo_por_id(id):
 
 def reemplazar_equipo(id, parametros):
     validar_body_presente(parametros)
-    for campo in equipo_update_params:
+    for campo in equipo_params:
         if campo not in parametros:
             raise ValidationError(
                 f"El campo '{campo}' es requerido."
@@ -99,7 +91,6 @@ def reemplazar_equipo(id, parametros):
         parametros["nombre"],
         "nombre"
     )
-    activo = parametros["activo"]
     evaluacion = evaluaciones_db.obtener_evaluacion_por_id(
         evaluacion_id
     )
@@ -115,8 +106,7 @@ def reemplazar_equipo(id, parametros):
         id,
         curso_id,
         evaluacion_id,
-        nombre,
-        activo
+        nombre
     )
     if not actualizado:
         raise NotFoundError(
@@ -125,11 +115,8 @@ def reemplazar_equipo(id, parametros):
 
     return actualizado
 
-def eliminar_equipo(id):
-    eliminado = db.eliminar_equipo(id)
+def eliminar_equipo(id, hard_delete=False):
+    eliminado = db.eliminar_equipo(id, hard=hard_delete)
     if not eliminado:
-        raise NotFoundError(
-            "No se encontró el equipo"
-        )
-
+        raise NotFoundError("No se encontró el equipo")
     return

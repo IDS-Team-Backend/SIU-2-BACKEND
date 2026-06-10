@@ -103,7 +103,7 @@ def actualizar_material(id, data):
     db.actualizar_parcial(id, data)
 
 
-def eliminar_material(id):
+def eliminar_material(id, hard_delete=False):
     if not db.obtener_por_id(id):
         raise NotFoundError(f"No existe un material con el ID {id}")
-    db.eliminar(id)
+    db.eliminar(id, hard=hard_delete)

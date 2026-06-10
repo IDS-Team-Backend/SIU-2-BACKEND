@@ -16,17 +16,15 @@ def health_check():
 @equipos_bp.route("/", methods=["GET"])
 @auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
 def obtener_equipos():
-
     curso_id = request.args.get("curso_id")
     evaluacion_id = request.args.get("evaluacion_id")
     nombre = request.args.get("nombre")
-    activo = request.args.get("activo")
 
     equipos, total = logic.obtener_equipos(
         curso_id,
         evaluacion_id,
         nombre,
-        activo
+
     )
 
     if not equipos:
@@ -75,7 +73,8 @@ def reemplazar_equipo(id):
 @equipos_bp.route("/<int:id>", methods=["DELETE"])
 @auth.requiere_roles(ADMIN, DOCENTE)
 def eliminar_equipo(id):
-    logic.eliminar_equipo(id)
+    param_hard = request.args.get("hard", "false").lower() == "true"
+    logic.eliminar_equipo(id, hard_delete=param_hard)
     return "", 204
 
 

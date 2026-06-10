@@ -58,10 +58,9 @@ def obtener_usuario_por_id(id):
     return usuario
 
 
-def eliminar_usuario(id: int):
-    if not db.eliminar_usuario(id):
+def eliminar_usuario(id: int, hard_delete=False):
+    if not db.eliminar_usuario(id, hard=hard_delete):
         raise NotFoundError("No se encontró el usuario")
-        
     return 
 
 def reemplazar_usuario(id, parametros):

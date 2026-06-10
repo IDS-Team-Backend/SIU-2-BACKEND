@@ -5,12 +5,11 @@ def obtener_evaluaciones(
     curso_id=None,
     tipo_evaluacion_id=None,
     titulo=None,
-    fecha=None,
-    activo=None
+    fecha=None
 ):
     query = """
         FROM evaluaciones e
-        WHERE 1=1
+        WHERE e.deleted_at IS NULL
     """
     params = []
     if curso_id:
@@ -25,9 +24,7 @@ def obtener_evaluaciones(
     if fecha:
         query += " AND e.fecha = %s"
         params.append(fecha)
-    if activo is not None:
-        query += " AND e.activo = %s"
-        params.append(activo.lower() == "true")
+
     count_query = """
         SELECT COUNT(*) as total
     """ + query
@@ -49,7 +46,6 @@ def obtener_evaluaciones(
             e.titulo,
             e.descripcion,
             e.fecha,
-            e.activo,
             e.created_at
     """ + query + " ORDER BY e.id ASC"
     lista_evaluaciones = db.execute_query(
@@ -101,7 +97,6 @@ def obtener_evaluacion_por_id(id):
             e.titulo,
             e.descripcion,
             e.fecha,
-            e.activo,
             e.created_at,
             te.es_grupal,
             te.nombre as tipo_evaluacion
@@ -123,8 +118,7 @@ def reemplazar_evaluacion(
     tipo_evaluacion_id,
     titulo,
     descripcion,
-    fecha,
-    activo
+    fecha
 ):
     query = """
         UPDATE evaluaciones
@@ -133,8 +127,7 @@ def reemplazar_evaluacion(
             tipo_evaluacion_id = %s,
             titulo = %s,
             descripcion = %s,
-            fecha = %s,
-            activo = %s
+            fecha = %s
         WHERE id = %s
     """
     params = (
@@ -143,7 +136,6 @@ def reemplazar_evaluacion(
         titulo,
         descripcion,
         fecha,
-        activo,
         id
     )
     filas = db.execute_query(
@@ -153,12 +145,11 @@ def reemplazar_evaluacion(
     )
     return filas > 0
 
-def eliminar_evaluacion(id):
-    query = """
-        UPDATE evaluaciones
-        SET activo = FALSE
-        WHERE id = %s
-    """
+def eliminar_evaluacion(id, hard=False):
+    if hard:
+        query = "DELETE FROM evaluaciones WHERE id = %s"
+    else:
+        query = "UPDATE evaluaciones SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s"
     filas_afectadas = db.execute_query(
         query,
         (id,),

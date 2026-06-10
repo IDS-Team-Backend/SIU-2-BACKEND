@@ -59,7 +59,7 @@ def reemplazar_materia(materia_id, parametros):
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe otra materia con ese código.")
 
-def eliminar_materia(materia_id: int):
+def eliminar_materia(materia_id: int, hard_delete=False):
     materia = db.obtener_materia_por_id(materia_id)
     if not materia:
         raise NotFoundError("No se encontró la materia")
@@ -69,7 +69,7 @@ def eliminar_materia(materia_id: int):
     if total_cursos > 0:
         raise ValidationError("No se puede eliminar la materia porque tiene cursos asociados.")
 
-    db.eliminar_materia(materia_id)
+    db.eliminar_materia(materia_id, hard=hard_delete)
     return
 
 def obtener_cursos_de_materia(materia_id, page_size=20, offset=0):

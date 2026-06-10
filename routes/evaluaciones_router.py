@@ -21,14 +21,12 @@ def obtener_evaluaciones():
     tipo_evaluacion_id = request.args.get("tipo_evaluacion_id")
     titulo = request.args.get("titulo")
     fecha = request.args.get("fecha")
-    activo = request.args.get("activo")
 
     evaluaciones, total = logic.obtener_evaluaciones(
         curso_id,
         tipo_evaluacion_id,
         titulo,
         fecha,
-        activo
     )
 
     if not evaluaciones:
@@ -77,7 +75,9 @@ def reemplazar_evaluacion(id):
 @evaluaciones_bp.route("/<int:id>", methods=["DELETE"])
 @auth.requiere_roles(ADMIN, DOCENTE)
 def eliminar_evaluacion(id):
-    logic.eliminar_evaluacion(id)
+    param_hard = request.args.get("hard", "false").lower() == "true"
+    
+    logic.eliminar_evaluacion(id, hard_delete=param_hard)
     return "", 204
 
 

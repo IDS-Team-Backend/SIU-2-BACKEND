@@ -12,8 +12,7 @@ def obtener_usuarios():
     apellido = request.args.get("apellido")
     dni = request.args.get("dni")
     email = request.args.get("email")
-    rol = request.args.get("rol") # argumento exclusivo de admins para filtrar por rol (admin, alumno, docente, PENDIENTE)
-
+    rol = request.args.get("rol") 
     usuarios, total = logic.obtener_usuarios(nombre, apellido, email, dni, rol)
 
     if not usuarios:
@@ -55,9 +54,9 @@ def reemplazar_usuario(id):
 @usuarios_bp.route("/<int:id>", methods=["DELETE"])
 @auth.requiere_roles(ADMIN)
 def eliminar_usuario(id: int):
-    logic.eliminar_usuario(id)
+    param_hard = request.args.get("hard", "false").lower() == "true"
+    logic.eliminar_usuario(id, hard_delete=param_hard)
     return "", 204
-
 
 # ─── Catch-all para IDs no numéricos ─────────────────────────────────────────
 

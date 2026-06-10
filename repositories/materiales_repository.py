@@ -6,7 +6,7 @@ def obtener_todos(curso_id=None, subido_por=None, page_size=20, offset=0):
     query = """
         SELECT id, curso_id, titulo, archivo_url, subido_por, created_at
         FROM materiales
-        WHERE 1=1
+        WHERE deleted_at IS NULL
     """
     params = []
 
@@ -25,7 +25,7 @@ def obtener_por_id(id):
     query = """
         SELECT id, curso_id, titulo, archivo_url, subido_por, created_at
         FROM materiales
-        WHERE id = %s
+        WHERE id = %s AND deleted_at IS NULL
     """
     return db.execute_query(query, (id,), un_solo_valor=True)
 
@@ -66,6 +66,10 @@ def actualizar_parcial(id, data):
     db.execute_query(query, params, modifica_db=True)
 
 
-def eliminar(id):
-    query = "DELETE FROM materiales WHERE id = %s"
+def eliminar(id, hard=False):
+    if hard:
+        query = "DELETE FROM materiales WHERE id = %s"
+    else:
+        query = "UPDATE materiales SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s"
+        
     db.execute_query(query, (id,), modifica_db=True)

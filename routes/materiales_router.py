@@ -60,6 +60,7 @@ def actualizar_material(id):
 @materiales_bp.route("/<int:id>", methods=["DELETE"])
 @auth.requiere_roles(ADMIN, DOCENTE)
 def eliminar_material(id):
-    logic.eliminar_material(id)
+    param_hard = request.args.get("hard", "false").lower() == "true"
+    logic.eliminar_material(id, hard_delete=param_hard)
     return "", 204
  

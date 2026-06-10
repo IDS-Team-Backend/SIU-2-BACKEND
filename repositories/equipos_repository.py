@@ -3,12 +3,11 @@ import db
 def obtener_equipos(
     curso_id=None,
     evaluacion_id=None,
-    nombre=None,
-    activo=None
+    nombre=None
 ):
     query = """
         FROM equipos e
-        WHERE 1=1
+        WHERE e.deleted_at IS NULL
     """
     params = []
     if curso_id:
@@ -20,9 +19,7 @@ def obtener_equipos(
     if nombre:
         query += " AND e.nombre LIKE %s"
         params.append(f"%{nombre}%")
-    if activo is not None:
-        query += " AND e.activo = %s"
-        params.append(activo.lower() == "true")
+
     count_query = """
         SELECT COUNT(*) as total
     """ + query
@@ -42,7 +39,6 @@ def obtener_equipos(
             e.curso_id,
             e.evaluacion_id,
             e.nombre,
-            e.activo,
             e.created_at
     """ + query + " ORDER BY e.id ASC"
 
@@ -86,7 +82,6 @@ def obtener_equipo_por_id(id):
             e.curso_id,
             e.evaluacion_id,
             e.nombre,
-            e.activo,
             e.created_at
         FROM equipos e
         WHERE e.id = %s
@@ -103,8 +98,7 @@ def reemplazar_equipo(
     id,
     curso_id,
     evaluacion_id,
-    nombre,
-    activo
+    nombre
 ):
     query = """
         UPDATE equipos
@@ -119,7 +113,6 @@ def reemplazar_equipo(
         curso_id,
         evaluacion_id,
         nombre,
-        activo,
         id
     )
     filas = db.execute_query(
@@ -130,12 +123,11 @@ def reemplazar_equipo(
 
     return filas > 0
 
-def eliminar_equipo(id):
-    query = """
-        UPDATE equipos
-        SET activo = FALSE
-        WHERE id = %s
-    """
+def eliminar_equipo(id, hard=False):
+    if hard:
+        query = "DELETE FROM equipos WHERE id = %s"
+    else:
+        query = "UPDATE equipos SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s"
     filas_afectadas = db.execute_query(
         query,
         (id,),

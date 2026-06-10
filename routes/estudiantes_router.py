@@ -12,7 +12,7 @@ from validators import estudiantes_validator
 
 estudiantes_bp = Blueprint("estudiantes", __name__)
 
-FILTROS_PERMITIDOS = ("carrera", "anio_ingreso", "activo", "usuario_id")
+FILTROS_PERMITIDOS = ("carrera", "anio_ingreso", "usuario_id")
 
 
 def _parsear_filtros():
@@ -23,14 +23,9 @@ def _parsear_filtros():
             raise ValidationError(
                 f"Filtro '{key}' no permitido. Permitidos: {', '.join(FILTROS_PERMITIDOS)}."
             )
-
-    activo_arg = request.args.get("activo")
-    activo = activo_arg.lower() in ("true", "1") if activo_arg is not None else None
-
     return {
         "carrera": request.args.get("carrera"),
         "anio_ingreso": request.args.get("anio_ingreso", type=int),
-        "activo": activo,
         "usuario_id": request.args.get("usuario_id", type=int),
     }
 
@@ -57,6 +52,7 @@ def obtener_estudiantes():
         "page_size": page_size,
         "total_paginas": total_paginas,
     }), 200
+
 
 
 @estudiantes_bp.route("/", methods=["POST"])
@@ -113,7 +109,8 @@ def modificar_estudiante_parcial(id):
 @estudiantes_bp.route("/<int:id>", methods=["DELETE"])
 @auth.requiere_roles(ADMIN)
 def eliminar_estudiante(id: int):
-    logic.eliminar_estudiante(id)
+    param_hard = request.args.get("hard", "false").lower() == "true"
+    logic.eliminar_estudiante(id, hard_delete=param_hard)
     return "", 204
 
 

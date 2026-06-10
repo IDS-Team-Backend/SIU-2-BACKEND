@@ -85,8 +85,8 @@ def obtener_curso(id):
         raise NotFoundError("No se encontró el curso")
     return curso
 
-def eliminar_curso(id: int):
-    curso = db.obtener_curso_por_id(id)
+def eliminar_curso(id: int, hard_delete=False):
+    curso = db.obtener_curso_por_id(id, hard_delete)
     if not curso:
         raise NotFoundError("No se encontró el curso")
     db.eliminar_curso(id)
