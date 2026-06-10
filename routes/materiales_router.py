@@ -6,11 +6,14 @@ from utils import auth_validator as auth
 
 materiales_bp = Blueprint("materiales", __name__)
 
-
-materiales_bp.before_request(auth.validar_token)
+# Solo protege las rutas que modifican datos
+@materiales_bp.before_request
+def proteger_rutas_modificacion():
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        auth.validar_token()
 
 @materiales_bp.route("/", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
+
 def obtener_materiales():
     curso_id   = request.args.get("curso_id")
     subido_por = request.args.get("subido_por")
@@ -27,7 +30,7 @@ def obtener_materiales():
  
  
 @materiales_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
+
 def obtener_material(id):
     material = logic.obtener_material_por_id(id)
     return jsonify(material), 200
