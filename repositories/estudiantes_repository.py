@@ -181,9 +181,7 @@ def modificar_estudiante_parcial(id, parametros):
     query = f"UPDATE estudiantes SET {', '.join(campos)} WHERE id = %s"
     valores.append(id)
 
-    filas = db.execute_query(query, tuple(valores), modifica_db=True)
-    if filas == 0:
-        return None
+    db.execute_query(query, tuple(valores), modifica_db=True)
     return obtener_estudiante_por_id(id)
 
 
