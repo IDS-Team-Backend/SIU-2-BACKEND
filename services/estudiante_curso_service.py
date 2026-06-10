@@ -1,12 +1,10 @@
-import csv
-import io
-
 import mysql.connector
 
 import repositories.estudiante_curso_repository as db
 import repositories.estudiantes_repository as estudiantes_repo
 import repositories.cursos_repository as cursos_repo
-from utils.error_handlers import NotFoundError, DuplicateError, ValidationError
+from utils.csv_handler import leer_csv
+from utils.error_handlers import NotFoundError, DuplicateError
 
 
 def _validar_estudiante_y_curso(estudiante_id, curso_id):
@@ -101,25 +99,13 @@ def eliminar_estudiante_curso(id):
 
 
 def importar_inscripciones_por_lote(archivo_file):
-    if not archivo_file:
-        raise ValidationError("No se proporcionó ningún archivo")
-
-    try:
-        stream = io.TextIOWrapper(archivo_file.stream, encoding="utf-8-sig", newline="")
-        lector = csv.DictReader(stream)
-        columnas = set(lector.fieldnames or [])
-    except Exception as e:
-        raise ValidationError(f"Error al leer el archivo CSV: {str(e)}")
-
-    columnas_requeridas = {'padron', 'curso_id'}
-    if not columnas_requeridas.issubset(columnas):
-        raise ValidationError("El archivo debe contener las columnas 'padron' y 'curso_id'")
+    filas = leer_csv(archivo_file, columnas_requeridas={'padron', 'curso_id'})
 
     guardados = 0
     ignorados_duplicados = 0
     errores = []
 
-    for index, fila in enumerate(lector):
+    for index, fila in enumerate(filas):
         nro_linea = index + 2  # +1 por el encabezado, +1 porque enumerate arranca en 0
 
         try:
