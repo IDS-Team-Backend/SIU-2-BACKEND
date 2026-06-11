@@ -56,11 +56,12 @@ def signup():
 
     return respuesta, 200
 
-@auth_private_bp.get("/me")  # devuelve el usuario logueado
+@auth_private_bp.get("/me")  # devuelve el usuario logueado y sus perfiles 
 def get_me():
     usuario_id = auth.obtener_usuario_id()
     usuario = usuarios_logic.obtener_usuario_por_id(usuario_id)
-    return jsonify({"usuario": usuario}), 200
+    perfiles = perfiles_db.obtener_perfiles_de_usuario(usuario_id)
+    return jsonify({"usuario": usuario, "perfiles": perfiles}), 200
 
 
 @auth_private_bp.get("/me/perfiles")  # perfiles del usuario logueado, recalculados desde DB
