@@ -94,7 +94,7 @@ def eliminar_clase(clase_id): # esto es un soft delete, con delete_at = datetime
 
 def buscar_clase_superpuesta(profesor_id, fecha_hora_inicio, fecha_hora_fin, clase_id=None):
     query = """
-        SELECT id, nombre, fecha_hora_inicio, fecha_hora_fin 
+        SELECT id, nombre, fecha_hora_inicio, fecha_hora_fin, curso_id 
         FROM clases 
         WHERE profesor_id = %s 
         AND deleted_at IS NULL 

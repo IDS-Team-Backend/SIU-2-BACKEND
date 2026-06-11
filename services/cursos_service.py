@@ -13,7 +13,7 @@ def obtener_cursos_del_usuario_actual(usuario_id, rol):
         cursos = db.obtener_cursos_del_alumno(usuario_id)
     elif rol == DOCENTE:
         profesor = profesores_db.obtener_profesor_por_usuario_id(usuario_id)
-        if not profesor or not profesor.get("activo"):
+        if not profesor:
             raise NotFoundError("El usuario no tiene un perfil docente activo.")
         cursos = db.obtener_cursos_del_docente(profesor["id"])
     else:

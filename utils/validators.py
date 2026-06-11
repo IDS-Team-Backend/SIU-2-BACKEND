@@ -73,4 +73,4 @@ def validar_rango_fecha(fecha_hora_inicio: str, fecha_hora_fin: str) -> None:
 
 def es_estado_clase_valido(estado: str) -> bool:
     """Valida si un estado de clase enviado por el cliente es correcto."""
-    return estado in ESTADOS_CLASE
+    return estado.lower() in ESTADOS_CLASE
