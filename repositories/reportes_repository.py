@@ -28,7 +28,8 @@ def obtener_alumnos_reporte(
         INNER JOIN usuarios u ON e.usuario_id = u.id
         LEFT JOIN estudiante_curso ec ON e.id = ec.estudiante_id
         LEFT JOIN notas n ON e.id = n.alumno_id
-        WHERE e.activo = TRUE
+        WHERE e.deleted_at IS NULL 
+          AND u.deleted_at IS NULL
     """
     params = []
     
@@ -100,7 +101,7 @@ def obtener_promedio_por_evaluacion(curso_id):
         FROM evaluaciones ev
         INNER JOIN tipos_evaluacion te ON ev.tipo_evaluacion_id = te.id
         LEFT JOIN notas n ON ev.id = n.evaluacion_id
-        WHERE ev.curso_id = %s AND ev.activo = TRUE
+        WHERE ev.curso_id = %s AND ev.deleted_at IS NULL
         GROUP BY ev.id, ev.titulo, te.nombre
         ORDER BY ev.fecha ASC
     """
@@ -115,7 +116,7 @@ def obtener_distribucion_notas(curso_id):
         INNER JOIN evaluaciones ev
             ON ev.id = n.evaluacion_id
         WHERE ev.curso_id = %s
-          AND ev.activo = TRUE
+          AND ev.deleted_at IS NULL
         GROUP BY FLOOR(n.nota)
         ORDER BY rango
     """
@@ -132,7 +133,7 @@ def obtener_promedio_por_tipo(curso_id):
         INNER JOIN tipos_evaluacion te
             ON te.id = ev.tipo_evaluacion_id
         WHERE ev.curso_id = %s
-          AND ev.activo = TRUE
+          AND ev.deleted_at IS NULL
         GROUP BY te.id, te.nombre
     """
     return db.execute_query(query, (curso_id,))
@@ -140,11 +141,12 @@ def obtener_promedio_por_tipo(curso_id):
 def obtener_estado_cursada(curso_id):
     query = """
         SELECT
-            estado,
+            ec.estado,
             COUNT(*) cantidad
-        FROM estudiante_curso
-        WHERE curso_id = %s
-        GROUP BY estado
+        FROM estudiante_curso ec
+        INNER JOIN estudiantes e ON ec.estudiante_id = e.id
+        WHERE ec.curso_id = %s AND e.deleted_at IS NULL
+        GROUP BY ec.estado
     """
     return db.execute_query(query, (curso_id,))
 
@@ -179,7 +181,9 @@ def obtener_equipos_reporte(curso_id):
         LEFT JOIN equipo_integrantes ei ON eq.id = ei.equipo_id
         LEFT JOIN estudiantes e ON ei.alumno_id = e.id
         LEFT JOIN usuarios u ON e.usuario_id = u.id
-        WHERE eq.curso_id = %s AND eq.activo = TRUE
+        WHERE eq.curso_id = %s 
+          AND eq.deleted_at IS NULL
+          AND ev.deleted_at IS NULL
         GROUP BY eq.id, eq.nombre, ev.titulo
         ORDER BY eq.nombre ASC
     """
