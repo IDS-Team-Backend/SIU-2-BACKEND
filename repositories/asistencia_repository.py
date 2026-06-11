@@ -33,7 +33,6 @@ def obtener_alumnos_inscriptos_de_curso(curso_id):
 			e.padron,
 			e.carrera,
 			e.anio_ingreso,
-			e.activo,
 			u.nombre,
 			u.apellido,
 			u.email,
@@ -43,8 +42,8 @@ def obtener_alumnos_inscriptos_de_curso(curso_id):
 		INNER JOIN usuarios u ON u.id = e.usuario_id
 		WHERE ec.curso_id = %s
 		  AND ec.estado = 'activo'
-		  AND e.activo = TRUE
-		  AND u.activo = TRUE
+		  AND e.deleted_at IS NULL
+		  AND u.deleted_at IS NULL
 		ORDER BY u.apellido ASC, u.nombre ASC, e.id ASC
 	"""
 	return db.execute_query(query, (curso_id,)) or []
@@ -165,8 +164,8 @@ def obtener_asistencias_de_clase(clase_id):
 		   AND a.alumno_id = e.id
 		INNER JOIN clases c ON c.id = %s AND c.curso_id = ec.curso_id
 		WHERE ec.estado = 'activo'
-		  AND e.activo = TRUE
-		  AND u.activo = TRUE
+		  AND e.deleted_at IS NULL
+		  AND u.deleted_at IS NULL
 		  AND c.deleted_at IS NULL
 		ORDER BY u.apellido ASC, u.nombre ASC, e.id ASC
 	"""

@@ -67,7 +67,7 @@ def _validar_permiso_docente_sobre_clase(clase):
 		return
 
 	docente = profesores_repository.obtener_profesor_por_usuario_id(auth.obtener_usuario_id())
-	if not docente or not docente.get("activo"):
+	if not docente:
 		raise UnauthorizedError("No tenés un perfil docente activo.")
 
 	if not curso_docentes_db.docente_pertenece_activamente_a_curso(docente["id"], clase["curso_id"]):
@@ -108,7 +108,7 @@ def generar_qrs_de_asistencia(clase_id):
 		)
 
 		enviar_email_qr(
-			to="ffernandez.joaco@gmail.com",
+			to="nibefa9655@herojp.com",
 			subject=f"QR de Asistencia - {notificacion['clase']}",
 			nombre_alumno=notificacion["nombre"],
 			apellido_alumno=notificacion["apellido"],
@@ -168,7 +168,7 @@ def obtener_asistencias_por_clase(clase_id):
 		"asistencias": [
 			_serializar_valor(
 				{
-					"usuario_id": asistencia["usuario_id"],
+					"alumno_id": asistencia["alumno_id"],
 					"nombre": asistencia["nombre"],
 					"apellido": asistencia["apellido"],
 					"padron": asistencia["padron"],
