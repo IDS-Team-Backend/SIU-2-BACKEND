@@ -41,7 +41,7 @@ def _verificar_token_reset(token):
 
     # FIX: consultar password_hash directamente
     fila = db.execute_query(
-        "SELECT id, password_hash FROM usuarios WHERE id = %s AND activo = TRUE",
+        "SELECT id, password_hash FROM usuarios WHERE id = %s AND deleted_at IS NULL",
         (payload["user_id"],),
         un_solo_valor=True,
     )
@@ -58,7 +58,18 @@ def _verificar_token_reset(token):
 def solicitar_reset(email, url_base_frontend):
     usuario = usuarios_db.get_user_by_email(email)
     if not usuario:
-        return
+        return  # silencioso
+
+    # Solo admin y docentes pueden resetear password — estudiantes no reciben email ni revelamos el motivo
+    es_admin   = usuario.get("es_admin", False)
+    es_docente = db.execute_query(
+        "SELECT id FROM profesores WHERE usuario_id = %s AND deleted_at IS NULL",
+        (usuario["id"],),
+        un_solo_valor=True,
+    )
+
+    if not es_admin and not es_docente:
+        return  # silencioso — estudiante, no enviamos email ni revelamos el motivo
 
     token = _crear_token_reset(usuario)
     url_reset = f"{url_base_frontend}/recuperar/confirmar?token={token}"
@@ -108,10 +119,9 @@ def cambiar_password_autenticado(usuario_id, password_actual, nueva_password, co
 
     # Consultar hash directamente — obtener_usuario_por_id no lo incluye
     fila = db.execute_query(
-        "SELECT id, password_hash FROM usuarios WHERE id = %s AND activo = TRUE",
-        (usuario_id,),
-        un_solo_valor=True,
-    )
+        "SELECT id, password_hash FROM usuarios WHERE id = %s AND deleted_at IS NULL",
+        (usuario_id,), un_solo_valor=True,
+        )
     if not fila:
         raise NotFoundError("Usuario no encontrado.")
 

@@ -186,7 +186,7 @@ def get_user_by_dni(dni):
 
 
 def get_user_by_email(email):
-    query = "SELECT * FROM usuarios WHERE email = %s AND AND deleted_at IS NULL"
+    query = "SELECT * FROM usuarios WHERE email = %s AND deleted_at IS NULL"
     params = (email,)
 
     result = db.execute_query(query, params)
