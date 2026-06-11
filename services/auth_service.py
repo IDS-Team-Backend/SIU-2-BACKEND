@@ -5,6 +5,7 @@ import repositories.perfiles_repository as perfiles_db
 from utils.error_handlers import NotFoundError, ValidationError
 import utils.JWT_handler as TokenHandler
 import utils.validators as validator
+import repositories.auth_repository as auth_db
 
 signup_required_fields = ["nombre", "apellido", "dni", "email", "password"]
 
@@ -79,3 +80,11 @@ def crear_usuario(args):
     token = TokenHandler.create_token(new_user, [])
 
     return new_user, token
+
+def get_usuario_completo(usuario_id):
+    usuario = auth_db.obtener_usuario_completo(usuario_id)
+
+    if not usuario:
+        raise NotFoundError("No se encontró el usuario")
+
+    return usuario

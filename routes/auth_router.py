@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, make_response, request
 from constants import ADMIN, DOCENTE, ALUMNO
 import services.auth_service as logic
 import repositories.perfiles_repository as perfiles_db
+import services.usuarios_service as usuarios_logic
 from utils import auth_validator as auth
 
 
@@ -54,6 +55,13 @@ def signup():
     )
 
     return respuesta, 200
+
+@auth_private_bp.get("/me")  # devuelve el usuario logueado y sus perfiles 
+def get_me():
+    usuario_id = auth.obtener_usuario_id()
+    usuario = logic.get_usuario_completo(usuario_id) # devuelve el usuario y si existe, su ID de profesor o alumno
+    perfiles = perfiles_db.obtener_perfiles_de_usuario(usuario_id)
+    return jsonify({"usuario": usuario, "perfiles": perfiles}), 200
 
 
 @auth_private_bp.get("/me/perfiles")  # perfiles del usuario logueado, recalculados desde DB

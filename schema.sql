@@ -257,7 +257,7 @@ CREATE TABLE IF NOT EXISTS materiales (
     titulo VARCHAR(255) NOT NULL,
     archivo_url VARCHAR(255) NOT NULL,
     subido_por INT NULL,
-    deleted_at TIMESTAMP NULL DEFAULT NULL.
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_materiales_cursos 
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
