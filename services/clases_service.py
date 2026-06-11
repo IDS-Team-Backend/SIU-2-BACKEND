@@ -4,6 +4,7 @@ import repositories.clases_repository as db
 import repositories.profesores_repository as profesores_db
 from services import cursos_service
 from constants import ADMIN, ESTADOS_CLASE, TIPOS_CLASE, MODALIDADES_CLASE
+from services.profesores_service import obtener_profesor_me
 from utils.error_handlers import NotFoundError, ValidationError
 import utils.validators as validator
 import utils.auth_validator as auth
@@ -17,8 +18,6 @@ def validar_profesor_asignado(profesor_id):
     profesor = profesores_db.obtener_profesor_por_id(profesor_id)
     if not profesor:
         raise NotFoundError("Profesor no existe")
-    if not profesor["activo"]:
-        raise ValidationError("El profesor asignado está dado de baja.")
 
 
 def validar_permisos_para_crear_clase(profesor_id):
@@ -38,7 +37,7 @@ def validar_disponibilidad_profesor(profesor_id, fecha_hora_inicio, fecha_hora_f
         )
     
     if clase_superpuesta:
-        raise ValidationError(f"El profesor tiene una clase superpuesta: {clase_superpuesta['nombre']} (ID: {clase_superpuesta['id']}) que va desde {clase_superpuesta['fecha_hora_inicio']} hasta {clase_superpuesta['fecha_hora_fin']}.")
+        raise ValidationError(f"El profesor tiene una clase superpuesta en el curso : {clase_superpuesta['curso_id']} (clase ID: {clase_superpuesta['id']}) que va desde {clase_superpuesta['fecha_hora_inicio']} hasta {clase_superpuesta['fecha_hora_fin']}.")
 
 def validar_clase(parametros, parametros_obligatorios, estado_default=ESTADOS_CLASE[0], clase_por_actualizarse=None):
     # limpiar los espacios de los argumentos
@@ -73,13 +72,14 @@ def validar_clase(parametros, parametros_obligatorios, estado_default=ESTADOS_CL
     validar_permisos_para_crear_clase(profesor_id)
 
     validar_profesor_asignado(profesor_id)
+
+    if not validator.es_estado_clase_valido(status):
+        raise ValidationError(f"Estado de clase inválido. Estados válidos: {', '.join(ESTADOS_CLASE)}")
     
     if status != ESTADOS_CLASE[1]:
         # que no tenga ninguna clase superpuesta en ese rango horario
         validar_disponibilidad_profesor(parametros["profesor_id"], parametros["fecha_hora_inicio"], parametros["fecha_hora_fin"], clase_por_actualizarse)
 
-    if not validator.es_estado_clase_valido(status):
-        raise ValidationError(f"Estado de clase inválido. Estados válidos: {', '.join(ESTADOS_CLASE)}")
 
     validar_campos_cronograma(parametros)
 
@@ -159,8 +159,10 @@ def actualizar_clase(clase_id, parametros):
 
     if clase_por_actualizarse["deleted_at"] is not None:
         raise ValidationError("No se puede modificar una clase eliminada.")
+    
+    docente_logueado = obtener_profesor_me()
 
-    if not auth.usuario_es(ADMIN) and auth.obtener_usuario_id() != clase_por_actualizarse["profesor_id"]:
+    if not auth.usuario_es(ADMIN) and docente_logueado["id"] != clase_por_actualizarse["profesor_id"]:
         raise ValidationError("Los docentes solo pueden modificar sus propias clases.")
     
     # if clase_por_actualizarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
@@ -194,7 +196,9 @@ def actualizar_clase_parcial(clase_id, parametros):
 
     clase_por_actualizarse = get_clase_by_id(clase_id)
 
-    if not auth.usuario_es(ADMIN) and auth.obtener_usuario_id() != clase_por_actualizarse["profesor_id"]:
+    docente_logueado = obtener_profesor_me()
+
+    if not auth.usuario_es(ADMIN) and docente_logueado["id"] != clase_por_actualizarse["profesor_id"]:
         raise ValidationError("Los docentes solo pueden modificar sus propias clases.")
     
     if clase_por_actualizarse["deleted_at"] is not None:
@@ -249,7 +253,9 @@ def eliminar_clase(clase_id):
     if clase_por_eliminarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
         raise ValidationError("No se pueden modificar ni eliminar clases que ya finalizaron.")
 
-    if not auth.usuario_es(ADMIN) and auth.obtener_usuario_id() != clase_por_eliminarse["profesor_id"]:
+    docente_logueado = obtener_profesor_me()
+
+    if not auth.usuario_es(ADMIN) and docente_logueado["id"] != clase_por_eliminarse["profesor_id"]:
         raise ValidationError("Los docentes solo pueden eliminar sus propias clases.")
     
     db.eliminar_clase(clase_id)
