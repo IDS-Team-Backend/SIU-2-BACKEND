@@ -27,10 +27,13 @@ def obtener_cursos_del_docente(docente_id):
 
 def obtener_cursos(materia_id=None, nombre=None, anio=None, cuatrimestre=None, docente_id=None, page_size=20, offset=0):
     query = """
-        SELECT c.id, c.materia_id, c.nombre, c.anio, c.cuatrimestre
+        SELECT c.id, c.materia_id, c.nombre, c.anio, c.cuatrimestre,
+               c.estado, c.activa, m.nombre AS materia_nombre
         FROM cursos c
+        INNER JOIN materias m ON m.id = c.materia_id
     """
-    
+
+    # si se filtra por docente, hay que hacer un join
     if docente_id:
         query += " INNER JOIN curso_docentes cd ON c.id = cd.curso_id"
 
@@ -57,7 +60,7 @@ def obtener_cursos(materia_id=None, nombre=None, anio=None, cuatrimestre=None, d
         query += " AND c.cuatrimestre = %s"
         params.append(cuatrimestre)
 
-    return paginacion.ejecutar(query, params, "c.id ASC", page_size, offset)
+    return paginacion.ejecutar(query, params, "c.anio DESC, c.cuatrimestre DESC, c.id DESC", page_size, offset)
 
 def obtener_docentes_por_cursos(curso_ids):
     if not curso_ids:
@@ -92,9 +95,110 @@ def crear_cursos(materia_id, nombre, anio, cuatrimestre):
     nuevo_id = db.execute_query(query, values, modifica_db=True)
     return obtener_curso_por_id(nuevo_id)
 
+
+def crear_cursada(materia_id, nombre, anio, cuatrimestre,
+                  descripcion, modalidad, carrera, horas_semanales):
+    """Crea una cursada con los campos descriptivos (estado 'abierta', activa FALSE por default)."""
+    query = """
+        INSERT INTO cursos
+            (materia_id, nombre, anio, cuatrimestre,
+             descripcion, modalidad, carrera, horas_semanales)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    values = (materia_id, nombre.strip(), anio, cuatrimestre,
+              descripcion, modalidad, carrera, horas_semanales)
+    nuevo_id = db.execute_query(query, values, modifica_db=True)
+    return obtener_curso_por_id(nuevo_id)
+
+
+def existe_cursada_en_periodo(materia_id, anio, cuatrimestre):
+    fila = db.execute_query(
+        "SELECT 1 FROM cursos WHERE materia_id = %s AND anio = %s AND cuatrimestre = %s LIMIT 1",
+        (materia_id, anio, cuatrimestre), un_solo_valor=True,
+    )
+    return fila is not None
+
 def obtener_curso_por_id(curso_id):
     query = "SELECT * FROM cursos WHERE id = %s AND deleted_at IS NULL"
     return db.execute_query(query, (curso_id,), un_solo_valor=True)
+
+
+def obtener_curso_detalle(curso_id):
+    """Curso + datos de la materia (nombre y codigo) para la vista pública."""
+    query = """
+        SELECT
+            c.id,
+            c.materia_id,
+            c.nombre,
+            c.anio,
+            c.cuatrimestre,
+            c.descripcion,
+            c.modalidad,
+            c.carrera,
+            c.horas_semanales,
+            c.estado,
+            c.activa,
+            m.nombre AS materia_nombre,
+            m.codigo AS codigo
+        FROM cursos c
+        INNER JOIN materias m ON m.id = c.materia_id
+        WHERE c.id = %s
+    """
+    return db.execute_query(query, (curso_id,), un_solo_valor=True)
+
+
+def cambiar_estado(curso_id, estado):
+    query = "UPDATE cursos SET estado = %s WHERE id = %s"
+    db.execute_query(query, (estado, curso_id), modifica_db=True)
+    return obtener_curso_por_id(curso_id)
+
+
+def obtener_curso_activo_id():
+    """Id de la cursada marcada como activa, o None si ninguna lo está."""
+    fila = db.execute_query(
+        "SELECT id FROM cursos WHERE activa = TRUE ORDER BY id ASC LIMIT 1",
+        un_solo_valor=True,
+    )
+    return fila["id"] if fila else None
+
+
+def obtener_primer_curso_id():
+    fila = db.execute_query("SELECT id FROM cursos ORDER BY id ASC LIMIT 1", un_solo_valor=True)
+    return fila["id"] if fila else None
+
+
+def activar_curso(curso_id):
+    # Deja exactamente una cursada en activa = TRUE.
+    db.execute_query("UPDATE cursos SET activa = (id = %s)", (curso_id,), modifica_db=True)
+    return obtener_curso_por_id(curso_id)
+
+
+def finalizar_curso(curso_id):
+    db.execute_query(
+        "UPDATE cursos SET estado = 'finalizada' WHERE id = %s",
+        (curso_id,), modifica_db=True,
+    )
+
+
+def obtener_stats(curso_id):
+    """Conteos para las tarjetas de la vista del curso."""
+    alumnos = db.execute_query(
+        "SELECT COUNT(*) AS total FROM estudiante_curso WHERE curso_id = %s AND estado = 'activo'",
+        (curso_id,), un_solo_valor=True,
+    )
+    materiales = db.execute_query(
+        "SELECT COUNT(*) AS total FROM materiales WHERE curso_id = %s",
+        (curso_id,), un_solo_valor=True,
+    )
+    evaluaciones = db.execute_query(
+        "SELECT COUNT(*) AS total FROM evaluaciones WHERE curso_id = %s AND activo = TRUE",
+        (curso_id,), un_solo_valor=True,
+    )
+    return {
+        "alumnos":      alumnos["total"] if alumnos else 0,
+        "materiales":   materiales["total"] if materiales else 0,
+        "evaluaciones": evaluaciones["total"] if evaluaciones else 0,
+    }
 
 def eliminar_curso(curso_id, hard=False):
     if hard:
@@ -107,7 +211,14 @@ def eliminar_curso(curso_id, hard=False):
 def reemplazar_curso(curso_id, params):
     query = """
         UPDATE cursos
-        SET materia_id = %s, nombre = %s, anio = %s, cuatrimestre = %s
+        SET materia_id = %s,
+            nombre = %s,
+            anio = %s,
+            cuatrimestre = %s,
+            descripcion = %s,
+            modalidad = %s,
+            carrera = %s,
+            horas_semanales = %s
         WHERE id = %s AND deleted_at IS NULL
     """
     values = (
@@ -115,6 +226,10 @@ def reemplazar_curso(curso_id, params):
         params["nombre"].strip(),
         params["anio"],
         params["cuatrimestre"],
+        params.get("descripcion"),
+        params.get("modalidad"),
+        params.get("carrera"),
+        params.get("horas_semanales"),
         curso_id
     )
     db.execute_query(query, values, modifica_db=True)

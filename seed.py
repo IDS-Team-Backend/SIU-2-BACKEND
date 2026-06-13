@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash
 
 def seed_materias():
     materias = [
-        ("Algoritmos y Programación", "75.40"),
+        ("Introducción al Desarrollo de Software", "75.40"),
         ("Base de Datos", "75.06"),
         ("Organización de Datos", "75.41"),
     ]
@@ -49,7 +49,7 @@ def seed_usuarios():
         ("Franco",     "Dimeola",     "fdimeola@fi.uba.ar",     44100002, password, False),
         ("Federico",   "Folgar",      "ffolgar@fi.uba.ar",      44100003, password, False),
         ("Joaquin",    "Fernandez",   "jfernandez@fi.uba.ar",   44100004, password, False),
-        ("Tomas",      "Vargas",      "tvargas@fi.uba.ar",      44215876, password, False),
+        ("Tomas",      "Vargas",      "tvargas@fi.uba.ar",      44100005, password, False),
         # resto de alumnos
         ("Sofia",      "Ramirez",     "sramirez@fi.uba.ar",     47000004, password, False),
         ("Camila",     "Lopez",       "clopez@fi.uba.ar",       47000005, password, False),
@@ -145,9 +145,15 @@ def seed_profesores():
 
 
 def seed_cursos():
+    # Una sola cátedra (materia 1) que avanza cuatri a cuatri: la cursada actual
+    # es la activa; la del cuatrimestre anterior queda finalizada (cursada anterior).
+    DESC = ("Materia introductoria al desarrollo de software con Python. Cubre Git, "
+            "desarrollo web con Flask, APIs REST, bases de datos SQL, testing y Docker.")
     cursos = [
-        (1, "Curso A", 2026, 1),
-        (2, "Curso B", 2026, 1),
+        (1, "2026 · 1º cuatrimestre", 2026, 1, DESC,
+         "Virtual con presenciales obligatorias", "Ingeniería en Informática", 6, "abierta", True),
+        (1, "2025 · 2º cuatrimestre", 2025, 2, DESC,
+         "Virtual con presenciales obligatorias", "Ingeniería en Informática", 6, "finalizada", False),
     ]
 
     query = """
@@ -155,9 +161,15 @@ def seed_cursos():
         materia_id,
         nombre,
         anio,
-        cuatrimestre
+        cuatrimestre,
+        descripcion,
+        modalidad,
+        carrera,
+        horas_semanales,
+        estado,
+        activa
     )
-    VALUES (%s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
 
     for curso in cursos:

@@ -82,7 +82,16 @@ CREATE TABLE IF NOT EXISTS cursos (
     anio INT NOT NULL,
     cuatrimestre INT NOT NULL,
     deleted_at TIMESTAMP NULL DEFAULT NULL,
-    CONSTRAINT fk_cursos_materias 
+    -- info editable desde la pantalla de gestión de la cursada (se muestra en /curso)
+    descripcion TEXT NULL,
+    modalidad VARCHAR(50) NULL,
+    carrera VARCHAR(150) NULL,
+    horas_semanales INT NULL,
+    -- ciclo de vida de la cursada (ver ESTADOS_CURSO en constants.py)
+    estado ENUM('abierta', 'inscripcion_cerrada', 'finalizada') NOT NULL DEFAULT 'abierta',
+    -- cursada activa del sistema (una sola en TRUE), define el foco por defecto
+    activa BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT fk_cursos_materias
         FOREIGN KEY (materia_id) REFERENCES materias(id)
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
