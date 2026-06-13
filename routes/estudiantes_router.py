@@ -96,7 +96,7 @@ def reemplazar_estudiante(id):
 
 
 @estudiantes_bp.route("/<int:id>", methods=["PATCH"])
-@auth.requiere_roles(ADMIN, ALUMNO)
+@auth.requiere_roles(ADMIN, DOCENTE, ALUMNO)
 def modificar_estudiante_parcial(id):
     parametros = estudiantes_validator.validar_body_modificar_estudiante(request.get_json())
     estudiante = logic.modificar_estudiante_parcial(id, parametros)

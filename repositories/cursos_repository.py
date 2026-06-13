@@ -191,7 +191,7 @@ def obtener_stats(curso_id):
         (curso_id,), un_solo_valor=True,
     )
     evaluaciones = db.execute_query(
-        "SELECT COUNT(*) AS total FROM evaluaciones WHERE curso_id = %s AND activo = TRUE",
+        "SELECT COUNT(*) AS total FROM evaluaciones WHERE curso_id = %s AND deleted_at IS NULL",
         (curso_id,), un_solo_valor=True,
     )
     return {

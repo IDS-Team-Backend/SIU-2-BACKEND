@@ -52,7 +52,7 @@ def actualizar(tipo_evaluacion_id):
 
 
 @tipos_evaluacion_bp.route("/<int:tipo_evaluacion_id>",methods=["DELETE"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(ADMIN, DOCENTE)
 def eliminar(tipo_evaluacion_id):
     eliminar_tipo_evaluacion_service(
         tipo_evaluacion_id

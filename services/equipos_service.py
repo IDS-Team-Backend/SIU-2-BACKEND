@@ -121,14 +121,7 @@ def reemplazar_equipo(id, parametros):
 def eliminar_equipo(id, hard_delete=False):
     eliminado = db.eliminar_equipo(id, hard=hard_delete)
     if not eliminado:
-<<<<<<< HEAD
         raise NotFoundError("No se encontró el equipo")
-    return
-=======
-        raise NotFoundError(
-            "No se encontró el equipo"
-        )
-
     return
 
 
@@ -220,4 +213,3 @@ def importar_equipos_por_lote(archivo_file, curso_id, evaluacion_id):
         return "creado"
 
     return procesar_lote(filas, procesar_fila)
->>>>>>> 9a7eda6 (feat: csv util y carga masiva equipos)

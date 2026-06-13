@@ -18,7 +18,7 @@ def iniciar_sesion(dni, password):
     if not usuario:
         raise NotFoundError("El DNI no corresponde a ningún usuario registrado")
 
-    if not usuario["activo"]:
+    if usuario.get("deleted_at"):
         raise ValidationError("El usuario esta dado de baja")
 
     if not usuario.get("email_verificado", True):

@@ -67,7 +67,7 @@ def crear_profesor():
 
 
 @profesores_bp.route("/registro", methods=["POST"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(ADMIN, DOCENTE)
 def registrar_profesor():
     parametros = profesores_validator.validar_body_registrar_profesor(request.get_json())
     url_base_frontend = request.host_url.rstrip("/").replace(":5000", ":5001")

@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from constants import DOCENTE, AYUDANTE, ALUMNO
+from constants import ADMIN, DOCENTE, AYUDANTE, ALUMNO
 from utils.error_handlers import ValidationError
 from utils import auth_validator as auth
 import services.asistencia_service as logic
@@ -9,7 +9,7 @@ asistencia_bp = Blueprint("asistencia", __name__)
 
 
 @asistencia_bp.post("/clases/<int:clase_id>/generar-qrs")
-@auth.requiere_roles(DOCENTE, AYUDANTE)
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
 def generar_qrs(clase_id):
     logic.generar_qrs_de_asistencia(clase_id)
     
@@ -19,7 +19,7 @@ def generar_qrs(clase_id):
 
 
 @asistencia_bp.post("/escanear")
-@auth.requiere_roles(DOCENTE, AYUDANTE)
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
 def escanear():
     args = request.get_json(silent=True)
 
@@ -31,14 +31,14 @@ def escanear():
 
 
 @asistencia_bp.get("/clases/<int:clase_id>")
-@auth.requiere_roles(DOCENTE, AYUDANTE)
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
 def listar_asistencias_clase(clase_id):
     resultado = logic.obtener_asistencias_por_clase(clase_id)
     return jsonify(resultado), 200
 
 
 @asistencia_bp.put("/clases/<int:clase_id>")
-@auth.requiere_roles(DOCENTE, AYUDANTE)
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
 def actualizar_asistencias_clase(clase_id):
     args = request.get_json(silent=True)
 
