@@ -3,6 +3,7 @@ import math
 from flask import request, jsonify, Blueprint
 
 import services.profesores_service as logic
+import services.registro_profesor_service as registro_logic
 from constants import ADMIN, DOCENTE
 from utils.error_handlers import created_response, NotFoundError, ValidationError
 from utils import auth_validator as auth
@@ -63,6 +64,28 @@ def crear_profesor():
         {"message": "Profesor creado exitosamente", "profesor": nuevo_profesor},
         f"/profesores/{nuevo_profesor['id']}"
     )
+
+
+@profesores_bp.route("/registro", methods=["POST"])
+@auth.requiere_roles(ADMIN)
+def registrar_profesor():
+    parametros = profesores_validator.validar_body_registrar_profesor(request.get_json())
+    url_base_frontend = request.host_url.rstrip("/").replace(":5000", ":5001")
+    profesor = registro_logic.registrar_profesor(parametros, url_base_frontend)
+    return created_response(
+        {
+            "message": "Profesor creado. Se envió un email para finalizar la registración.",
+            "profesor": profesor,
+        },
+        f"/profesores/{profesor['id']}"
+    )
+
+
+@profesores_bp.route("/legajo/<int:legajo>", methods=["GET"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def obtener_profesor_por_legajo(legajo):
+    profesor = logic.obtener_profesor_por_legajo(legajo)
+    return jsonify(profesor), 200
 
 
 @profesores_bp.route("/me", methods=["GET"])

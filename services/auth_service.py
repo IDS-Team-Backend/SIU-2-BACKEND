@@ -18,6 +18,12 @@ def iniciar_sesion(dni, password):
     if not usuario:
         raise NotFoundError("El DNI no corresponde a ningún usuario registrado")
 
+    if not usuario["activo"]:
+        raise ValidationError("El usuario esta dado de baja")
+
+    if not usuario.get("email_verificado", True):
+        raise ValidationError("Tenés que finalizar tu registración desde el email que te enviamos")
+
     if not check_password_hash(usuario["password_hash"], password):
         raise ValidationError("Contraseña incorrecta")
 
