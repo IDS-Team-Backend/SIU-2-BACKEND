@@ -72,14 +72,14 @@ def obtener_usuarios(
     return lista_usuarios, total
 
 
-def crear_usuario(nombre, apellido, email, dni, password, es_admin=False):
+def crear_usuario(nombre, apellido, email, dni, password, es_admin=False, email_verificado=True):
 
     password_hash = generate_password_hash(password)
 
     query = """
         INSERT INTO usuarios
-        (nombre, apellido, email, dni, password_hash, es_admin)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        (nombre, apellido, email, dni, password_hash, es_admin, email_verificado)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
 
     params = (
@@ -89,6 +89,7 @@ def crear_usuario(nombre, apellido, email, dni, password, es_admin=False):
         dni,
         password_hash,
         es_admin,
+        email_verificado,
     )
 
     new_id = db.execute_query(query, params, modifica_db=True)

@@ -43,7 +43,7 @@ def _validar_fecha_ingreso(body, errores, resultado, requerido=True):
         return
     try:
         resultado["fecha_ingreso"] = validaciones.validar_fecha_iso(
-            body.get("fecha_ingreso"), "fecha_ingreso", permitir_futura=False
+            body.get("fecha_ingreso"), "fecha_ingreso", permitir_futura=True
         )
     except ValueError as e:
         errores.extend(e.args[0]["errors"])
@@ -68,6 +68,38 @@ def validar_body_crear_profesor(body):
         usuario_id = validaciones.validar_entero(body.get("usuario_id"), "usuario_id")
         usuario_id = validaciones.validar_minimo(usuario_id, 1, "usuario_id")
         resultado["usuario_id"] = usuario_id
+    except ValueError as e:
+        errores.extend(e.args[0]["errors"])
+
+    _validar_legajo(body, errores, resultado)
+    _validar_titulo(body, errores, resultado)
+    _validar_departamento(body, errores, resultado)
+    _validar_fecha_ingreso(body, errores, resultado)
+
+    if errores:
+        raise ValueError({"errors": errores})
+
+    return resultado
+
+
+def validar_body_registrar_profesor(body):
+    """Alta completa: datos del usuario + del profesor (sin contraseña).
+    Las reglas semánticas de nombre/email/dni las completa validar_datos_usuario
+    en el service; acá se asegura presencia, tipos y los campos del profesor."""
+    validaciones.validar_body_presente(body)
+
+    errores = []
+    resultado = {}
+
+    for campo in ("nombre", "apellido", "email"):
+        try:
+            resultado[campo] = validaciones.validar_string_no_vacio(body.get(campo), campo)
+        except ValueError as e:
+            errores.extend(e.args[0]["errors"])
+
+    try:
+        dni = validaciones.validar_entero(body.get("dni"), "dni")
+        resultado["dni"] = validaciones.validar_minimo(dni, 1, "dni")
     except ValueError as e:
         errores.extend(e.args[0]["errors"])
 

@@ -2,6 +2,7 @@ from .materias_router import materias_bp
 from .asistencia_router import asistencia_bp
 from .auth_router import auth_public_bp, auth_private_bp
 from .cursos_router import cursos_bp
+from .cursos_public_router import cursos_public_bp
 from .email_router import email_bp
 from .equipos_router import equipos_bp
 from .estudiantes_router import estudiantes_bp
@@ -12,6 +13,7 @@ from .materiales_router import materiales_bp
 from .reportes_router import reportes_bp
 from .usuarios_router import usuarios_bp
 from .estudiante_curso_router import estudiante_curso_bp
+from .curso_docentes_router import curso_docentes_bp
 
 from utils import auth_validator as auth
 from .equipo_integrantes_router import equipo_integrantes_bp
@@ -25,7 +27,8 @@ from .password_router import password_bp
 BLUEPRINTS_PUBLICOS = [
     ("/auth",       auth_public_bp),
     ("/materiales", materiales_bp),
-    ("/password",          password_bp)  
+    ("/password",          password_bp),
+    ("/cursos-publico", cursos_public_bp),
 ]
 
 BLUEPRINTS_PRIVADOS = [
@@ -42,6 +45,7 @@ BLUEPRINTS_PRIVADOS = [
     ("/reportes",          reportes_bp),
     ("/materias",          materias_bp),
     ("/estudiante_curso",  estudiante_curso_bp),
+    ("/curso_docentes",    curso_docentes_bp),
     ("/equipo_integrantes", equipo_integrantes_bp),
     ("/notas",             notas_bp),
     ("/entregas",          entregas_bp),

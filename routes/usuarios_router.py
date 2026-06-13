@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, Blueprint
-from constants import ADMIN
+from constants import ADMIN, DOCENTE
 import services.usuarios_service as logic
 from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
@@ -42,7 +42,7 @@ def obtener_usuario_por_id(id):
 # ─── PUT /usuarios/{id} ───────────────────────────────────────────────────────
 
 @usuarios_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(ADMIN, DOCENTE)
 def reemplazar_usuario(id):
     parametros = request.get_json()
 

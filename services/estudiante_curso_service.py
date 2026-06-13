@@ -4,7 +4,7 @@ import repositories.estudiante_curso_repository as db
 import repositories.estudiantes_repository as estudiantes_repo
 import repositories.cursos_repository as cursos_repo
 from utils.csv_handler import leer_csv
-from utils.error_handlers import NotFoundError, DuplicateError
+from utils.error_handlers import NotFoundError, DuplicateError, ValidationError
 
 
 def _validar_estudiante_y_curso(estudiante_id, curso_id):
@@ -12,6 +12,14 @@ def _validar_estudiante_y_curso(estudiante_id, curso_id):
         raise NotFoundError("No se encontró el estudiante para la inscripción.")
     if not cursos_repo.obtener_curso_por_id(curso_id):
         raise NotFoundError("No se encontró el curso para la inscripción.")
+
+
+def _validar_inscripciones_abiertas(curso_id):
+    """Bloquea inscribir alumnos nuevos si el curso no está 'abierta'.
+    Solo aplica al alta de inscripciones, no a editar inscripciones existentes."""
+    curso = cursos_repo.obtener_curso_por_id(curso_id)
+    if curso and curso.get("estado") and curso["estado"] != "abierta":
+        raise ValidationError("Las inscripciones de este curso están cerradas.")
 
 
 def obtener_estudiante_cursos(estudiante_id=None, curso_id=None, estado=None,
@@ -28,6 +36,7 @@ def crear_estudiante_curso(parametros):
     estado = parametros["estado"]
 
     _validar_estudiante_y_curso(estudiante_id, curso_id)
+    _validar_inscripciones_abiertas(curso_id)
 
     if db.existe_inscripcion(estudiante_id, curso_id):
         raise DuplicateError("El estudiante ya está inscripto en este curso.")
@@ -104,6 +113,7 @@ def importar_inscripciones_por_lote(archivo_file):
     guardados = 0
     ignorados_duplicados = 0
     errores = []
+    cursos_cache = {}  # evita reconsultar el mismo curso por cada fila
 
     for index, fila in enumerate(filas):
         nro_linea = index + 2  # +1 por el encabezado, +1 porque enumerate arranca en 0
@@ -127,6 +137,22 @@ def importar_inscripciones_por_lote(archivo_file):
             continue
 
         estudiante_id = estudiante['id']
+
+        if curso_id not in cursos_cache:
+            cursos_cache[curso_id] = cursos_repo.obtener_curso_por_id(curso_id)
+        curso = cursos_cache[curso_id]
+        if not curso:
+            errores.append({
+                "linea": nro_linea,
+                "error": f"No se encontró un curso con id {curso_id}"
+            })
+            continue
+        if curso.get("estado") and curso["estado"] != "abierta":
+            errores.append({
+                "linea": nro_linea,
+                "error": f"Las inscripciones del curso {curso_id} están cerradas."
+            })
+            continue
 
         if db.existe_inscripcion(estudiante_id, curso_id):
             ignorados_duplicados += 1

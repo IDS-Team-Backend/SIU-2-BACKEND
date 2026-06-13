@@ -21,6 +21,15 @@ ESTADOS_CLASE = [   # índice 0 = default
     "finalizada",
 ]
 
+# Ciclo de vida de la cursada. El orden define las transiciones válidas
+# (solo se avanza/retrocede de a un paso). Índice 0 = default.
+# ATENCIÓN: reflejar cualquier cambio en el ENUM de cursos.estado en schema.sql.
+ESTADOS_CURSO = [
+    "abierta",
+    "inscripcion_cerrada",
+    "finalizada",
+]
+
 TIPOS_CLASE = [     # para el cronograma
     "teorica",
     "practica",

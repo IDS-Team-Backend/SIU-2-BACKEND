@@ -52,6 +52,13 @@ def obtener_profesor_por_id(id):
     return profesor
 
 
+def obtener_profesor_por_legajo(legajo):
+    profesor = db.obtener_profesor_por_legajo(legajo)
+    if not profesor:
+        raise NotFoundError("No se encontró un profesor con ese legajo")
+    return profesor
+
+
 def obtener_profesor_me():
     usuario_id = auth.obtener_usuario_id()
     profesor = db.obtener_profesor_por_usuario_id(usuario_id)

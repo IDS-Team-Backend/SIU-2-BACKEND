@@ -97,6 +97,35 @@ def eliminar_curso(curso_id: int):
     logic.eliminar_curso(curso_id, hard_delete=param_hard)
     return "", 204
 
+@cursos_bp.route("/<int:curso_id>/estado", methods=["PATCH"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def cambiar_estado_curso(curso_id):
+    parametros = request.get_json(silent=True) or {}
+    estado = (parametros.get("estado") or "").strip()
+    curso = logic.cambiar_estado(curso_id, estado)
+    return jsonify({
+        "message": "Estado de la cursada actualizado",
+        "curso": curso
+    }), 200
+
+@cursos_bp.route("/<int:curso_id>/activar", methods=["POST"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def activar_curso(curso_id):
+    curso = logic.activar_curso(curso_id)
+    return jsonify({
+        "message": "Cursada activada",
+        "curso": curso
+    }), 200
+
+@cursos_bp.route("/siguiente", methods=["POST"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def crear_siguiente_cursada():
+    curso = logic.crear_siguiente_cursada()
+    return created_response(
+        {"message": "Siguiente cursada creada y activada", "curso": curso},
+        f"/cursos/{curso['id']}"
+    )
+
 @cursos_bp.route("/<curso_id>", methods=["GET", "PUT", "DELETE"])
 def curso_id_invalido(curso_id):
     raise ValidationError("El ID de curso debe ser un número entero positivo.")
