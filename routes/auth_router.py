@@ -77,6 +77,18 @@ def finalizar_registro():
     return jsonify({"message": "Registración finalizada. Ya podés iniciar sesión."}), 200
 
 
+@auth_public_bp.post("/finalizar-registro")  # el profesor define su contraseña y valida su email
+def finalizar_registro():
+    data = request.get_json(silent=True) or {}
+    registro_logic.finalizar_registro(
+        email=data.get("email", ""),
+        codigo=data.get("codigo", ""),
+        nueva_password=data.get("nueva_password", ""),
+        confirmar_password=data.get("confirmar_password", ""),
+    )
+    return jsonify({"message": "Registración finalizada. Ya podés iniciar sesión."}), 200
+
+
 @auth_private_bp.get("/me/perfiles")  # perfiles del usuario logueado, recalculados desde DB
 def get_mis_perfiles():
     usuario_id = auth.obtener_usuario_id()

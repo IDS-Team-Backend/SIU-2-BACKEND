@@ -125,6 +125,28 @@ def obtener_profesor_por_legajo(legajo):
     return db.execute_query(query, (legajo,), un_solo_valor=True)
 
 
+def obtener_profesor_por_legajo(legajo):
+    query = """
+        SELECT
+            p.id,
+            p.usuario_id,
+            p.legajo,
+            p.titulo,
+            p.departamento,
+            p.fecha_ingreso,
+            p.activo,
+            p.created_at,
+            u.nombre,
+            u.apellido,
+            u.email,
+            u.dni
+        FROM profesores p
+        INNER JOIN usuarios u ON u.id = p.usuario_id
+        WHERE p.legajo = %s
+    """
+    return db.execute_query(query, (legajo,), un_solo_valor=True)
+
+
 def existe_legajo(legajo, excluir_id=None):
     if excluir_id is not None:
         query = "SELECT COUNT(*) as total FROM profesores WHERE legajo = %s AND id != %s AND deleted_at IS NULL"
