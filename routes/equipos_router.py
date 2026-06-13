@@ -51,6 +51,27 @@ def crear_equipo():
     )
 
 
+@equipos_bp.route("/bulk", methods=["POST"])
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+def crear_equipos_bulk():
+    if 'archivo' not in request.files:
+        return jsonify({"error": "No se encontró la parte del archivo en la petición con la clave 'archivo'"}), 400
+
+    archivo = request.files['archivo']
+    if archivo.filename == '':
+        return jsonify({"error": "No se seleccionó ningún archivo"}), 400
+
+    resultado_proceso = logic.importar_equipos_por_lote(
+        archivo,
+        request.form.get("curso_id"),
+        request.form.get("evaluacion_id"),
+    )
+    return jsonify({
+        "mensaje": "Procesamiento de lote finalizado",
+        "resultado": resultado_proceso
+    }), 200
+
+
 @equipos_bp.route("/<int:id>", methods=["GET"])
 @auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
 def obtener_equipo_por_id(id):

@@ -69,6 +69,37 @@ def agregar_integrante(equipo_id,alumno_id):
         "alumno_id": alumno_id
     }
 
+def agregar_integrantes(equipo_id, alumno_ids):
+    """Inserta varios integrantes de un equipo en una sola ida a la DB (executemany).
+    Sigue el patrón de asistencia_repository.bulk_upsert_asistencias."""
+    if not alumno_ids:
+        return 0
+    conn = db.get_connection()
+    cursor = None
+    try:
+        cursor = conn.cursor(dictionary=True)
+        query = """
+            INSERT INTO equipo_integrantes
+            (
+                equipo_id,
+                alumno_id
+            )
+            VALUES (%s, %s)
+        """
+        data = [(equipo_id, alumno_id) for alumno_id in alumno_ids]
+        cursor.executemany(query, data)
+        conn.commit()
+        return cursor.rowcount
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise Exception(f"Error al agregar integrantes: {e}") from e
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 def eliminar_integrante(equipo_id,alumno_id):
     query = """
         DELETE FROM equipo_integrantes

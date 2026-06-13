@@ -65,3 +65,38 @@ def generar_csv(filas, columnas, encabezados=None):
 
     # BOM utf-8-sig para que Excel abra bien los acentos
     return texto.encode("utf-8-sig")
+
+
+def procesar_lote(filas, procesar_fila):
+    """Itera las filas de un CSV ya parseado y agrega el resultado en el formato
+    estándar de las cargas masivas.
+
+    `procesar_fila(fila)` se llama una vez por fila y debe:
+      - devolver "duplicado" para contarla como ignorada,
+      - devolver cualquier otra cosa para contarla como éxito,
+      - o lanzar una excepción: su mensaje se guarda en `detalles_errores`
+        junto al número de línea (el encabezado es la línea 1).
+
+    Genérico: cada entidad sólo escribe su `procesar_fila`.
+    """
+    guardados = 0
+    ignorados_duplicados = 0
+    errores = []
+
+    for index, fila in enumerate(filas):
+        nro_linea = index + 2  # +1 por el encabezado, +1 porque enumerate arranca en 0
+
+        try:
+            if procesar_fila(fila) == "duplicado":
+                ignorados_duplicados += 1
+            else:
+                guardados += 1
+        except Exception as e:
+            errores.append({"linea": nro_linea, "error": str(e)})
+
+    return {
+        "procesados_exito": guardados,
+        "ignorados_duplicados": ignorados_duplicados,
+        "errores_encontrados": len(errores),
+        "detalles_errores": errores,
+    }
