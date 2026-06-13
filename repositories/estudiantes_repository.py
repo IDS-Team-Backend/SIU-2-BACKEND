@@ -128,6 +128,22 @@ def obtener_estudiante_por_padron(padron):
     return db.execute_query(query, (padron,), un_solo_valor=True)
 
 
+def obtener_estudiantes_por_padrones(padrones):
+    """Resuelve varios padrones de una sola vez (SELECT ... IN). Devuelve los
+    estudiantes activos encontrados; los padrones inexistentes simplemente no vienen.
+    """
+    if not padrones:
+        return []
+    placeholders = ", ".join(["%s"] * len(padrones))
+    query = f"""
+        SELECT e.id, e.padron
+        FROM estudiantes e
+        WHERE e.padron IN ({placeholders})
+        AND e.activo = TRUE
+    """
+    return db.execute_query(query, tuple(padrones)) or []
+
+
 def existe_padron(padron, excluir_id=None):
     if excluir_id is not None:
         query = "SELECT COUNT(*) as total FROM estudiantes WHERE padron = %s AND id != %s AND deleted_at IS NULL"

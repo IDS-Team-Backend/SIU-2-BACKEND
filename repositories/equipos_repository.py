@@ -94,6 +94,18 @@ def obtener_equipo_por_id(id):
 
     return resultado
 
+def obtener_nombres_equipos(evaluacion_id):
+    """Nombres de los equipos activos de la evaluación. Una sola query para que la
+    carga masiva detecte duplicados en memoria (sin un SELECT por fila)."""
+    query = """
+        SELECT e.nombre
+        FROM equipos e
+        WHERE e.evaluacion_id = %s
+        AND e.activo = TRUE
+    """
+    filas = db.execute_query(query, (evaluacion_id,))
+    return [fila["nombre"] for fila in filas] if filas else []
+
 def reemplazar_equipo(
     id,
     curso_id,
