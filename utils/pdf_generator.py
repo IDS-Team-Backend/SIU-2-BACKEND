@@ -43,7 +43,7 @@ def crear_pdf_alumnos(data_alumnos):
         pdf.cell(45, 8, alu['email'][:28], 1, 0, "L", fill)
         pdf.ln()
         fill = not fill
-    return bytes(pdf.output())
+    return pdf.output(dest='S').encode('latin-1')
 
 def crear_pdf_estadisticas(data_stats):
     pdf = FPDF()
@@ -131,7 +131,7 @@ def crear_pdf_estadisticas(data_stats):
         pdf.cell(140, 8, f"Clase: {row.get('nombre', 'N/A')}", 1)
         pdf.cell(50, 8, f"Asistencia: {row.get('porcentaje', 0)}%", 1, ln=True, align="R")
         
-    return bytes(pdf.output())
+    return pdf.output(dest='S').encode('latin-1')
 
 def crear_pdf_equipos(data_equipos):
     pdf = FPDF("P", "mm", "A4")
@@ -207,4 +207,4 @@ def crear_pdf_equipos(data_equipos):
         pdf.set_y(max(y + altura, pdf.get_y()))
         pdf.set_x(10)
 
-    return bytes(pdf.output())
+    return pdf.output(dest='S').encode('latin-1')
