@@ -56,6 +56,8 @@ def obtener_profesor_por_legajo(legajo):
     profesor = db.obtener_profesor_por_legajo(legajo)
     if not profesor:
         raise NotFoundError("No se encontró un profesor con ese legajo")
+    if profesor.get("deleted_at") is not None:
+        raise NotFoundError("Ese no es un profesor activo")
     return profesor
 
 

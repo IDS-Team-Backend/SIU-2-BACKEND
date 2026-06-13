@@ -102,7 +102,6 @@ def obtener_profesor_por_usuario_id(usuario_id):
     """
     return db.execute_query(query, (usuario_id,), un_solo_valor=True)
 
-
 def obtener_profesor_por_legajo(legajo):
     query = """
         SELECT
@@ -112,30 +111,7 @@ def obtener_profesor_por_legajo(legajo):
             p.titulo,
             p.departamento,
             p.fecha_ingreso,
-            p.activo,
-            p.created_at,
-            u.nombre,
-            u.apellido,
-            u.email,
-            u.dni
-        FROM profesores p
-        INNER JOIN usuarios u ON u.id = p.usuario_id
-        WHERE p.legajo = %s
-    """
-    return db.execute_query(query, (legajo,), un_solo_valor=True)
-
-
-def obtener_profesor_por_legajo(legajo):
-    query = """
-        SELECT
-            p.id,
-            p.usuario_id,
-            p.legajo,
-            p.titulo,
-            p.departamento,
-            p.fecha_ingreso,
-            p.activo,
-            p.created_at,
+            p.deleted_at,
             u.nombre,
             u.apellido,
             u.email,
