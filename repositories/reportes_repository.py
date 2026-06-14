@@ -13,8 +13,10 @@ def obtener_alumnos_reporte(
     page_size=paginacion.PAGE_SIZE_DEFAULT,
     offset=0
 ):
+    params = []
+
     query = """
-        SELECT 
+        SELECT
             e.id AS alumno_id,
             e.padron,
             e.carrera,
@@ -22,63 +24,69 @@ def obtener_alumnos_reporte(
             u.nombre,
             u.apellido,
             u.email,
-            u.dni,
-            n.nota AS nota_evaluacion
+            u.dni
+    """
+
+    if evaluacion_id:
+        query += ", n.nota AS nota_evaluacion"
+
+    query += """
         FROM estudiantes e
         INNER JOIN usuarios u ON e.usuario_id = u.id
         LEFT JOIN estudiante_curso ec ON e.id = ec.estudiante_id
-        LEFT JOIN notas n ON e.id = n.alumno_id
-        WHERE e.deleted_at IS NULL 
+    """
+
+    if evaluacion_id:
+        query += """
+            LEFT JOIN notas n
+                ON e.id = n.alumno_id
+                AND n.evaluacion_id = %s
+        """
+        params.append(evaluacion_id)
+
+    query += """
+        WHERE e.deleted_at IS NULL
           AND u.deleted_at IS NULL
     """
-    params = []
-    
+
     # filtros estructurales
+
     if curso_id:
         query += " AND ec.curso_id = %s AND ec.estado = 'activo'"
         params.append(curso_id)
+
     if carrera:
         query += " AND e.carrera = %s"
         params.append(carrera)
+
     if anio_ingreso:
         query += " AND e.anio_ingreso = %s"
         params.append(anio_ingreso)
+
     if nombre_completo:
         query += " AND (u.nombre LIKE %s OR u.apellido LIKE %s)"
         termino = f"%{nombre_completo}%"
-        params.append(termino)
-        params.append(termino)
+        params.extend([termino, termino])
+
     if padron:
         query += " AND e.padron = %s"
         params.append(padron)
-        
+
     # filtros académicos
-    if evaluacion_id:
-        query += " AND n.evaluacion_id = %s"
-        params.append(evaluacion_id)
-    if condicion:
+
+    if evaluacion_id and condicion:
         condicion_limpia = condicion.lower()
+
         if condicion_limpia == "aprobado":
-            query += " AND n.nota >= 4.0"
+            query += " AND n.nota >= 4"
+
         elif condicion_limpia == "desaprobado":
-            query += " AND n.nota < 4.0"
-    if nota_mayor_a:
-        query += " AND n.nota > %s"
+            query += " AND n.nota < 4"
+
+    if evaluacion_id and nota_mayor_a:
+        query += " AND n.nota >= %s"
         params.append(float(nota_mayor_a))
 
-    query += """
-        GROUP BY
-            e.id,
-            e.padron,
-            e.carrera,
-            e.anio_ingreso,
-            u.nombre,
-            u.apellido,
-            u.email,
-            u.dni,
-            n.nota
-    """
-    
     return paginacion.ejecutar(
         query,
         params,
@@ -86,7 +94,6 @@ def obtener_alumnos_reporte(
         page_size=page_size,
         offset=offset,
     )
-
 
 def obtener_promedio_por_evaluacion(curso_id):
     query = """
@@ -155,19 +162,92 @@ def obtener_asistencia_por_clase(curso_id):
         SELECT
             c.nombre,
             ROUND(
-                COUNT(a.alumno_id) * 100.0 /
-                (SELECT COUNT(*) FROM estudiante_curso WHERE curso_id = c.curso_id),
+                COALESCE(SUM(
+                    CASE 
+                        WHEN a.estado IN ('presente', 'tarde', 'justificada') THEN 1 
+                        ELSE 0 
+                    END
+                ), 0) * 100.0 /
+                NULLIF((SELECT COUNT(*) FROM estudiante_curso WHERE curso_id = c.curso_id AND estado = 'activo'), 0),
             2) AS porcentaje
         FROM clases c
         LEFT JOIN asistencias a ON a.clase_id = c.id
         WHERE c.curso_id = %s
         AND c.deleted_at IS NULL
-        GROUP BY c.id, c.nombre, c.curso_id
+        GROUP BY c.id, c.nombre, c.curso_id, c.fecha_hora_inicio
         ORDER BY c.fecha_hora_inicio
     """
     return db.execute_query(query, (curso_id,))
 
+def obtener_rendimiento_por_asistencia(curso_id):
+    query = """
+        SELECT
+            CASE
+                WHEN datos.asistencia <= 20 THEN '0-20%'
+                WHEN datos.asistencia <= 40 THEN '21-40%'
+                WHEN datos.asistencia <= 60 THEN '41-60%'
+                WHEN datos.asistencia <= 80 THEN '61-80%'
+                ELSE '81-100%'
+            END AS rango,
+            ROUND(AVG(datos.promedio_notas), 2) AS promedio
+        FROM (
+            SELECT
+                asistencia.estudiante_id,
+                asistencia.porcentaje_asistencia AS asistencia,
+                notas.promedio_notas
+            FROM (
+                SELECT
+                    ec.estudiante_id,
+                    ROUND(
+                        SUM(
+                            CASE
+                                WHEN a.estado IN ('presente', 'tarde', 'justificada')
+                                THEN 1
+                                ELSE 0
+                            END
+                        ) * 100.0 / COUNT(*),
+                        2
+                    ) AS porcentaje_asistencia
+                FROM estudiante_curso ec
+                INNER JOIN asistencias a
+                    ON a.alumno_id = ec.estudiante_id
+                INNER JOIN clases c
+                    ON c.id = a.clase_id
+                WHERE ec.curso_id = %s
+                  AND c.curso_id = %s
+                  AND ec.estado = 'activo'
+                  AND c.deleted_at IS NULL
+                GROUP BY ec.estudiante_id
+            ) asistencia
+            INNER JOIN (
+                SELECT
+                    n.alumno_id AS estudiante_id,
+                    ROUND(AVG(n.nota), 2) AS promedio_notas
+                FROM notas n
+                INNER JOIN evaluaciones ev
+                    ON ev.id = n.evaluacion_id
+                WHERE ev.curso_id = %s
+                  AND ev.deleted_at IS NULL
+                  AND n.alumno_id IS NOT NULL
+                GROUP BY n.alumno_id
+            ) notas
+                ON asistencia.estudiante_id = notas.estudiante_id
+        ) datos
+        GROUP BY rango
+        ORDER BY
+            CASE rango
+                WHEN '0-20%' THEN 1
+                WHEN '21-40%' THEN 2
+                WHEN '41-60%' THEN 3
+                WHEN '61-80%' THEN 4
+                ELSE 5
+            END
+    """
 
+    return db.execute_query(
+        query,
+        (curso_id, curso_id, curso_id)
+    )
 
 def obtener_equipos_reporte(curso_id):
     query = """

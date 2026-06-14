@@ -130,8 +130,32 @@ def crear_pdf_estadisticas(data_stats):
     for row in data_stats.get('asistencia_por_clase', []):
         pdf.cell(140, 8, f"Clase: {row.get('nombre', 'N/A')}", 1)
         pdf.cell(50, 8, f"Asistencia: {row.get('porcentaje', 0)}%", 1, ln=True, align="R")
+
+    # --- 5. Relacion asistencia con promedio en evaluaciones ---
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, "3. Rendimiento segun Asistencia", ln=True)
+
+    pdf.set_font("Arial", "", 10)
+
+    for row in data_stats.get('rendimiento', []):
+        pdf.cell(
+            95,
+            8,
+            f"Rango de asistencia: {row.get('rango', 'N/A')}",
+            1
+        )
+        pdf.cell(
+            95,
+            8,
+            f"Promedio de notas: {row.get('promedio', 0)}",
+            1,
+            ln=True
+        )
+
+    pdf.ln(5)
+
         
-    return pdf.output(dest='S').encode('latin-1')
+    return bytes(pdf.output(dest='S'))
 
 def crear_pdf_equipos(data_equipos):
     pdf = FPDF("P", "mm", "A4")
