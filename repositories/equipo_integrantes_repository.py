@@ -36,8 +36,7 @@ def obtener_integrantes(equipo_id=None,alumno_id=None):
             e.padron,
             u.nombre,
             u.apellido,
-            u.email,
-            u.activo
+            u.email
     """ + query
     integrantes = db.execute_query(
         select_query,
