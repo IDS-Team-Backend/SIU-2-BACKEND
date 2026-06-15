@@ -43,16 +43,14 @@ def crear_pdf_alumnos(data_alumnos):
         pdf.cell(45, 8, alu['email'][:28], 1, 0, "L", fill)
         pdf.ln()
         fill = not fill
-    # Generamos la salida del PDF
+
     salida_pdf = pdf.output(dest='S')
-    
-    # Manejo dinámico según el tipo de dato que retorne la librería
+
     if isinstance(salida_pdf, bytearray):
         return bytes(salida_pdf)
     elif isinstance(salida_pdf, str):
         return salida_pdf.encode('latin-1')
     
-    # Si por alguna razón ya es un objeto de tipo bytes, lo retornamos directo
     return salida_pdf
 
 def crear_pdf_estadisticas(data_stats):
@@ -164,17 +162,13 @@ def crear_pdf_estadisticas(data_stats):
 
     pdf.ln(5)
 
-        
-    # Generamos la salida del PDF
     salida_pdf = pdf.output(dest='S')
     
-    # Manejo dinámico según el tipo de dato que retorne la librería
     if isinstance(salida_pdf, bytearray):
         return bytes(salida_pdf)
     elif isinstance(salida_pdf, str):
         return salida_pdf.encode('latin-1')
     
-    # Si por alguna razón ya es un objeto de tipo bytes, lo retornamos directo
     return salida_pdf
 
 def crear_pdf_equipos(data_equipos):
@@ -251,14 +245,11 @@ def crear_pdf_equipos(data_equipos):
         pdf.set_y(max(y + altura, pdf.get_y()))
         pdf.set_x(10)
 
-        # Generamos la salida del PDF
-        salida_pdf = pdf.output(dest='S')
-        
-        # Manejo dinámico según el tipo de dato que retorne la librería
+    salida_pdf = pdf.output(dest='S')
+
     if isinstance(salida_pdf, bytearray):
         return bytes(salida_pdf)
     elif isinstance(salida_pdf, str):
         return salida_pdf.encode('latin-1')
-    
-    # Si por alguna razón ya es un objeto de tipo bytes, lo retornamos directo
+
     return salida_pdf
