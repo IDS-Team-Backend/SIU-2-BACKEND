@@ -127,6 +127,7 @@ def seed_profesores():
         (2, 500001, "Ingeniero en Informática", "Informática", "2018-03-01"),
         (5, 500002, "Licenciado en Sistemas", "Informática", "2020-04-15"),
         (6, 500003, "Analista de Sistemas", "Informática", "2022-08-10"),
+        (7, 500004, "Ingeniero en Informática", "Informática", "2021-07-02"),
     ]
 
     query = """
@@ -180,7 +181,8 @@ def seed_curso_docentes():
         (1, 1, "titular"),
         (2, 1, "titular"),
         (1, 2, "jefe_tp"),
-        (1, 3, "ayudante")
+        (1, 3, "ayudante"),
+        (1, 4, "colaborador")
     ]
 
     query = """
