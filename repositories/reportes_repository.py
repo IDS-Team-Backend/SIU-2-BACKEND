@@ -164,7 +164,9 @@ def obtener_asistencia_por_clase(curso_id):
             ROUND(
                 COALESCE(SUM(
                     CASE 
-                        WHEN a.estado IN ('presente', 'tarde', 'justificada') THEN 1 
+                        -- Evaluamos el presente SOLO si el estudiante sigue activo en el curso
+                        WHEN a.estado IN ('presente', 'tarde', 'justificada') 
+                             AND ec.estado = 'activo' THEN 1 
                         ELSE 0 
                     END
                 ), 0) * 100.0 /
@@ -172,6 +174,8 @@ def obtener_asistencia_por_clase(curso_id):
             2) AS porcentaje
         FROM clases c
         LEFT JOIN asistencias a ON a.clase_id = c.id
+        -- Traemos los datos de la cursada del alumno para validar su estado actual
+        LEFT JOIN estudiante_curso ec ON ec.estudiante_id = a.alumno_id AND ec.curso_id = c.curso_id
         WHERE c.curso_id = %s
         AND c.deleted_at IS NULL
         GROUP BY c.id, c.nombre, c.curso_id, c.fecha_hora_inicio
