@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS cursos (
     carrera VARCHAR(150) NULL,
     horas_semanales INT NULL,
     -- ciclo de vida de la cursada (ver ESTADOS_CURSO en constants.py)
-    estado ENUM('abierta', 'inscripcion_cerrada', 'finalizada') NOT NULL DEFAULT 'abierta',
+    estado ENUM('abierta', 'inscripcion_cerrada', 'periodo_evaluativo', 'finalizada') NOT NULL DEFAULT 'abierta',
     -- cursada activa del sistema (una sola en TRUE), define el foco por defecto
     activa BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_cursos_materias

@@ -27,6 +27,7 @@ ESTADOS_CLASE = [   # índice 0 = default
 ESTADOS_CURSO = [
     "abierta",
     "inscripcion_cerrada",
+    "periodo_evaluativo",
     "finalizada",
 ]
 
