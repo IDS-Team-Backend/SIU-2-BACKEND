@@ -3,6 +3,7 @@ import math
 from flask import request, jsonify, Blueprint
 
 import services.estudiantes_service as logic
+import services.carga_masiva_alumnos_service as carga_masiva
 from constants import ADMIN, ALUMNO, DOCENTE
 from utils.error_handlers import created_response, NotFoundError, ValidationError
 from utils import auth_validator as auth
@@ -112,6 +113,23 @@ def eliminar_estudiante(id: int):
     param_hard = request.args.get("hard", "false").lower() == "true"
     logic.eliminar_estudiante(id, hard_delete=param_hard)
     return "", 204
+
+
+@estudiantes_bp.route("/importar-lote", methods=["POST"])
+@auth.requiere_roles(ADMIN)
+def importar_lote_estudiantes():
+    if 'archivo' not in request.files:
+        return jsonify({"error": "No se encontró la parte del archivo en la petición con la clave 'archivo'"}), 400
+
+    archivo = request.files['archivo']
+    if archivo.filename == '':
+        return jsonify({"error": "No se seleccionó ningún archivo"}), 400
+
+    resultado = carga_masiva.importar_estudiantes_por_lote(archivo)
+    return jsonify({
+        "mensaje": "Procesamiento de lote finalizado",
+        "resultado": resultado,
+    }), 200
 
 
 @estudiantes_bp.route("/<id>", methods=["GET", "PUT", "PATCH", "DELETE"])
