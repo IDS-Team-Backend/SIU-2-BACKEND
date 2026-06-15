@@ -13,6 +13,9 @@ def obtener_alumnos_reporte(
     page_size=paginacion.PAGE_SIZE_DEFAULT,
     offset=0
 ):
+    # Consulta estudiantes con filtros multiples incluyendo paginacion.
+    # COALESCE sirve para el filtro de evaluaciones sea tanto como para las evaluaciones individuales como grupales.
+    # Los resultados se devuelven paginados
     params = []
 
     query = """
@@ -28,7 +31,8 @@ def obtener_alumnos_reporte(
     """
 
     if evaluacion_id:
-        query += ", n.nota AS nota_evaluacion"
+        # COALESCE agarra la priemra nota no null (individual primero, luego grupal)
+        query += ", COALESCE(n_ind.nota, n_grp.nota) AS nota_evaluacion"
 
     query += """
         FROM estudiantes e
@@ -38,19 +42,33 @@ def obtener_alumnos_reporte(
 
     if evaluacion_id:
         query += """
-            LEFT JOIN notas n
-                ON e.id = n.alumno_id
-                AND n.evaluacion_id = %s
+            -- 1. Buscamos si existe una nota individual directa
+            LEFT JOIN notas n_ind
+                ON e.id = n_ind.alumno_id
+                AND n_ind.evaluacion_id = %s
+                
+            -- 2. Vinculamos al alumno con sus equipos
+            LEFT JOIN equipo_integrantes ei
+                ON e.id = ei.alumno_id
+                
+            -- 3. Filtramos para quedarnos SOLO con el equipo de ESTA evaluación puntual
+            LEFT JOIN equipos eq
+                ON ei.equipo_id = eq.id
+                AND eq.evaluacion_id = %s
+                
+            -- 4. Buscamos si existe una nota asignada a ese equipo
+            LEFT JOIN notas n_grp
+                ON eq.id = n_grp.equipo_id
+                AND n_grp.evaluacion_id = %s
         """
-        params.append(evaluacion_id)
+        params.extend([evaluacion_id, evaluacion_id, evaluacion_id])
 
     query += """
         WHERE e.deleted_at IS NULL
           AND u.deleted_at IS NULL
     """
 
-    # filtros estructurales
-
+    # de usuario
     if curso_id:
         query += " AND ec.curso_id = %s AND ec.estado = 'activo'"
         params.append(curso_id)
@@ -72,19 +90,19 @@ def obtener_alumnos_reporte(
         query += " AND e.padron = %s"
         params.append(padron)
 
-    # filtros académicos
+    # académicos
 
     if evaluacion_id and condicion:
         condicion_limpia = condicion.lower()
 
         if condicion_limpia == "aprobado":
-            query += " AND n.nota >= 4"
+            query += " AND COALESCE(n_ind.nota, n_grp.nota) >= 4"
 
         elif condicion_limpia == "desaprobado":
-            query += " AND n.nota < 4"
+            query += " AND COALESCE(n_ind.nota, n_grp.nota) < 4"
 
     if evaluacion_id and nota_mayor_a:
-        query += " AND n.nota >= %s"
+        query += " AND COALESCE(n_ind.nota, n_grp.nota) >= %s"
         params.append(float(nota_mayor_a))
 
     return paginacion.ejecutar(
@@ -95,7 +113,9 @@ def obtener_alumnos_reporte(
         offset=offset,
     )
 
+
 def obtener_promedio_por_evaluacion(curso_id):
+    # De cada evaluacion trae el promedio de todas las notas de esa evaluacion, tambien suma los aprobados y los desaprobrados
     query = """
         SELECT 
             ev.id AS evaluacion_id,
@@ -115,6 +135,8 @@ def obtener_promedio_por_evaluacion(curso_id):
     return db.execute_query(query, (curso_id,))
 
 def obtener_distribucion_notas(curso_id):
+    # Consulta la cantidad de notas iguales, que hay de cada nota. 
+    # cada nota la guarda como el rango y cantidad es cuantas hay de ese rango
     query = """
         SELECT
             FLOOR(n.nota) AS rango,
@@ -130,6 +152,7 @@ def obtener_distribucion_notas(curso_id):
     return db.execute_query(query, (curso_id,))
 
 def obtener_promedio_por_tipo(curso_id):
+    # Consulta el promedio por cada tipo de evaluacion, trae el nombre y el promedio de nota de cada tipo.
     query = """
         SELECT
             te.nombre,
@@ -146,6 +169,8 @@ def obtener_promedio_por_tipo(curso_id):
     return db.execute_query(query, (curso_id,))
 
 def obtener_estado_cursada(curso_id):
+    # De todos los estudiantes de un curso, agrupa por el tipo de estado que haya y devuelve la cantidad de alumnos
+    # que hay en ese estado
     query = """
         SELECT
             ec.estado,
@@ -158,13 +183,18 @@ def obtener_estado_cursada(curso_id):
     return db.execute_query(query, (curso_id,))
 
 def obtener_asistencia_por_clase(curso_id):
+    # Por cada clase, calcula el porcentaje de los alumnos que actualmente siguen activos y asistieron a esa clase. 
+    # Se considera asistencia cuando el estado es presente, tarde o justificada,
+    # los alumnos dados de baja no participan en el calculo.
     query = """
         SELECT
             c.nombre,
             ROUND(
                 COALESCE(SUM(
                     CASE 
-                        WHEN a.estado IN ('presente', 'tarde', 'justificada') THEN 1 
+                        -- Evaluamos el presente SOLO si el estudiante sigue activo en el curso
+                        WHEN a.estado IN ('presente', 'tarde', 'justificada') 
+                             AND ec.estado = 'activo' THEN 1 
                         ELSE 0 
                     END
                 ), 0) * 100.0 /
@@ -172,6 +202,8 @@ def obtener_asistencia_por_clase(curso_id):
             2) AS porcentaje
         FROM clases c
         LEFT JOIN asistencias a ON a.clase_id = c.id
+        -- Traemos los datos de la cursada del alumno para validar su estado actual
+        LEFT JOIN estudiante_curso ec ON ec.estudiante_id = a.alumno_id AND ec.curso_id = c.curso_id
         WHERE c.curso_id = %s
         AND c.deleted_at IS NULL
         GROUP BY c.id, c.nombre, c.curso_id, c.fecha_hora_inicio
@@ -180,6 +212,8 @@ def obtener_asistencia_por_clase(curso_id):
     return db.execute_query(query, (curso_id,))
 
 def obtener_rendimiento_por_asistencia(curso_id):
+    # para cada alumno activo calcula su porcentaje de asistencia y su promedio de notas
+    # despues agrupa a los estudiantes en rangos de asistencia (0-20%, 21-40%, etc.) y obtiene el promedio de notas de cada grupo. 
     query = """
         SELECT
             CASE
@@ -249,7 +283,10 @@ def obtener_rendimiento_por_asistencia(curso_id):
         (curso_id, curso_id, curso_id)
     )
 
+
 def obtener_equipos_reporte(curso_id):
+    # consulta los equipos, y de ahi une en un formato especial los integrantes de ese equipo
+    # Agrupa todos los registros por cada equipo
     query = """
         SELECT 
             eq.id AS equipo_id,
@@ -257,7 +294,7 @@ def obtener_equipos_reporte(curso_id):
             ev.titulo AS evaluacion_contexto,
             GROUP_CONCAT(CONCAT(u.apellido, ', ', u.nombre, ' (Padrón: ', e.padron, ')') SEPARATOR ' | ') AS integrantes
         FROM equipos eq
-        INNER JOIN evaluaciones ev ON eq.evaluacion_id = ev.id
+        JOIN evaluaciones ev ON eq.evaluacion_id = ev.id
         LEFT JOIN equipo_integrantes ei ON eq.id = ei.equipo_id
         LEFT JOIN estudiantes e ON ei.alumno_id = e.id
         LEFT JOIN usuarios u ON e.usuario_id = u.id

@@ -43,7 +43,15 @@ def crear_pdf_alumnos(data_alumnos):
         pdf.cell(45, 8, alu['email'][:28], 1, 0, "L", fill)
         pdf.ln()
         fill = not fill
-    return pdf.output(dest='S').encode('latin-1')
+
+    salida_pdf = pdf.output(dest='S')
+
+    if isinstance(salida_pdf, bytearray):
+        return bytes(salida_pdf)
+    elif isinstance(salida_pdf, str):
+        return salida_pdf.encode('latin-1')
+    
+    return salida_pdf
 
 def crear_pdf_estadisticas(data_stats):
     pdf = FPDF()
@@ -154,8 +162,14 @@ def crear_pdf_estadisticas(data_stats):
 
     pdf.ln(5)
 
-        
-    return bytes(pdf.output(dest='S'))
+    salida_pdf = pdf.output(dest='S')
+    
+    if isinstance(salida_pdf, bytearray):
+        return bytes(salida_pdf)
+    elif isinstance(salida_pdf, str):
+        return salida_pdf.encode('latin-1')
+    
+    return salida_pdf
 
 def crear_pdf_equipos(data_equipos):
     pdf = FPDF("P", "mm", "A4")
@@ -231,4 +245,11 @@ def crear_pdf_equipos(data_equipos):
         pdf.set_y(max(y + altura, pdf.get_y()))
         pdf.set_x(10)
 
-    return pdf.output(dest='S').encode('latin-1')
+    salida_pdf = pdf.output(dest='S')
+
+    if isinstance(salida_pdf, bytearray):
+        return bytes(salida_pdf)
+    elif isinstance(salida_pdf, str):
+        return salida_pdf.encode('latin-1')
+
+    return salida_pdf
