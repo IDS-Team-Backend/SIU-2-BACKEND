@@ -8,6 +8,7 @@ from utils.error_handlers import created_response, NotFoundError, ValidationErro
 from utils import auth_validator as auth
 from utils import paginacion
 from validators import estudiante_curso_validator
+import services.carga_masiva_alumnos_service as carga_masiva
 
 
 estudiante_curso_bp = Blueprint("estudiante_curso", __name__)
@@ -121,3 +122,43 @@ def eliminar_estudiante_curso(id):
 @estudiante_curso_bp.route("/<id>", methods=["GET", "PUT", "PATCH", "DELETE"])
 def estudiante_curso_id_invalido(id):
     raise ValidationError("El ID debe ser un número entero positivo.")
+
+
+@estudiante_curso_bp.route("/inscribir-lote", methods=["POST"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def inscribir_lote_por_ids():
+    body = request.get_json(silent=True) or {}
+    curso_id = body.get("curso_id")
+    estudiante_ids = body.get("estudiante_ids")
+    estado = body.get("estado", "activo")
+
+    if curso_id is None:
+        return jsonify({"error": "falta el curso_id"}), 400
+    if not isinstance(estudiante_ids, list) or not estudiante_ids:
+        return jsonify({"error": "Se requiere 'estudiante_ids' como lista no vacía."}), 400
+
+    try:
+        curso_id = int(curso_id)
+    except (ValueError, TypeError):
+        return jsonify({"error": "'curso_id' debe ser un entero."}), 400
+
+    resultado = carga_masiva.inscribir_lote_por_ids(curso_id, estudiante_ids, estado)
+    return jsonify({
+        "mensaje": "Inscripción masiva finalizada",
+        "resultado": resultado,
+    }), 200
+
+@estudiante_curso_bp.route("/desvincular-lote", methods=["POST"])
+@auth.requiere_roles(ADMIN, DOCENTE)
+def desvincular_lote():
+    body = request.get_json(silent=True) or {}
+    curso_id = body.get("curso_id")
+    estudiante_ids = body.get("estudiante_ids")
+
+    if curso_id is None:
+        return jsonify({"error": "falta el curso_id"}), 400
+    if not isinstance(estudiante_ids, list) or not estudiante_ids:
+        return jsonify({"error": "Se requiere 'estudiante_ids' como lista."}), 400
+
+    resultado = carga_masiva.desvincular_lote_por_ids(int(curso_id), estudiante_ids)
+    return jsonify({"mensaje": "Desvinculación masiva finalizada", "resultado": resultado}), 200
