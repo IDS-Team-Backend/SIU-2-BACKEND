@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS curso_docentes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     curso_id INT NOT NULL,
     docente_id INT NOT NULL,
-    nombre ENUM('titular', 'jefe_tp', 'ayudante') NOT NULL,
+    nombre ENUM('titular', 'jefe_tp', 'ayudante', 'colaborador') NOT NULL,
     CONSTRAINT fk_curso_docentes_cursos
         FOREIGN KEY (curso_id) REFERENCES cursos(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
