@@ -28,7 +28,8 @@ def obtener_alumnos_reporte(
     """
 
     if evaluacion_id:
-        query += ", n.nota AS nota_evaluacion"
+        # COALESCE toma la primera nota que no sea NULL (individual primero, luego grupal)
+        query += ", COALESCE(n_ind.nota, n_grp.nota) AS nota_evaluacion"
 
     query += """
         FROM estudiantes e
@@ -38,18 +39,34 @@ def obtener_alumnos_reporte(
 
     if evaluacion_id:
         query += """
-            LEFT JOIN notas n
-                ON e.id = n.alumno_id
-                AND n.evaluacion_id = %s
+            -- 1. Buscamos si existe una nota individual directa
+            LEFT JOIN notas n_ind
+                ON e.id = n_ind.alumno_id
+                AND n_ind.evaluacion_id = %s
+                
+            -- 2. Vinculamos al alumno con sus equipos
+            LEFT JOIN equipo_integrantes ei
+                ON e.id = ei.alumno_id
+                
+            -- 3. Filtramos para quedarnos SOLO con el equipo de ESTA evaluación puntual
+            LEFT JOIN equipos eq
+                ON ei.equipo_id = eq.id
+                AND eq.evaluacion_id = %s
+                
+            -- 4. Buscamos si existe una nota asignada a ese equipo
+            LEFT JOIN notas n_grp
+                ON eq.id = n_grp.equipo_id
+                AND n_grp.evaluacion_id = %s
         """
-        params.append(evaluacion_id)
+        # Como usamos evaluacion_id en 3 JOINs diferentes, lo pasamos 3 veces
+        params.extend([evaluacion_id, evaluacion_id, evaluacion_id])
 
     query += """
         WHERE e.deleted_at IS NULL
           AND u.deleted_at IS NULL
     """
 
-    # filtros estructurales
+    # --- Filtros estructurales ---
 
     if curso_id:
         query += " AND ec.curso_id = %s AND ec.estado = 'activo'"
@@ -72,19 +89,20 @@ def obtener_alumnos_reporte(
         query += " AND e.padron = %s"
         params.append(padron)
 
-    # filtros académicos
+    # --- Filtros académicos ---
 
     if evaluacion_id and condicion:
         condicion_limpia = condicion.lower()
 
+        # Reemplazamos n.nota por el COALESCE para que los filtros apliquen a ambas modalidades
         if condicion_limpia == "aprobado":
-            query += " AND n.nota >= 4"
+            query += " AND COALESCE(n_ind.nota, n_grp.nota) >= 4"
 
         elif condicion_limpia == "desaprobado":
-            query += " AND n.nota < 4"
+            query += " AND COALESCE(n_ind.nota, n_grp.nota) < 4"
 
     if evaluacion_id and nota_mayor_a:
-        query += " AND n.nota >= %s"
+        query += " AND COALESCE(n_ind.nota, n_grp.nota) >= %s"
         params.append(float(nota_mayor_a))
 
     return paginacion.ejecutar(
@@ -182,6 +200,7 @@ def obtener_asistencia_por_clase(curso_id):
         ORDER BY c.fecha_hora_inicio
     """
     return db.execute_query(query, (curso_id,))
+
 
 def obtener_rendimiento_por_asistencia(curso_id):
     query = """
