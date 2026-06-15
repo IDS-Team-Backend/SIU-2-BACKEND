@@ -160,3 +160,14 @@ def eliminar_estudiante_curso(id):
     query = "DELETE FROM estudiante_curso WHERE id = %s"
     filas_afectadas = db.execute_query(query, (id,), modifica_db=True)
     return filas_afectadas > 0
+
+
+def obtener_por_estudiante_y_curso(estudiante_id, curso_id):
+    query = (
+        "SELECT id, estudiante_id, curso_id, estado "
+        "FROM estudiante_curso "
+        "WHERE estudiante_id = %s AND curso_id = %s "
+        "LIMIT 1"
+    )
+    result = db.execute_query(query, (estudiante_id, curso_id))
+    return result[0] if result else None
