@@ -7,7 +7,7 @@ from utils import auth_validator as auth
 from utils.error_handlers import NotFoundError, DuplicateError, ForbiddenError
 
 
-CAMPOS_PATCH_ADMIN = ("padron", "carrera", "anio_ingreso", "activo")
+CAMPOS_PATCH_ADMIN = ("padron", "carrera", "anio_ingreso")
 CAMPOS_PATCH_SELF = ("carrera",)
 
 
@@ -72,13 +72,12 @@ def reemplazar_estudiante(id, parametros):
     padron = parametros["padron"]
     carrera = parametros["carrera"]
     anio_ingreso = parametros["anio_ingreso"]
-    activo = parametros["activo"]
 
     if db.existe_padron(padron, excluir_id=id):
         raise DuplicateError("Ya existe otro estudiante con ese padrón.")
 
     try:
-        return db.reemplazar_estudiante(id, padron, carrera, anio_ingreso, activo)
+        return db.reemplazar_estudiante(id, padron, carrera, anio_ingreso)
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe otro estudiante con esos datos.")
 

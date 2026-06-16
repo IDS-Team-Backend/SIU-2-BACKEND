@@ -2,7 +2,7 @@ from utils import validaciones
 from utils.validaciones import construir_error_api
 
 
-CAMPOS_PATCH_PERMITIDOS = ("legajo", "titulo", "departamento", "fecha_ingreso", "activo")
+CAMPOS_PATCH_PERMITIDOS = ("legajo", "titulo", "departamento", "fecha_ingreso")
 
 
 def _validar_legajo(body, errores, resultado, requerido=True):
@@ -45,15 +45,6 @@ def _validar_fecha_ingreso(body, errores, resultado, requerido=True):
         resultado["fecha_ingreso"] = validaciones.validar_fecha_iso(
             body.get("fecha_ingreso"), "fecha_ingreso", permitir_futura=True
         )
-    except ValueError as e:
-        errores.extend(e.args[0]["errors"])
-
-
-def _validar_activo(body, errores, resultado, requerido=True):
-    if "activo" not in body and not requerido:
-        return
-    try:
-        resultado["activo"] = validaciones.validar_booleano(body.get("activo"), "activo")
     except ValueError as e:
         errores.extend(e.args[0]["errors"])
 
@@ -124,7 +115,6 @@ def validar_body_reemplazar_profesor(body):
     _validar_titulo(body, errores, resultado)
     _validar_departamento(body, errores, resultado)
     _validar_fecha_ingreso(body, errores, resultado)
-    _validar_activo(body, errores, resultado)
 
     if errores:
         raise ValueError({"errors": errores})
@@ -153,7 +143,6 @@ def validar_body_modificar_profesor(body):
     _validar_titulo(body, errores, resultado, requerido=False)
     _validar_departamento(body, errores, resultado, requerido=False)
     _validar_fecha_ingreso(body, errores, resultado, requerido=False)
-    _validar_activo(body, errores, resultado, requerido=False)
 
     if errores:
         raise ValueError({"errors": errores})

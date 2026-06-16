@@ -7,7 +7,7 @@ from utils import auth_validator as auth
 from utils.error_handlers import NotFoundError, DuplicateError, ForbiddenError
 
 
-CAMPOS_PATCH_ADMIN = ("legajo", "titulo", "departamento", "fecha_ingreso", "activo")
+CAMPOS_PATCH_ADMIN = ("legajo", "titulo", "departamento", "fecha_ingreso")
 CAMPOS_PATCH_SELF = ("titulo", "departamento")
 
 
