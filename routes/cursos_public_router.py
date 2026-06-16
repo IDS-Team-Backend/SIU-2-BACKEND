@@ -21,6 +21,12 @@ def obtener_curso_publico(curso_id):
     return jsonify(curso), 200
 
 
+@cursos_public_bp.get("/<int:curso_id>/cronograma")
+def obtener_cronograma_publico(curso_id):
+    semanas = logic.get_cronograma(curso_id)
+    return jsonify({"semanas": semanas}), 200
+
+
 @cursos_public_bp.route("/<curso_id>", methods=["GET"])
 def curso_publico_id_invalido(curso_id):
     raise ValidationError("El ID de curso debe ser un número entero positivo.")

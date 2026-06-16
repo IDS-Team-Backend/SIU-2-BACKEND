@@ -69,12 +69,6 @@ def obtener_curso(curso_id):
     curso = logic.obtener_curso(curso_id)
     return jsonify(curso), 200
 
-# ─── GET /cursos/{id}/cronograma ───────────────────────────────────────────────
-@cursos_bp.get("/<int:curso_id>/cronograma")
-def get_cronograma(curso_id):
-    semanas = logic.get_cronograma(curso_id)
-    return jsonify({"semanas": semanas}), 200
-
 @cursos_bp.route("/<int:curso_id>", methods=["PUT"])
 @auth.requiere_roles(ADMIN)
 def reemplazar_curso(curso_id):
