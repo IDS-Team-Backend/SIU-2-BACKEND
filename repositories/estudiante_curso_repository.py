@@ -31,6 +31,7 @@ def obtener_estudiante_cursos(
     estudiante_id=None,
     curso_id=None,
     estado=None,
+    q=None,
     page_size=paginacion.PAGE_SIZE_DEFAULT,
     offset=0
 ):
@@ -49,6 +50,17 @@ def obtener_estudiante_cursos(
     if estado is not None:
         query += " AND ec.estado = %s"
         params.append(estado)
+
+    if q:
+        query += """ AND (
+            u.nombre LIKE %s
+            OR u.apellido LIKE %s
+            OR u.email LIKE %s
+            OR CAST(u.dni AS CHAR) LIKE %s
+            OR CAST(e.padron AS CHAR) LIKE %s
+        )"""
+        comodin = f"%{q}%"
+        params.extend([comodin, comodin, comodin, comodin, comodin])
 
     return paginacion.ejecutar(
         query,
@@ -160,6 +172,12 @@ def eliminar_estudiante_curso(id):
     query = "DELETE FROM estudiante_curso WHERE id = %s"
     filas_afectadas = db.execute_query(query, (id,), modifica_db=True)
     return filas_afectadas > 0
+
+
+def eliminar_por_estudiante(estudiante_id):
+    """Desvincula a un estudiante de todos los cursos en los que esté inscripto."""
+    query = "DELETE FROM estudiante_curso WHERE estudiante_id = %s"
+    return db.execute_query(query, (estudiante_id,), modifica_db=True)
 
 
 def obtener_por_estudiante_y_curso(estudiante_id, curso_id):
