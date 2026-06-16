@@ -6,6 +6,8 @@ def obtener_estudiantes(
     carrera=None,
     anio_ingreso=None,
     usuario_id=None,
+    q=None,
+    eliminados=False,
     page_size=paginacion.PAGE_SIZE_DEFAULT,
     offset=0
 ):
@@ -17,13 +19,14 @@ def obtener_estudiantes(
             e.carrera,
             e.anio_ingreso,
             e.created_at,
+            e.deleted_at,
             u.nombre,
             u.apellido,
             u.email,
             u.dni
         FROM estudiantes e
         INNER JOIN usuarios u ON u.id = e.usuario_id
-        WHERE e.deleted_at IS NULL
+        WHERE e.deleted_at IS """ + ("NOT NULL" if eliminados else "NULL") + """
     """
     params = []
 
@@ -38,7 +41,17 @@ def obtener_estudiantes(
     if usuario_id:
         query += " AND e.usuario_id = %s"
         params.append(usuario_id)
-        
+
+    if q:
+        query += """ AND (
+            u.nombre LIKE %s
+            OR u.apellido LIKE %s
+            OR u.email LIKE %s
+            OR CAST(u.dni AS CHAR) LIKE %s
+            OR CAST(e.padron AS CHAR) LIKE %s
+        )"""
+        comodin = f"%{q}%"
+        params.extend([comodin, comodin, comodin, comodin, comodin])
 
     return paginacion.ejecutar(
         query,
@@ -203,8 +216,56 @@ def modificar_estudiante_parcial(id, parametros):
 
 def eliminar_estudiante(id: int, hard=False):
     if hard:
-        query = "DELETE FROM usuarios WHERE id = %s"
+        query = "DELETE FROM estudiantes WHERE id = %s"
     else:
-        query = "UPDATE usuarios SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s"
+        query = "UPDATE estudiantes SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s"
     filas_afectadas = db.execute_query(query, (id,), modifica_db=True)
     return filas_afectadas > 0
+
+
+def reactivar_estudiante(id: int):
+    query = "UPDATE estudiantes SET deleted_at = NULL WHERE id = %s AND deleted_at IS NOT NULL"
+    filas_afectadas = db.execute_query(query, (id,), modifica_db=True)
+    return filas_afectadas > 0
+
+
+
+def eliminar_estudiantes_lote(ids):
+    """Baja masiva (soft-delete) por lote de ids de estudiante.
+    Un solo for sobre la misma conexión, igual al patrón usado en
+    estudiante_curso_repository para las operaciones por lote."""
+    eliminados = 0
+    errores = []
+
+    for est_id in ids:
+        try:
+            est_id = int(est_id)
+        except (ValueError, TypeError):
+            errores.append({"estudiante_id": est_id, "error": "id inválido"})
+            continue
+
+        if eliminar_estudiante(est_id, hard=False):
+            eliminados += 1
+        else:
+            errores.append({"estudiante_id": est_id, "error": "estudiante inexistente"})
+
+    return eliminados, errores
+
+
+def reactivar_estudiantes_lote(ids):
+    reactivados = 0
+    errores = []
+
+    for est_id in ids:
+        try:
+            est_id = int(est_id)
+        except (ValueError, TypeError):
+            errores.append({"estudiante_id": est_id, "error": "id inválido"})
+            continue
+
+        if reactivar_estudiante(est_id):
+            reactivados += 1
+        else:
+            errores.append({"estudiante_id": est_id, "error": "estudiante inexistente o no eliminado"})
+
+    return reactivados, errores
