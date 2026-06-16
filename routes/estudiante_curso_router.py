@@ -13,7 +13,7 @@ import services.carga_masiva_alumnos_service as carga_masiva
 
 estudiante_curso_bp = Blueprint("estudiante_curso", __name__)
 
-FILTROS_PERMITIDOS = ("estudiante_id", "curso_id", "estado")
+FILTROS_PERMITIDOS = ("estudiante_id", "curso_id", "estado", "q")
 
 
 def _parsear_filtros():
@@ -29,6 +29,7 @@ def _parsear_filtros():
         "estudiante_id": request.args.get("estudiante_id", type=int),
         "curso_id": request.args.get("curso_id", type=int),
         "estado": request.args.get("estado"),
+        "q": request.args.get("q"),
     }
 
 

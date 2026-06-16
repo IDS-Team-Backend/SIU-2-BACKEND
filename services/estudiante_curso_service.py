@@ -23,9 +23,9 @@ def _validar_inscripciones_abiertas(curso_id):
 
 
 def obtener_estudiante_cursos(estudiante_id=None, curso_id=None, estado=None,
-                              page_size=20, offset=0):
+                              q=None, page_size=20, offset=0):
     return db.obtener_estudiante_cursos(
-        estudiante_id, curso_id, estado,
+        estudiante_id, curso_id, estado, q=q,
         page_size=page_size, offset=offset
     )
 
