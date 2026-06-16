@@ -13,7 +13,7 @@ from validators import estudiantes_validator
 
 estudiantes_bp = Blueprint("estudiantes", __name__)
 
-FILTROS_PERMITIDOS = ("carrera", "anio_ingreso", "usuario_id")
+FILTROS_PERMITIDOS = ("carrera", "anio_ingreso", "usuario_id", "q", "eliminados")
 
 
 def _parsear_filtros():
@@ -28,6 +28,8 @@ def _parsear_filtros():
         "carrera": request.args.get("carrera"),
         "anio_ingreso": request.args.get("anio_ingreso", type=int),
         "usuario_id": request.args.get("usuario_id", type=int),
+        "q": request.args.get("q"),
+        "eliminados": request.args.get("eliminados", "false").lower() == "true",
     }
 
 
@@ -113,6 +115,39 @@ def eliminar_estudiante(id: int):
     param_hard = request.args.get("hard", "false").lower() == "true"
     logic.eliminar_estudiante(id, hard_delete=param_hard)
     return "", 204
+
+
+@estudiantes_bp.route("/<int:id>/reactivar", methods=["POST"])
+@auth.requiere_roles(ADMIN)
+def reactivar_estudiante(id: int):
+    logic.reactivar_estudiante(id)
+    return "", 204
+
+
+@estudiantes_bp.route("/eliminar-lote", methods=["POST"])
+@auth.requiere_roles(ADMIN)
+def eliminar_lote():
+    body = request.get_json(silent=True) or {}
+    estudiante_ids = body.get("estudiante_ids")
+
+    if not isinstance(estudiante_ids, list) or not estudiante_ids:
+        return jsonify({"error": "Se requiere 'estudiante_ids' como lista no vacía."}), 400
+
+    resultado = logic.eliminar_estudiantes_lote(estudiante_ids)
+    return jsonify({"mensaje": "Baja masiva finalizada", "resultado": resultado}), 200
+
+
+@estudiantes_bp.route("/reactivar-lote", methods=["POST"])
+@auth.requiere_roles(ADMIN)
+def reactivar_lote():
+    body = request.get_json(silent=True) or {}
+    estudiante_ids = body.get("estudiante_ids")
+
+    if not isinstance(estudiante_ids, list) or not estudiante_ids:
+        return jsonify({"error": "Se requiere 'estudiante_ids' como lista no vacía."}), 400
+
+    resultado = logic.reactivar_estudiantes_lote(estudiante_ids)
+    return jsonify({"mensaje": "Reactivación masiva finalizada", "resultado": resultado}), 200
 
 
 @estudiantes_bp.route("/importar-lote", methods=["POST"])
