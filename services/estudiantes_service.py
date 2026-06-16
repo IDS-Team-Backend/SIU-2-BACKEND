@@ -2,6 +2,7 @@ import mysql.connector
 
 import repositories.estudiantes_repository as db
 import repositories.usuarios_repository as usuarios_db
+import repositories.estudiante_curso_repository as estudiante_curso_db
 from constants import ADMIN
 from utils import auth_validator as auth
 from utils.error_handlers import NotFoundError, DuplicateError, ForbiddenError
@@ -16,9 +17,9 @@ def _es_propio_estudiante(estudiante):
 
 
 def obtener_estudiantes(carrera=None, anio_ingreso=None,
-                        usuario_id=None, page_size=20, offset=0):
+                        usuario_id=None, q=None, eliminados=False, page_size=20, offset=0):
     return db.obtener_estudiantes(
-        carrera, anio_ingreso, usuario_id,
+        carrera, anio_ingreso, usuario_id, q=q, eliminados=eliminados,
         page_size=page_size, offset=offset
     )
 
@@ -119,4 +120,46 @@ def eliminar_estudiante(id: int, hard_delete=False):
     if not db.eliminar_estudiante(id, hard=hard_delete):
         raise NotFoundError("No se encontró el estudiante")
 
+    # Al dar de baja al estudiante, se lo desvincula de todos los cursos
+    # en los que estuviera inscripto.
+    estudiante_curso_db.eliminar_por_estudiante(id)
     return
+
+
+def reactivar_estudiante(id: int):
+    if not db.reactivar_estudiante(id):
+        raise NotFoundError("No se encontró el estudiante eliminado")
+    return
+
+
+def eliminar_estudiantes_lote(ids):
+    if not isinstance(ids, list) or not ids:
+        raise ValueError("Se requiere una lista no vacía de estudiante_ids.")
+
+    eliminados, errores = db.eliminar_estudiantes_lote(ids)
+
+    for est_id in ids:
+        try:
+            estudiante_curso_db.eliminar_por_estudiante(int(est_id))
+        except (ValueError, TypeError):
+            continue
+
+    return {
+        "procesados_exito": eliminados,
+        "ignorados_duplicados": 0,
+        "errores_encontrados": len(errores),
+        "detalles_errores": errores,
+    }
+
+
+def reactivar_estudiantes_lote(ids):
+    if not isinstance(ids, list) or not ids:
+        raise ValueError("Se requiere una lista no vacía de estudiante_ids.")
+
+    reactivados, errores = db.reactivar_estudiantes_lote(ids)
+    return {
+        "procesados_exito": reactivados,
+        "ignorados_duplicados": 0,
+        "errores_encontrados": len(errores),
+        "detalles_errores": errores,
+    }
