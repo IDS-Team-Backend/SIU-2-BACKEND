@@ -9,6 +9,7 @@ from utils.error_handlers import (
 import repositories.usuarios_repository as usuarios_repo
 import repositories.estudiantes_repository as estudiantes_repo
 import repositories.estudiante_curso_repository as estudiante_curso_repo
+import services.estudiante_curso_service as estudiante_curso_serv
 import repositories.cursos_repository as cursos_repo
 import services.auth_service as auth_service
  
@@ -107,7 +108,7 @@ def inscribir_lote_por_ids(curso_id, estudiante_ids, estado="activo"):
             continue
  
         try:
-            estudiante_curso_repo.crear_estudiante_curso(est_id, curso_id, estado)
+            estudiante_curso_serv.crear_estudiante_curso(est_id, curso_id, estado)
             guardados += 1
         except mysql.connector.errors.IntegrityError:
             duplicados += 1
