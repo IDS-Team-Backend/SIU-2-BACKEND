@@ -93,8 +93,14 @@ def obtener_reporte_estadisticas():
 @auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
 def obtener_reporte_equipos():
     curso_id = request.args.get("curso_id")
+    evaluacion_id = request.args.get("evaluacion_id")
     exportar_pdf = request.args.get("export", "").lower() == "pdf"
-    resultado = logic.obtener_reporte_equipos(curso_id, exportar_pdf)
+
+    resultado = logic.obtener_reporte_equipos(
+        curso_id,
+        evaluacion_id,
+        exportar_pdf
+    )
     
     if exportar_pdf:
         return send_file(
