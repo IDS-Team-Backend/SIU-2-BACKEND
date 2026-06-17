@@ -57,6 +57,10 @@ DOMINIOS_EMAIL_PERMITIDOS = [
     if dominio.strip()
 ]
 
+# URL pública del frontend, para armar los enlaces de los emails (registro, reset).
+# En Docker se inyecta por entorno; el default es para dev local sin Docker.
+FRONTEND_URL = _get_env("FRONTEND_URL", required=False, default="http://localhost:5001").rstrip("/")
+
 DB_CONFIG: dict[str, str | int] = {
     "host": os.getenv("DB_HOST", "localhost"),
     "user": os.getenv("DB_USER", "root"),

@@ -5,6 +5,7 @@ from flask import request, jsonify, Blueprint
 import services.profesores_service as logic
 import services.registro_profesor_service as registro_logic
 from constants import ADMIN, DOCENTE, ROLES_STAFF
+from config import FRONTEND_URL
 from utils.error_handlers import created_response, NotFoundError, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion
@@ -70,8 +71,7 @@ def crear_profesor():
 @auth.requiere_roles(*ROLES_STAFF)
 def registrar_profesor():
     parametros = profesores_validator.validar_body_registrar_profesor(request.get_json())
-    url_base_frontend = request.host_url.rstrip("/").replace(":5000", ":5001")
-    profesor = registro_logic.registrar_profesor(parametros, url_base_frontend)
+    profesor = registro_logic.registrar_profesor(parametros, FRONTEND_URL)
     return created_response(
         {
             "message": "Profesor creado. Se envió un email para finalizar la registración.",
