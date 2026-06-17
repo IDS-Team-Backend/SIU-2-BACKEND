@@ -1,5 +1,5 @@
 from flask import request, jsonify, Blueprint
-from constants import ADMIN, AYUDANTE, DOCENTE
+from constants import ADMIN, AYUDANTE, DOCENTE, ROLES_STAFF
 import services.notas_service as logic
 from utils.error_handlers import (
     created_response,
@@ -10,7 +10,7 @@ from utils import auth_validator as auth
 notas_bp = Blueprint("notas", __name__)
 
 @notas_bp.route("/", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_notas():
     evaluacion_id = request.args.get("evaluacion_id")
     alumno_id = request.args.get("alumno_id")
@@ -29,7 +29,7 @@ def obtener_notas():
     }), 200
 
 @notas_bp.route("/", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_nota():
     parametros = request.get_json()
     nueva_nota = logic.crear_nota(parametros)
@@ -42,13 +42,13 @@ def crear_nota():
     )
 
 @notas_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_nota_por_id(id):
     nota = logic.obtener_nota_por_id(id)
     return jsonify(nota), 200
 
 @notas_bp.route("/<int:id>", methods=["PATCH"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def reemplazar_nota(id):
     parametros = request.get_json()
     actualizado = logic.reemplazar_nota(
@@ -60,7 +60,7 @@ def reemplazar_nota(id):
     return "", 204
 
 @notas_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar_nota(id):
     logic.eliminar_nota(id)
     return "", 204

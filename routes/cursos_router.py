@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint
 import services.cursos_service as logic
 from utils import auth_validator as auth
-from constants import ADMIN, ALUMNO, DOCENTE
+from constants import ADMIN, ALUMNO, DOCENTE, ROLES_STAFF
 from utils.error_handlers import created_response, ValidationError
 from utils import paginacion
 
@@ -50,7 +50,7 @@ def obtener_cursos():
     }), 200
 
 @cursos_bp.route("/", methods=["POST"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_cursos():
     parametros = request.get_json(silent=True)
 
@@ -70,7 +70,7 @@ def obtener_curso(curso_id):
     return jsonify(curso), 200
 
 @cursos_bp.route("/<int:curso_id>", methods=["PUT"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def reemplazar_curso(curso_id):
     parametros = request.get_json(silent=True)
 
@@ -85,14 +85,14 @@ def reemplazar_curso(curso_id):
     }), 200
 
 @cursos_bp.route("/<int:curso_id>", methods=["DELETE"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar_curso(curso_id: int):
     param_hard = request.args.get("hard", "false").lower() == "true"
     logic.eliminar_curso(curso_id, hard_delete=param_hard)
     return "", 204
 
 @cursos_bp.route("/<int:curso_id>/estado", methods=["PATCH"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def cambiar_estado_curso(curso_id):
     parametros = request.get_json(silent=True) or {}
     estado = (parametros.get("estado") or "").strip()
@@ -103,7 +103,7 @@ def cambiar_estado_curso(curso_id):
     }), 200
 
 @cursos_bp.route("/<int:curso_id>/activar", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def activar_curso(curso_id):
     curso = logic.activar_curso(curso_id)
     return jsonify({
@@ -112,7 +112,7 @@ def activar_curso(curso_id):
     }), 200
 
 @cursos_bp.route("/siguiente", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_siguiente_cursada():
     curso = logic.crear_siguiente_cursada()
     return created_response(

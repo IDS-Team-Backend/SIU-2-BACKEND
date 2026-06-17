@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from utils import auth_validator as auth
 import services.clases_service as logic
-from constants import ADMIN, DOCENTE, ESTADOS_CLASE
+from constants import ADMIN, DOCENTE, ESTADOS_CLASE, ROLES_STAFF
 from utils.error_handlers import ValidationError
 
 
@@ -26,7 +26,7 @@ def get_clase(clase_id):
 
 # ─── POST /clases ──────────────────────────────────────────────────────────────
 @clases_bp.post("/")
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_clase():
     args = request.get_json(silent=True)
 
@@ -50,7 +50,7 @@ def get_estados_clase():
 
 # ─── PUT /clases/{id} ──────────────────────────────────────────────────────────────
 @clases_bp.put("/<int:clase_id>")
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def actualizar_clase(clase_id):
     args = request.get_json()
 
@@ -60,7 +60,7 @@ def actualizar_clase(clase_id):
 
 # ─── PATCH /clases/{id} ──────────────────────────────────────────────────────────────
 @clases_bp.patch("/<int:clase_id>")
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def actualizar_clase_parcial(clase_id):
     args = request.get_json()
 
@@ -71,7 +71,7 @@ def actualizar_clase_parcial(clase_id):
 
 # ─── DELETE /clases/{id} ──────────────────────────────────────────────────────────────
 @clases_bp.delete("/<int:clase_id>")
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar_clase(clase_id):
     logic.eliminar_clase(clase_id)
 

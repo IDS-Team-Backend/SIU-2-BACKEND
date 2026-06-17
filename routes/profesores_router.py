@@ -4,7 +4,7 @@ from flask import request, jsonify, Blueprint
 
 import services.profesores_service as logic
 import services.registro_profesor_service as registro_logic
-from constants import ADMIN, DOCENTE
+from constants import ADMIN, DOCENTE, ROLES_STAFF
 from utils.error_handlers import created_response, NotFoundError, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion
@@ -56,7 +56,7 @@ def obtener_profesores():
 
 
 @profesores_bp.route("/", methods=["POST"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_profesor():
     parametros = profesores_validator.validar_body_crear_profesor(request.get_json())
     nuevo_profesor = logic.crear_profesor(parametros)
@@ -67,7 +67,7 @@ def crear_profesor():
 
 
 @profesores_bp.route("/registro", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def registrar_profesor():
     parametros = profesores_validator.validar_body_registrar_profesor(request.get_json())
     url_base_frontend = request.host_url.rstrip("/").replace(":5000", ":5001")
@@ -82,7 +82,7 @@ def registrar_profesor():
 
 
 @profesores_bp.route("/legajo/<int:legajo>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_profesor_por_legajo(legajo):
     profesor = logic.obtener_profesor_por_legajo(legajo)
     return jsonify(profesor), 200
@@ -95,14 +95,14 @@ def obtener_mi_profesor():
 
 
 @profesores_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_profesor_por_id(id):
     profesor = logic.obtener_profesor_por_id(id)
     return jsonify(profesor), 200
 
 
 @profesores_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def reemplazar_profesor(id):
     parametros = profesores_validator.validar_body_reemplazar_profesor(request.get_json())
     if not logic.reemplazar_profesor(id, parametros):
@@ -111,7 +111,7 @@ def reemplazar_profesor(id):
 
 
 @profesores_bp.route("/<int:id>", methods=["PATCH"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def modificar_profesor_parcial(id):
     parametros = profesores_validator.validar_body_modificar_profesor(request.get_json())
     profesor = logic.modificar_profesor_parcial(id, parametros)
@@ -122,7 +122,7 @@ def modificar_profesor_parcial(id):
 
 
 @profesores_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar_profesor(id: int):
     param_hard = request.args.get("hard", "false").lower() == "true"
     logic.eliminar_profesor(id, hard_delete=param_hard)

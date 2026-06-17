@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 import services.materiales_service as logic
-from config import ADMIN, DOCENTE, AYUDANTE, ALUMNO
+from config import ADMIN, DOCENTE, AYUDANTE, ALUMNO, ROLES_STAFF
 from utils import auth_validator as auth
 
 
@@ -34,7 +34,7 @@ def obtener_material(id):
  
  
 @materiales_bp.route("/", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_material():
     data = request.get_json()
     material = logic.crear_material(data)
@@ -42,7 +42,7 @@ def crear_material():
  
  
 @materiales_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def reemplazar_material(id):
     data = request.get_json()
     logic.reemplazar_material(id, data)
@@ -50,7 +50,7 @@ def reemplazar_material(id):
  
  
 @materiales_bp.route("/<int:id>", methods=["PATCH"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def actualizar_material(id):
     data = request.get_json()
     logic.actualizar_material(id, data)
@@ -58,7 +58,7 @@ def actualizar_material(id):
  
  
 @materiales_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar_material(id):
     param_hard = request.args.get("hard", "false").lower() == "true"
     logic.eliminar_material(id, hard_delete=param_hard)

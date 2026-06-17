@@ -87,13 +87,13 @@ def modificar_estudiante_parcial(id, parametros):
     if not estudiante:
         raise NotFoundError("No se encontró el estudiante")
 
-    es_admin = auth.usuario_es(ADMIN)
+    es_staff = auth.usuario_es_staff()
     es_propio = _es_propio_estudiante(estudiante)
 
-    if not es_admin and not es_propio:
+    if not es_staff and not es_propio:
         raise ForbiddenError("No tenés permisos para modificar este estudiante.")
 
-    if not es_admin:
+    if not es_staff:
         keys_no_permitidas = set(parametros.keys()) - set(CAMPOS_PATCH_SELF)
         if keys_no_permitidas:
             raise ForbiddenError(

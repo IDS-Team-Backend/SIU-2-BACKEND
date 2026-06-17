@@ -20,6 +20,9 @@ DOCENTE = "docente"
 ALUMNO = "alumno"
 AYUDANTE = "ayudante"
 
+# Set canónico de roles del staff (mismos permisos en endpoints de gestión).
+ROLES_STAFF = (ADMIN, DOCENTE, AYUDANTE)
+
 TITULAR          = "titular"
 JEFE_TP          = "jefe_tp"
 AYUDANTE_CATEDRA = "ayudante"
