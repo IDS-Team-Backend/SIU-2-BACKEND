@@ -49,7 +49,7 @@ def mis_asistencias(curso_id):
     return jsonify(resultado), 200
     
 
-@asistencia_bp.get("/cursos/<int:curso_id>/mi-qr")
+@asistencia_bp.get("/mi-qr")
 @auth.requiere_roles(ALUMNO)
 def mi_qr(curso_id):
     resultado = logic.obtener_mi_qr(curso_id)

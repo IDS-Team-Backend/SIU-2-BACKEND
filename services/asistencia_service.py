@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
+import token
 
 import repositories.asistencia_repository as db
-from repositories import cursos_repository
+from repositories import cursos_repository, estudiantes_repository
 import repositories.estudiante_curso_repository as estudiante_curso_db
 import repositories.curso_docentes_repository as curso_docentes_db
 import repositories.profesores_repository as profesores_repository
@@ -77,14 +78,23 @@ def escanear_qr(token, clase_id):
 	if not isinstance(clase_id, int) or clase_id <= 0:
 		raise ValidationError("El campo 'clase_id' debe ser un entero positivo.")
 
-	inscripcion = db.obtener_inscripcion_por_token_qr(token.strip())
-	if not inscripcion:
-		raise ValidationError("Token inválido o alumno no inscripto.")
+	estudiante = estudiantes_repository.obtener_estudiante_por_token_qr(token.strip())
+	if not estudiante:
+		raise ValidationError("Token inválido.")
 
 	clase = _validar_clase_existe(clase_id)
 
-	if inscripcion["curso_id"] != clase["curso_id"]:
-		raise ValidationError("El token no corresponde al curso de esta clase.")
+	if datetime.now() > clase["fecha_hora_fin"]:
+		raise ValidationError("No se puede registrar asistencia: la clase ya finalizó.")
+
+	inscripcion = estudiante_curso_db.obtener_estudiante_curso_por_estudiante_curso(
+		estudiante["id"], clase["curso_id"]
+	)
+	if not inscripcion or inscripcion.get("estado") != "activo":
+		raise ValidationError("El alumno no está inscripto activamente en este curso.")
+
+	if db.obtener_asistencia_por_alumno_y_clase(estudiante["id"], clase_id):
+		raise ValidationError("Asistencia ya registrada.")
 
 	estado = (
 		"tarde"
@@ -92,14 +102,14 @@ def escanear_qr(token, clase_id):
 		else "presente"
 	)
 
-	db.upsert_asistencia(clase_id, inscripcion["estudiante_id"], estado)
+	db.upsert_asistencia(clase_id, estudiante["id"], estado)
 
 	return {
 		"asistencia": _serializar_valor({
-			"alumno_id": inscripcion["estudiante_id"],
-			"nombre": inscripcion["nombre"],
-			"apellido": inscripcion["apellido"],
-			"padron": inscripcion["padron"],
+			"alumno_id": estudiante["id"],
+			"nombre": estudiante["nombre"],
+			"apellido": estudiante["apellido"],
+			"padron": estudiante["padron"],
 			"clase_id": clase_id,
 			"estado": estado,
 			"fecha_registro": datetime.now(),
@@ -212,30 +222,11 @@ def obtener_asistencias_de_alumno_en_curso(curso_id, alumno_id):
 		},
 	}
 
-def obtener_mis_asistencias(curso_id):
+def obtener_mi_qr():
 	usuario_id = auth.obtener_usuario_id()
 	estudiante = _obtener_estudiante_por_usuario_id(usuario_id)
 
-	inscripcion = estudiante_curso_db.obtener_estudiante_curso_por_estudiante_curso(estudiante["id"], curso_id)
-	if not inscripcion or inscripcion.get("estado") != "activo":
-		raise ValidationError("El alumno no está inscripto activamente en este curso.")
-
-	return obtener_asistencias_de_alumno_en_curso(curso_id, estudiante["id"])
-
-
-def obtener_mi_qr(curso_id):
-	if not isinstance(curso_id, int) or curso_id <= 0:
-		raise ValidationError("El ID del curso debe ser un entero positivo.")
-
-	usuario_id = auth.obtener_usuario_id()
-	estudiante = _obtener_estudiante_por_usuario_id(usuario_id)
-
-	inscripcion = estudiante_curso_db.obtener_estudiante_curso_por_estudiante_curso(estudiante["id"], curso_id)
-	
-	if not inscripcion or inscripcion.get("estado") != "activo":
-		raise ValidationError("No estás inscripto activamente en este curso.")
-
-	if not inscripcion.get("token_qr"):
+	if not estudiante.get("token_qr"):
 		raise NotFoundError("No tenés un QR asignado aún.")
 
-	return {"token_qr": inscripcion["token_qr"]}
+	return {"token_qr": estudiante["token_qr"]}

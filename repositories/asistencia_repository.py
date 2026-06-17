@@ -48,27 +48,6 @@ def obtener_alumnos_inscriptos_de_curso(curso_id):
 	"""
 	return db.execute_query(query, (curso_id,)) or []
 
-
-def obtener_inscripcion_por_token_qr(token) -> dict[str, Any] | None:
-	query = """
-		SELECT
-			ec.id,
-			ec.estudiante_id,
-			ec.curso_id,
-			ec.token_qr,
-			e.padron,
-			u.nombre,
-			u.apellido,
-			u.email
-		FROM estudiante_curso ec
-		INNER JOIN estudiantes e ON e.id = ec.estudiante_id
-		INNER JOIN usuarios u ON u.id = e.usuario_id
-		WHERE ec.token_qr = %s
-		AND ec.estado = 'activo'
-	"""
-	return db.execute_query(query, (token,), un_solo_valor=True)
-
-
 def upsert_asistencia(clase_id, alumno_id, estado):
 	query = """
 		INSERT INTO asistencias (clase_id, alumno_id, estado)
@@ -102,6 +81,17 @@ def obtener_asistencias_de_clase(clase_id):
 		ORDER BY u.apellido ASC, u.nombre ASC, e.id ASC
 	"""
 	return db.execute_query(query, (clase_id, clase_id)) or []
+
+def obtener_asistencia_por_alumno_y_clase(alumno_id, clase_id):
+	query = """
+		SELECT
+		a.estado,
+		a.fecha_registro
+	FROM asistencias a
+	WHERE a.alumno_id = %s
+	AND a.clase_id = %s
+	"""
+	return db.execute_query(query, (alumno_id, clase_id), un_solo_valor=True)
 
 
 def bulk_upsert_asistencias(clase_id, asistencias): 
@@ -146,7 +136,7 @@ def obtener_asistencias_del_alumno_en_curso(curso_id, alumno_id):
 		   AND a.alumno_id = %s
 		WHERE c.curso_id = %s
 		  AND c.deleted_at IS NULL
-		  AND c.status = 'finalizada'
+		  AND (c.status = 'finalizada' OR c.status = 'en curso')
 		ORDER BY c.fecha_hora_inicio ASC
 	"""
 	return db.execute_query(query, (alumno_id, curso_id)) or []
