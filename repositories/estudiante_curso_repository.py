@@ -98,7 +98,8 @@ def obtener_estudiante_curso_por_estudiante_curso(estudiante_id, curso_id):
             ec.estudiante_id,
             ec.curso_id,
             ec.estado,
-            ec.fecha_inscripcion
+            ec.fecha_inscripcion,
+            ec.token_qr
         FROM estudiante_curso ec
         WHERE ec.estudiante_id = %s AND ec.curso_id = %s
     """

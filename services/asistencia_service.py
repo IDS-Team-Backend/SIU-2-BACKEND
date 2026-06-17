@@ -230,9 +230,8 @@ def obtener_mi_qr(curso_id):
 	usuario_id = auth.obtener_usuario_id()
 	estudiante = _obtener_estudiante_por_usuario_id(usuario_id)
 
-	inscripcion = estudiante_curso_db.obtener_estudiante_curso_por_estudiante_curso(
-		estudiante["id"], curso_id
-	)
+	inscripcion = estudiante_curso_db.obtener_estudiante_curso_por_estudiante_curso(estudiante["id"], curso_id)
+	
 	if not inscripcion or inscripcion.get("estado") != "activo":
 		raise ValidationError("No estás inscripto activamente en este curso.")
 
