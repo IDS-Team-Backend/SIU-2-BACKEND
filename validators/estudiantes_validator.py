@@ -5,7 +5,7 @@ from utils.validaciones import construir_error_api
 
 
 ANIO_INGRESO_MIN = 1900
-CAMPOS_PATCH_PERMITIDOS = ("padron", "carrera", "anio_ingreso", "activo")
+CAMPOS_PATCH_PERMITIDOS = ("padron", "carrera", "anio_ingreso")
 
 
 def _anio_ingreso_max():
@@ -64,7 +64,6 @@ def validar_body_reemplazar_estudiante(body):
     padron = None
     carrera = None
     anio_ingreso = None
-    activo = None
 
     try:
         padron = validaciones.validar_entero(body.get("padron"), "padron")
@@ -85,11 +84,6 @@ def validar_body_reemplazar_estudiante(body):
     except ValueError as e:
         errores.extend(e.args[0]["errors"])
 
-    try:
-        activo = validaciones.validar_booleano(body.get("activo"), "activo")
-    except ValueError as e:
-        errores.extend(e.args[0]["errors"])
-
     if errores:
         raise ValueError({"errors": errores})
 
@@ -97,7 +91,6 @@ def validar_body_reemplazar_estudiante(body):
         "padron": padron,
         "carrera": carrera,
         "anio_ingreso": anio_ingreso,
-        "activo": activo,
     }
 
 
@@ -140,12 +133,6 @@ def validar_body_modificar_estudiante(body):
             anio_ingreso = validaciones.validar_minimo(anio_ingreso, ANIO_INGRESO_MIN, "anio_ingreso")
             anio_ingreso = validaciones.validar_maximo(anio_ingreso, _anio_ingreso_max(), "anio_ingreso")
             resultado["anio_ingreso"] = anio_ingreso
-        except ValueError as e:
-            errores.extend(e.args[0]["errors"])
-
-    if "activo" in body:
-        try:
-            resultado["activo"] = validaciones.validar_booleano(body.get("activo"), "activo")
         except ValueError as e:
             errores.extend(e.args[0]["errors"])
 

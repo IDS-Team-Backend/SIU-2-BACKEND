@@ -139,7 +139,7 @@ def obtener_estudiantes_por_padrones(padrones):
         SELECT e.id, e.padron
         FROM estudiantes e
         WHERE e.padron IN ({placeholders})
-        AND e.activo = TRUE
+        AND e.deleted_at IS NULL
     """
     return db.execute_query(query, tuple(padrones)) or []
 

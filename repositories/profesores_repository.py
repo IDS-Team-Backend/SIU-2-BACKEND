@@ -146,7 +146,7 @@ def reemplazar_profesor(id, legajo, titulo, departamento, fecha_ingreso):
             legajo = %s,
             titulo = %s,
             departamento = %s,
-            fecha_ingreso = %s,
+            fecha_ingreso = %s
         WHERE id = %s
     """
     params = (legajo, titulo, departamento, fecha_ingreso, id)

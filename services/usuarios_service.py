@@ -8,7 +8,7 @@ from .auth_service import validar_datos_usuario
 
 
 usuario_params = ["nombre", "apellido", "dni", "email", "password"]
-usuario_update_params = ["nombre", "apellido", "dni", "email", "activo"]
+usuario_update_params = ["nombre", "apellido", "dni", "email"]
 
 
 def obtener_usuarios(nombre=None, apellido=None, email=None, dni=None, rol=None):
@@ -72,7 +72,6 @@ def reemplazar_usuario(id, parametros):
     apellido = parametros["apellido"]
     email = parametros["email"]
     dni = parametros["dni"]
-    activo = parametros.get("activo", True)
     es_admin = bool(parametros.get("es_admin", False))
 
     usuario_existente = obtener_usuario_por_id(id)

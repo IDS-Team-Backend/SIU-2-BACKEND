@@ -40,7 +40,7 @@ def _validar_clase_existe(clase_id):
 
 def _obtener_estudiante_por_usuario_id(usuario_id):
 	estudiante = estudiantes_repository.obtener_estudiante_por_usuario_id(usuario_id)
-	if not estudiante or not estudiante.get("activo"):
+	if not estudiante:
 		raise NotFoundError("El usuario no tiene un perfil estudiante activo.")
 	return estudiante
 

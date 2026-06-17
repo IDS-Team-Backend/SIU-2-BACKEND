@@ -101,7 +101,7 @@ def obtener_nombres_equipos(evaluacion_id):
         SELECT e.nombre
         FROM equipos e
         WHERE e.evaluacion_id = %s
-        AND e.activo = TRUE
+        AND e.deleted_at IS NULL
     """
     filas = db.execute_query(query, (evaluacion_id,))
     return [fila["nombre"] for fila in filas] if filas else []
@@ -117,8 +117,7 @@ def reemplazar_equipo(
         SET
             curso_id = %s,
             evaluacion_id = %s,
-            nombre = %s,
-            activo = %s
+            nombre = %s
         WHERE id = %s
     """
     params = (
