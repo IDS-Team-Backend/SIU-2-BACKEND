@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, cast
+from typing import Any
 
 import db
 
@@ -49,92 +49,24 @@ def obtener_alumnos_inscriptos_de_curso(curso_id):
 	return db.execute_query(query, (curso_id,)) or []
 
 
-def guardar_qrs(clase_id, qrs):
-	conn = db.get_connection()
-	cursor = None
-	try:
-		cursor = conn.cursor(dictionary=True)
-		query = """
-			INSERT INTO qr_asistencia (clase_id, alumno_id, token, expiracion)
-			VALUES (%s, %s, %s, %s)
-			ON DUPLICATE KEY UPDATE
-				token = VALUES(token),
-				expiracion = VALUES(expiracion),
-				consumido_at = NULL
-		"""
-		cursor.executemany(query, qrs)
-		conn.commit()
-		return cursor.rowcount
-	except Exception as e:
-		if conn:
-			conn.rollback()
-		raise Exception(f"Error al guardar QRs de asistencia: {e}") from e
-	finally:
-		if cursor:
-			cursor.close()
-		if conn:
-			conn.close()
-
-
-def obtener_qr_por_token(token) -> dict[str, Any] | None:
+def obtener_inscripcion_por_token_qr(token) -> dict[str, Any] | None:
 	query = """
 		SELECT
-			qa.clase_id,
-			qa.alumno_id,
+			ec.id,
+			ec.estudiante_id,
+			ec.curso_id,
+			ec.token_qr,
 			e.padron,
 			u.nombre,
 			u.apellido,
-			c.fecha_hora_inicio,
-			qa.expiracion,
-			qa.consumido_at
-		FROM qr_asistencia qa
-		INNER JOIN clases c ON c.id = qa.clase_id
-		INNER JOIN estudiantes e ON e.id = qa.alumno_id
+			u.email
+		FROM estudiante_curso ec
+		INNER JOIN estudiantes e ON e.id = ec.estudiante_id
 		INNER JOIN usuarios u ON u.id = e.usuario_id
-		WHERE qa.token = %s
+		WHERE ec.token_qr = %s
+		AND ec.estado = 'activo'
 	"""
 	return db.execute_query(query, (token,), un_solo_valor=True)
-
-
-def consumir_qr_por_token(token) -> dict[str, Any] | None:
-	query = """
-		SELECT
-			qa.clase_id,
-			qa.alumno_id,
-			e.padron,
-			u.nombre,
-			u.apellido,
-			c.fecha_hora_inicio,
-			qa.expiracion,
-			qa.consumido_at
-		FROM qr_asistencia qa
-		INNER JOIN clases c ON c.id = qa.clase_id
-		INNER JOIN estudiantes e ON e.id = qa.alumno_id
-		INNER JOIN usuarios u ON u.id = e.usuario_id
-		WHERE qa.token = %s
-	"""
-	qr = db.execute_query(query, (token,), un_solo_valor=True)
-	if not qr:
-		return None
-
-	if qr["consumido_at"] is not None:
-		qr["ya_consumido"] = True
-		return qr
-
-	if qr["expiracion"] < datetime.now():
-		qr["expirado"] = True
-		return qr
-
-	update_query = """
-		UPDATE qr_asistencia
-		SET consumido_at = NOW()
-		WHERE token = %s AND consumido_at IS NULL
-	"""
-	filas_actualizadas = db.execute_query(update_query, (token,), modifica_db=True)
-	if filas_actualizadas == 0:
-		qr["ya_consumido"] = True
-
-	return qr
 
 
 def upsert_asistencia(clase_id, alumno_id, estado):
@@ -161,10 +93,10 @@ def obtener_asistencias_de_clase(clase_id):
 		INNER JOIN usuarios u ON u.id = e.usuario_id
 		LEFT JOIN asistencias a
 			ON a.clase_id = %s
-		   AND a.alumno_id = e.id
+		AND a.alumno_id = e.id
 		INNER JOIN clases c ON c.id = %s AND c.curso_id = ec.curso_id
 		WHERE ec.estado = 'activo'
-		  AND e.deleted_at IS NULL
+		AND e.deleted_at IS NULL
 		  AND u.deleted_at IS NULL
 		  AND c.deleted_at IS NULL
 		ORDER BY u.apellido ASC, u.nombre ASC, e.id ASC
@@ -172,7 +104,10 @@ def obtener_asistencias_de_clase(clase_id):
 	return db.execute_query(query, (clase_id, clase_id)) or []
 
 
-def bulk_upsert_asistencias(clase_id, asistencias):
+def bulk_upsert_asistencias(clase_id, asistencias): 
+	# esta funcion es de esta forma, y no usa db.execute_query() porque es la unica funcion 
+	# que modifica varias filas a la vez, por lo que usa cursor.executemany() para eficiencia, 
+	# y db.execute_query() no tiene esa capacidad y no vale la pena modificarla por una unica funcion
 	conn = db.get_connection()
 	cursor = None
 	try:
@@ -182,7 +117,7 @@ def bulk_upsert_asistencias(clase_id, asistencias):
 			VALUES (%s, %s, %s)
 			ON DUPLICATE KEY UPDATE estado = VALUES(estado)
 		"""
-		data = [(clase_id, asistencia["alumno_id"], asistencia["estado"]) for asistencia in asistencias]
+		data = [(clase_id, a["alumno_id"], a["estado"]) for a in asistencias]
 		cursor.executemany(query, data)
 		conn.commit()
 		return cursor.rowcount
