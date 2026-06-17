@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import db
 from utils import paginacion
 
@@ -52,15 +54,16 @@ def obtener_estudiantes(
 def crear_estudiante(usuario_id, padron, carrera, anio_ingreso):
     query = """
         INSERT INTO estudiantes
-        (usuario_id, padron, carrera, anio_ingreso)
-        VALUES (%s, %s, %s, %s)
+        (usuario_id, padron, carrera, anio_ingreso, token_qr)
+        VALUES (%s, %s, %s, %s, %s)
     """
 
     params = (
         usuario_id,
         padron,
         carrera,
-        anio_ingreso
+        anio_ingreso,
+        str(uuid4())  # token QR unico
     )
 
     new_id = db.execute_query(query, params, modifica_db=True)
@@ -97,6 +100,7 @@ def obtener_estudiante_por_usuario_id(usuario_id):
             e.carrera,
             e.anio_ingreso,
             e.created_at,
+            e.token_qr,
             u.nombre,
             u.apellido,
             u.email,
@@ -208,3 +212,34 @@ def eliminar_estudiante(id: int, hard=False):
         query = "UPDATE usuarios SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s"
     filas_afectadas = db.execute_query(query, (id,), modifica_db=True)
     return filas_afectadas > 0
+
+# //////////////////////////////////
+# //////////// TOKEN QR ////////////
+# //////////////////////////////////
+
+def obtener_estudiante_por_token_qr(token_qr):
+    query = """
+        SELECT
+            e.id,
+            e.usuario_id,
+            e.padron,
+            e.carrera,
+            e.anio_ingreso,
+            e.created_at,
+            u.nombre,
+            u.apellido,
+            u.email,
+            u.dni
+        FROM estudiantes e
+        INNER JOIN usuarios u ON u.id = e.usuario_id
+        WHERE e.token_qr = %s AND e.deleted_at IS NULL
+    """
+    return db.execute_query(query, (token_qr,), un_solo_valor=True)
+
+def actualizar_token_qr(estudiante_id, nuevo_token):
+    query = """
+        UPDATE estudiantes
+        SET token_qr = %s
+        WHERE id = %s
+    """
+    return db.execute_query(query, (nuevo_token, estudiante_id), modifica_db=True)

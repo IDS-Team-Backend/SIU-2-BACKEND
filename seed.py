@@ -1,6 +1,7 @@
 import json
 import random
 from datetime import datetime, timedelta
+from uuid import uuid4
 from db import execute_query
 from werkzeug.security import generate_password_hash
 
@@ -104,7 +105,7 @@ def seed_estudiantes():
     PROFESORES_IDS = {2, 5, 6}
     estudiante_uids = [uid for uid in range(1, 38) if uid != ADMIN_ID and uid not in PROFESORES_IDS]
     estudiantes = [
-        (uid, 100000 + uid - 1, C[i % len(C)], 2024)
+        (uid, 100000 + uid - 1, C[i % len(C)], 2024, str(uuid4()))
         for i, uid in enumerate(estudiante_uids)
     ]
 
@@ -113,9 +114,10 @@ def seed_estudiantes():
         usuario_id,
         padron,
         carrera,
-        anio_ingreso
+        anio_ingreso,
+        token_qr
     )
-    VALUES (%s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s)
     """
 
     for estudiante in estudiantes:

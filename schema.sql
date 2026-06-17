@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS estudiantes (
     padron BIGINT NOT NULL UNIQUE,
     carrera VARCHAR(150) NOT NULL,
     anio_ingreso INT NOT NULL,
+    token_qr VARCHAR(255) NOT NULL UNIQUE, -- token unico para asistencia por QR
     deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_estudiantes_usuarios
@@ -103,7 +104,6 @@ CREATE TABLE IF NOT EXISTS estudiante_curso (
     curso_id INT NOT NULL,
     estado ENUM('activo', 'abandono') NOT NULL DEFAULT 'activo',
     fecha_inscripcion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    token_qr VARCHAR(255) NULL UNIQUE, -- token unico para asistencia por QR, se genera al inscribirse y se borra al finalizar la cursada
     CONSTRAINT fk_estudiante_curso_estudiantes
         FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
