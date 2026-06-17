@@ -8,16 +8,6 @@ import services.asistencia_service as logic
 asistencia_bp = Blueprint("asistencia", __name__)
 
 
-@asistencia_bp.post("/clases/<int:clase_id>/generar-qrs")
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
-def generar_qrs(clase_id):
-    logic.generar_qrs_de_asistencia(clase_id)
-    
-    return jsonify({
-        "message": "QRs generados correctamente y enviados por mail",
-    }), 201
-
-
 @asistencia_bp.post("/escanear")
 @auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
 def escanear():
@@ -26,7 +16,10 @@ def escanear():
     if not isinstance(args, dict):
         raise ValidationError("El cuerpo de la solicitud debe ser un JSON válido.")
 
-    resultado = logic.escanear_qr(args.get("token"))
+    resultado = logic.escanear_qr(
+        token=args.get("token"),
+        clase_id=args.get("clase_id"),
+    )
     return jsonify(resultado), 200
 
 
@@ -53,4 +46,11 @@ def actualizar_asistencias_clase(clase_id):
 @auth.requiere_roles(ALUMNO)
 def mis_asistencias(curso_id):
     resultado = logic.obtener_mis_asistencias(curso_id)
+    return jsonify(resultado), 200
+
+
+@asistencia_bp.get("/cursos/<int:curso_id>/mi-qr")
+@auth.requiere_roles(ALUMNO)
+def mi_qr(curso_id):
+    resultado = logic.obtener_mi_qr(curso_id)
     return jsonify(resultado), 200
