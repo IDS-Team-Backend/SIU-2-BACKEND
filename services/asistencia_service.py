@@ -167,28 +167,14 @@ def actualizar_asistencias_manualmente(clase_id, asistencias):
 	db.bulk_upsert_asistencias(clase_id, payload)
 
 
-# ──────────────────────────────────────────────
-# Vista del alumno
-# ──────────────────────────────────────────────
-
 def obtener_asistencias_de_alumno_en_curso(curso_id, alumno_id):
 	if not isinstance(curso_id, int) or curso_id <= 0:
 		raise ValidationError("El ID del curso debe ser un entero positivo.")
 
 	curso = cursos_repository.obtener_curso_por_id(curso_id)
 	if not curso:
-		raise NotFoundError("Curso no encontrado.")
+		raise NotFoundError("Curso no encontrado")
 
-	usuario_id = auth.obtener_usuario_id()
-	estudiante = _obtener_estudiante_por_usuario_id(usuario_id)
-
-	inscripcion = estudiante_curso_db.obtener_estudiante_curso_por_estudiante_curso(
-		estudiante["id"], curso_id
-	)
-	if not inscripcion or inscripcion.get("estado") != "activo":
-		raise ValidationError("El alumno no está inscripto activamente en este curso.")
-
-	asistencias = db.obtener_asistencias_del_alumno_en_curso(curso_id, estudiante["id"])
 	asistencias = db.obtener_asistencias_del_alumno_en_curso(curso_id, alumno_id)
 	total_clases = len(asistencias)
 
@@ -198,13 +184,15 @@ def obtener_asistencias_de_alumno_en_curso(curso_id, alumno_id):
 	for asistencia in asistencias:
 		estado = asistencia["estado"] or "ausente"
 		conteo_estados[estado] = conteo_estados.get(estado, 0) + 1
-		detalle.append({
-			"clase_id": asistencia["clase_id"],
-			"clase_nombre": asistencia["clase_nombre"],
-			"fecha_hora_inicio": asistencia["fecha_hora_inicio"],
-			"estado": estado,
-			"fecha_registro": asistencia["fecha_registro"],
-		})
+		detalle.append(
+			{
+				"clase_id": asistencia["clase_id"],
+				"clase_nombre": asistencia["clase_nombre"],
+				"fecha_hora_inicio": asistencia["fecha_hora_inicio"],
+				"estado": estado,
+				"fecha_registro": asistencia["fecha_registro"],
+			}
+		)
 
 	presentes = conteo_estados.get("presente", 0)
 	tarde = conteo_estados.get("tarde", 0)
@@ -220,9 +208,9 @@ def obtener_asistencias_de_alumno_en_curso(curso_id, alumno_id):
 			"porcentaje_asistencia": porcentaje_asistencia,
 			"curso": curso["nombre"],
 			"detalle": _serializar_valor(detalle),
-		}
-	}
 
+		},
+	}
 
 def obtener_mis_asistencias(curso_id):
 	usuario_id = auth.obtener_usuario_id()
