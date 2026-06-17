@@ -216,16 +216,6 @@ def seed_inscripciones():
         execute_query(query, inscripcion, modifica_db=True)
 
 
-def seed_tokens_qr():
-    # El alta por API genera el token_qr al inscribirse; acá lo completamos para las
-    # inscripciones seedeadas (insertadas en crudo). Idempotente: solo las que están en NULL.
-    execute_query(
-        "UPDATE estudiante_curso SET token_qr = UUID() WHERE token_qr IS NULL",
-        (),
-        modifica_db=True,
-    )
-
-
 def seed_evaluaciones():
     evaluaciones = [
         (1, 1, "Primer Parcial",   "Parcial de estructuras",    "2026-05-10"),
@@ -717,7 +707,6 @@ def run_seed():
     seed_cursos()
     seed_curso_docentes()
     seed_inscripciones()
-    seed_tokens_qr()
     seed_evaluaciones()
     seed_equipos()
     seed_equipo_integrantes()

@@ -11,7 +11,6 @@ _SELECT_ESTUDIANTE_CURSO = """
         ec.curso_id,
         ec.estado,
         ec.fecha_inscripcion,
-        ec.token_qr,
         e.padron,
         e.carrera,
         e.anio_ingreso,
