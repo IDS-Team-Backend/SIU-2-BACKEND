@@ -1,5 +1,5 @@
 from flask import jsonify
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, HTTPException
 
 
 def created_response(body, resource_path):
@@ -103,6 +103,21 @@ def start(app):
                 "description": str(e),
             }]
         }), 500
+
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(e):
+        # Errores HTTP de Werkzeug/Flask (404 ruta inexistente, 405 método no
+        # permitido, etc.). Sin esto caían en el handler de Exception y se
+        # devolvían como 500. (BadRequest tiene su propio handler más específico.)
+        return jsonify({
+            "errors": [
+                {
+                    "code": (e.name or "HTTP_ERROR").upper().replace(" ", "_"),
+                    "message": e.description,
+                    "level": "error",
+                }
+            ]
+        }), e.code
 
     @app.errorhandler(Exception)
     def handle_unexpected_error(e):

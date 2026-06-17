@@ -9,7 +9,7 @@ from .estudiantes_router import estudiantes_bp
 from .profesores_router import profesores_bp
 from .evaluaciones_router import evaluaciones_bp
 from .logs_router import logs_bp
-from .materiales_router import materiales_bp
+from .materiales_router import materiales_bp, materiales_public_bp
 from .reportes_router import reportes_bp
 from .usuarios_router import usuarios_bp
 from .estudiante_curso_router import estudiante_curso_bp
@@ -21,18 +21,25 @@ from .notas_router import notas_bp
 from .entregas_router import entregas_bp
 from .clases_router import clases_bp
 from .tipo_evaluaciones import tipos_evaluacion_bp
-from .password_router import password_bp
+from .password_router import password_bp, password_private_bp
 
 
+# Convención: un blueprint es O totalmente público (sin token) O totalmente
+# protegido (register_routes le agrega before_request(validar_token)). Ningún
+# route se autovalida ni usa before_request selectivo. Si un recurso necesita
+# lecturas públicas y escrituras protegidas, se parte en dos blueprints
+# (público + privado) sobre el mismo prefijo, como auth/materiales/password.
 BLUEPRINTS_PUBLICOS = [
     ("/auth",       auth_public_bp),
-    ("/materiales", materiales_bp),
+    ("/materiales", materiales_public_bp),
     ("/password",          password_bp),
     ("/cursos-publico", cursos_public_bp),
 ]
 
 BLUEPRINTS_PRIVADOS = [
     ("/auth",              auth_private_bp),
+    ("/password",          password_private_bp),
+    ("/materiales",        materiales_bp),
     ("/email",             email_bp),
     ("/cursos",            cursos_bp),
     ("/logs",              logs_bp),

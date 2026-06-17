@@ -11,7 +11,6 @@ from services.tipos_evaluacion_service import (
 )
 
 tipos_evaluacion_bp = Blueprint("tipos_evaluacion",__name__)
-tipos_evaluacion_bp.before_request(auth.validar_token)
 
 @tipos_evaluacion_bp.route("/",methods=["GET"])
 def listar():

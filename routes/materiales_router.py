@@ -4,16 +4,14 @@ from config import ADMIN, DOCENTE, AYUDANTE, ALUMNO
 from utils import auth_validator as auth
 
 
+# Lectura pública (sin token); las escrituras viven en materiales_bp (privado).
+materiales_public_bp = Blueprint("materiales_public", __name__)
+
+# Escrituras protegidas por token (registrado en BLUEPRINTS_PRIVADOS).
 materiales_bp = Blueprint("materiales", __name__)
 
-# Solo protege las rutas que modifican datos
-@materiales_bp.before_request
-def proteger_rutas_modificacion():
-    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
-        auth.validar_token()
 
-@materiales_bp.route("/", methods=["GET"])
-
+@materiales_public_bp.route("/", methods=["GET"])
 def obtener_materiales():
     curso_id   = request.args.get("curso_id")
     subido_por = request.args.get("subido_por")
@@ -29,8 +27,7 @@ def obtener_materiales():
     return jsonify({"materiales": registros, "total": total}), 200
  
  
-@materiales_bp.route("/<int:id>", methods=["GET"])
-
+@materiales_public_bp.route("/<int:id>", methods=["GET"])
 def obtener_material(id):
     material = logic.obtener_material_por_id(id)
     return jsonify(material), 200

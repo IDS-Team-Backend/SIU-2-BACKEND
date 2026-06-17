@@ -7,7 +7,6 @@ import math
 
 
 reportes_bp = Blueprint("reportes", __name__)
-reportes_bp.before_request(auth.validar_token)
 
 @reportes_bp.route("/alumnos", methods=["GET"])
 @auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
