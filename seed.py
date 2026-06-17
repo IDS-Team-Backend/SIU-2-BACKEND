@@ -590,24 +590,27 @@ def seed_clases():
 
 def seed_asistencias():
     """
-    Genera asistencias realistas para todas las clases finalizadas del curso 1.
+    Genera asistencias variadas para todas las clases finalizadas del curso 1.
 
     Perfiles de asistencia por alumno (mismo seed que notas para consistencia):
-    - Muy constante (top 5):    85-100% de presencia
-    - Regular (siguientes 20):  60-85%
-    - Irregular (siguientes 5): 30-60%
-    - Abandonadores (últimos 4): solo primeras 4 clases (~30%)
+    - Muy constante (top 5):    ~92% de presencia
+    - Regular (siguientes 20):  ~72%
+    - Irregular (siguientes 5): ~45%
+    - Abandonadores (últimos 4): van poco y dejan de ir tras la 4ª clase
+
+    Cada par (clase, alumno) recibe un estado realista — presente / tarde /
+    ausente / justificada — en vez de quedar todo en 'ausente' (el default).
+    fecha_registro = fecha de la clase. Idempotente: borra y regenera.
     """
     random.seed(42)
 
     clases_rows = execute_query(
-        "SELECT id FROM clases WHERE curso_id = 1 AND status = 'finalizada' ORDER BY fecha_hora_inicio"
+        "SELECT id, fecha_hora_inicio FROM clases "
+        "WHERE curso_id = 1 AND status = 'finalizada' ORDER BY fecha_hora_inicio"
     )
-    clase_ids = [r["id"] for r in clases_rows]
-
     estudiante_ids = [r["id"] for r in execute_query("SELECT id FROM estudiantes ORDER BY id")]
 
-    # Definimos probabilidad de asistir por alumno
+    # Probabilidad de asistir según el perfil del alumno.
     probs = {}
     for idx, eid in enumerate(estudiante_ids):
         if idx < 5:
@@ -617,26 +620,39 @@ def seed_asistencias():
         elif idx < 30:
             probs[eid] = 0.45       # irregulares
         else:
-            probs[eid] = 0.25       # abandonadores (van poco desde el principio)
-
-    # Los "abandonadores" solo pueden asistir a las primeras 4 clases
+            probs[eid] = 0.25       # abandonadores
     abandonadores = set(estudiante_ids[-4:])
+
+    # Regeneramos las asistencias del curso 1 (idempotente, como seed_clases).
+    execute_query(
+        "DELETE FROM asistencias WHERE clase_id IN (SELECT id FROM clases WHERE curso_id = 1)",
+        (), modifica_db=True,
+    )
 
     query = """
     INSERT IGNORE INTO asistencias(
         clase_id,
-        alumno_id
+        alumno_id,
+        estado,
+        fecha_registro
     )
-    VALUES (%s, %s)
+    VALUES (%s, %s, %s, %s)
     """
 
-    for clase_idx, clase_id in enumerate(clase_ids):
+    def estado_de(eid, clase_idx):
+        # Abandonadores: dejan de ir tras la 4ª clase.
+        if eid in abandonadores and clase_idx >= 4:
+            return "ausente"
+        if random.random() < probs[eid]:
+            # Asistió: casi siempre presente, a veces llega tarde.
+            return "tarde" if random.random() < 0.12 else "presente"
+        # No asistió: la mayoría ausente, ~1 de cada 5 justificada.
+        return "justificada" if random.random() < 0.20 else "ausente"
+
+    for clase_idx, clase in enumerate(clases_rows):
         for eid in estudiante_ids:
-            # Abandonadores solo asisten a las primeras 4 clases
-            if eid in abandonadores and clase_idx >= 4:
-                continue
-            if random.random() < probs[eid]:
-                execute_query(query, (clase_id, eid), modifica_db=True)
+            estado = estado_de(eid, clase_idx)
+            execute_query(query, (clase["id"], eid, estado, clase["fecha_hora_inicio"]), modifica_db=True)
 
 
 def seed_qr_asistencia():

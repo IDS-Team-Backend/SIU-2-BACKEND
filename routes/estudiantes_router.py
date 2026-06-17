@@ -4,7 +4,7 @@ from flask import request, jsonify, Blueprint
 
 import services.estudiantes_service as logic
 import services.carga_masiva_alumnos_service as carga_masiva
-from constants import ADMIN, ALUMNO, DOCENTE
+from constants import ADMIN, ALUMNO, DOCENTE, AYUDANTE
 from utils.error_handlers import created_response, NotFoundError, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion
@@ -74,14 +74,14 @@ def obtener_mi_estudiante():
 
 
 @estudiantes_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
 def obtener_estudiante_por_id(id):
     estudiante = logic.obtener_estudiante_por_id(id)
     return jsonify(estudiante), 200
 
 
 @estudiantes_bp.route("/padron/<int:padron>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
 def obtener_estudiante_por_padron(padron):
     estudiante = logic.obtener_estudiante_por_padron(padron)
     return jsonify(estudiante), 200

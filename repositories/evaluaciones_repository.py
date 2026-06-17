@@ -9,6 +9,8 @@ def obtener_evaluaciones(
 ):
     query = """
         FROM evaluaciones e
+        INNER JOIN tipos_evaluacion te
+            ON te.id = e.tipo_evaluacion_id
         WHERE e.deleted_at IS NULL
     """
     params = []
@@ -43,6 +45,8 @@ def obtener_evaluaciones(
             e.id,
             e.curso_id,
             e.tipo_evaluacion_id,
+            te.nombre AS tipo_evaluacion,
+            te.es_grupal,
             e.titulo,
             e.descripcion,
             e.fecha,

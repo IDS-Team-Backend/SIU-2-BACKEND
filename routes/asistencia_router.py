@@ -54,3 +54,10 @@ def actualizar_asistencias_clase(clase_id):
 def mis_asistencias(curso_id):
     resultado = logic.obtener_mis_asistencias(curso_id)
     return jsonify(resultado), 200
+
+
+@asistencia_bp.get("/cursos/<int:curso_id>/alumnos/<int:alumno_id>")
+@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+def asistencias_de_alumno(curso_id, alumno_id):
+    resultado = logic.obtener_asistencias_de_alumno_en_curso(curso_id, alumno_id)
+    return jsonify(resultado), 200
