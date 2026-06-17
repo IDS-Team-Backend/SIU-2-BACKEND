@@ -83,15 +83,6 @@ def obtener_estudiante_curso_por_id(id):
     resultado = db.execute_query(query, (id,), un_solo_valor=True)
     return resultado
 
-def guardar_token_qr(estudiante_curso_id, token):
-    query = """
-        UPDATE estudiante_curso
-        SET token_qr = %s
-        WHERE id = %s
-    """
-    return db.execute_query(query, (token, estudiante_curso_id), modifica_db=True)
-
-
 def obtener_estudiante_curso_por_estudiante_curso(estudiante_id, curso_id):
     query = """
         SELECT
@@ -99,8 +90,7 @@ def obtener_estudiante_curso_por_estudiante_curso(estudiante_id, curso_id):
             ec.estudiante_id,
             ec.curso_id,
             ec.estado,
-            ec.fecha_inscripcion,
-            ec.token_qr
+            ec.fecha_inscripcion
         FROM estudiante_curso ec
         WHERE ec.estudiante_id = %s AND ec.curso_id = %s
     """

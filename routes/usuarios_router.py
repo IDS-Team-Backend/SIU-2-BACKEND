@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, Blueprint
-from constants import ADMIN, DOCENTE
+from constants import ADMIN, DOCENTE, ROLES_STAFF
 import services.usuarios_service as logic
 from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
@@ -24,7 +24,7 @@ def obtener_usuarios():
 # ─── POST /usuarios ───────────────────────────────────────────────────────────
 
 @usuarios_bp.route("/", methods=["POST"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_usuario():
     parametros = request.get_json()
     new_usuario = logic.crear_usuario(parametros)
@@ -42,7 +42,7 @@ def obtener_usuario_por_id(id):
 # ─── PUT /usuarios/{id} ───────────────────────────────────────────────────────
 
 @usuarios_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def reemplazar_usuario(id):
     parametros = request.get_json()
 
@@ -52,7 +52,7 @@ def reemplazar_usuario(id):
 
 # ─── DELETE /usuarios/{id} ────────────────────────────────────────────────────
 @usuarios_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar_usuario(id: int):
     param_hard = request.args.get("hard", "false").lower() == "true"
     logic.eliminar_usuario(id, hard_delete=param_hard)

@@ -3,7 +3,7 @@ import math
 from flask import request, jsonify, Blueprint
 
 import services.estudiante_curso_service as logic
-from constants import ADMIN, ALUMNO, AYUDANTE, DOCENTE
+from constants import ADMIN, ALUMNO, AYUDANTE, DOCENTE, ROLES_STAFF
 from utils.error_handlers import created_response, NotFoundError, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion
@@ -33,7 +33,7 @@ def _parsear_filtros():
 
 
 @estudiante_curso_bp.route("/", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
+@auth.requiere_roles(*ROLES_STAFF, ALUMNO)
 def obtener_estudiante_cursos():
     filtros = _parsear_filtros()
     page, page_size, offset = paginacion.desde_request()
@@ -58,7 +58,7 @@ def obtener_estudiante_cursos():
 
 
 @estudiante_curso_bp.route("/", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_estudiante_curso():
     parametros = estudiante_curso_validator.validar_body_crear_estudiante_curso(request.get_json())
     nueva_inscripcion = logic.crear_estudiante_curso(parametros)
@@ -69,7 +69,7 @@ def crear_estudiante_curso():
 
 
 @estudiante_curso_bp.route("/importar-lote", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def importar_lote_estudiante_curso():
     if 'archivo' not in request.files:
         return jsonify({"error": "No se encontró la parte del archivo en la petición con la clave 'archivo'"}), 400
@@ -86,14 +86,14 @@ def importar_lote_estudiante_curso():
 
 
 @estudiante_curso_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_estudiante_curso_por_id(id):
     estudiante_curso = logic.obtener_estudiante_curso_por_id(id)
     return jsonify(estudiante_curso), 200
 
 
 @estudiante_curso_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def reemplazar_estudiante_curso(id):
     parametros = estudiante_curso_validator.validar_body_reemplazar_estudiante_curso(request.get_json())
     if not logic.reemplazar_estudiante_curso(id, parametros):
@@ -102,7 +102,7 @@ def reemplazar_estudiante_curso(id):
 
 
 @estudiante_curso_bp.route("/<int:id>", methods=["PATCH"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def modificar_estudiante_curso_parcial(id):
     parametros = estudiante_curso_validator.validar_body_modificar_estudiante_curso(request.get_json())
     estudiante_curso = logic.modificar_estudiante_curso_parcial(id, parametros)
@@ -113,7 +113,7 @@ def modificar_estudiante_curso_parcial(id):
 
 
 @estudiante_curso_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar_estudiante_curso(id):
     logic.eliminar_estudiante_curso(id)
     return "", 204
@@ -125,7 +125,7 @@ def estudiante_curso_id_invalido(id):
 
 
 @estudiante_curso_bp.route("/inscribir-lote", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def inscribir_lote_por_ids():
     body = request.get_json(silent=True) or {}
     curso_id = body.get("curso_id")
@@ -149,7 +149,7 @@ def inscribir_lote_por_ids():
     }), 200
 
 @estudiante_curso_bp.route("/desvincular-lote", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def desvincular_lote():
     body = request.get_json(silent=True) or {}
     curso_id = body.get("curso_id")

@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from config import ADMIN, DOCENTE
+from config import ADMIN, DOCENTE, ROLES_STAFF
 from utils import auth_validator as auth
 
 from services.tipos_evaluacion_service import (
@@ -21,7 +21,7 @@ def listar():
 
 
 @tipos_evaluacion_bp.route("/",methods=["POST"])
-@auth.requiere_roles(ADMIN,DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear():
     data = request.get_json()
     nuevo_id = crear_nuevo_tipo_evaluacion(
@@ -36,7 +36,7 @@ def crear():
 
 
 @tipos_evaluacion_bp.route("/<int:tipo_evaluacion_id>",methods=["PUT"])
-@auth.requiere_roles(ADMIN,DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def actualizar(tipo_evaluacion_id):
     data = request.get_json()
     actualizar_tipo_evaluacion_service(
@@ -51,7 +51,7 @@ def actualizar(tipo_evaluacion_id):
 
 
 @tipos_evaluacion_bp.route("/<int:tipo_evaluacion_id>",methods=["DELETE"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar(tipo_evaluacion_id):
     eliminar_tipo_evaluacion_service(
         tipo_evaluacion_id

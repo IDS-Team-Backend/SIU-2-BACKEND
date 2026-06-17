@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint
 
 import services.curso_docentes_service as logic
-from constants import ADMIN, DOCENTE
+from constants import ADMIN, DOCENTE, ROLES_STAFF
 from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
 from validators import curso_docentes_validator
@@ -11,7 +11,7 @@ curso_docentes_bp = Blueprint("curso_docentes", __name__)
 
 
 @curso_docentes_bp.route("/", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_equipo_docente():
     curso_id = request.args.get("curso_id", type=int)
     if not curso_id:
@@ -26,7 +26,7 @@ def obtener_equipo_docente():
 
 
 @curso_docentes_bp.route("/participaciones", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_participaciones():
     """Participaciones de varios docentes: ?docente_ids=1,2,3 (una sola query)."""
     raw = request.args.get("docente_ids", "")
@@ -42,7 +42,7 @@ def obtener_participaciones():
 
 
 @curso_docentes_bp.route("/", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def agregar_integrante():
     parametros = curso_docentes_validator.validar_body_agregar_integrante(request.get_json())
     integrante = logic.agregar_integrante(
@@ -55,7 +55,7 @@ def agregar_integrante():
 
 
 @curso_docentes_bp.route("/<int:id>", methods=["PATCH"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def cambiar_participacion(id):
     parametros = curso_docentes_validator.validar_body_cambiar_participacion(request.get_json())
     integrante = logic.cambiar_participacion(id, parametros["rol"])
@@ -66,7 +66,7 @@ def cambiar_participacion(id):
 
 
 @curso_docentes_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def quitar_integrante(id):
     logic.quitar_integrante(id)
     return "", 204

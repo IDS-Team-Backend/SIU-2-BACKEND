@@ -2,7 +2,6 @@ from datetime import timedelta
 import os
 from dotenv import load_dotenv
 from flask import Flask
-from flask_jwt_extended import JWTManager
 
 from routes import register_routes
 import utils.error_handlers as error_handlers
@@ -25,8 +24,6 @@ app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
 
 horas_expiracion = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_HOURS", 2))
 app.config["JWT_ACCESS_TOKEN_EXPIRES_HOURS"] = horas_expiracion
-
-jwt = JWTManager(app)
 
 import sys
 if __name__ == "__main__":
