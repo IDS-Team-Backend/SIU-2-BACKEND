@@ -49,11 +49,9 @@ def crear_estudiante_curso(parametros):
         estudiante_curso = db.crear_estudiante_curso(estudiante_id, curso_id, estado)
         print(f"Inscripción creada con ID {estudiante_curso['id']} para estudiante_id {estudiante_id} en curso_id {curso_id}", flush=True)
 
-        token = str(uuid4())
-        db.guardar_token_qr(estudiante_curso["id"], token)
-
         estudiante = estudiantes_repo.obtener_estudiante_por_id(estudiante_id)
         curso = cursos_repo.obtener_curso_por_id(curso_id)
+        token = estudiante["token_qr"]  # QR único por estudiante (no por inscripción)
 
         print(f"Enviando email de bienvenida al estudiante {estudiante['nombre']} {estudiante['apellido']} ({estudiante['email']}) para el curso {curso['nombre']} con token {token}", flush=True)
         EmailClient.enviar_email_bienvenida_qr(
@@ -183,7 +181,11 @@ def importar_inscripciones_por_lote(archivo_file):
             continue
 
         try:
-            crear_estudiante_curso(estudiante_id, curso_id, "activo")
+            crear_estudiante_curso({
+                "estudiante_id": estudiante_id,
+                "curso_id": curso_id,
+                "estado": "activo",
+            })
             guardados += 1
         except Exception as e:
             errores.append({

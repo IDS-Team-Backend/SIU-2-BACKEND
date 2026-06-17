@@ -51,8 +51,8 @@ def mis_asistencias(curso_id):
 
 @asistencia_bp.get("/mi-qr")
 @auth.requiere_roles(ALUMNO)
-def mi_qr(curso_id):
-    resultado = logic.obtener_mi_qr(curso_id)
+def mi_qr():
+    resultado = logic.obtener_mi_qr()
     return jsonify(resultado), 200
 
 @asistencia_bp.get("/cursos/<int:curso_id>/alumnos/<int:alumno_id>")
