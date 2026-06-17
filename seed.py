@@ -655,24 +655,6 @@ def seed_asistencias():
             execute_query(query, (clase["id"], eid, estado, clase["fecha_hora_inicio"]), modifica_db=True)
 
 
-def seed_qr_asistencia():
-    qr = [
-        (1, "token-demo-123", "2026-12-31 23:59:59"),
-    ]
-
-    query = """
-    INSERT IGNORE INTO qr_asistencia(
-        clase_id,
-        token,
-        expiracion
-    )
-    VALUES (%s, %s, %s)
-    """
-
-    for item in qr:
-        execute_query(query, item, modifica_db=True)
-
-
 def seed_materiales():
     materiales = [
         (1, "Clase 1 PDF", "https://storage.com/clase1.pdf", 2),
@@ -729,7 +711,6 @@ def run_seed():
     seed_notas()
     seed_entregas()
     seed_clases()
-    seed_qr_asistencia()
     seed_asistencias()
     seed_materiales()
     seed_logs()

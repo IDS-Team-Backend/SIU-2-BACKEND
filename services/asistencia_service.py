@@ -1,11 +1,9 @@
 from datetime import datetime, timedelta
-from uuid import uuid4
 
-from clients.email_client import enviar_email_qr
 import repositories.asistencia_repository as db
-from repositories import cursos_repository, estudiantes_repository
-import repositories.curso_docentes_repository as curso_docentes_db
+from repositories import cursos_repository
 import repositories.estudiante_curso_repository as estudiante_curso_db
+import repositories.curso_docentes_repository as curso_docentes_db
 import repositories.profesores_repository as profesores_repository
 from constants import ADMIN
 from utils import auth_validator as auth
@@ -13,7 +11,6 @@ from utils.error_handlers import NotFoundError, UnauthorizedError, ValidationErr
 
 
 ASISTENCIA_ESTADOS_VALIDOS = {"presente", "ausente", "tarde", "justificada"}
-EXPIRACION_QR_HORAS = 2
 MINUTOS_TOLERANCIA_TARDE = 15
 
 
@@ -33,12 +30,13 @@ def _validar_clase_existe(clase_id):
 
 	clase = db.obtener_clase_por_id(clase_id)
 	if not clase:
-		raise NotFoundError("Clase no encontrada")
+		raise NotFoundError("Clase no encontrada.")
 
 	return clase
 
 
 def _obtener_estudiante_por_usuario_id(usuario_id):
+	from repositories import estudiantes_repository
 	estudiante = estudiantes_repository.obtener_estudiante_por_usuario_id(usuario_id)
 	if not estudiante:
 		raise NotFoundError("El usuario no tiene un perfil estudiante activo.")
@@ -52,14 +50,9 @@ def _validar_estado_asistencia(estado):
 	estado = estado.strip().lower()
 	if estado not in ASISTENCIA_ESTADOS_VALIDOS:
 		raise ValidationError(
-			f"Estado de asistencia invalido. Estados válidos: {', '.join(sorted(ASISTENCIA_ESTADOS_VALIDOS))}"
+			f"Estado de asistencia inválido. Estados válidos: {', '.join(sorted(ASISTENCIA_ESTADOS_VALIDOS))}"
 		)
 	return estado
-
-def _obtener_alumnos_inscriptos_a_clase(clase_id):
-	clase = _validar_clase_existe(clase_id)
-	alumnos = db.obtener_alumnos_inscriptos_de_curso(clase["curso_id"])
-	return clase, alumnos
 
 
 def _validar_permiso_docente_sobre_clase(clase):
@@ -74,109 +67,68 @@ def _validar_permiso_docente_sobre_clase(clase):
 		raise UnauthorizedError("No tenés permisos para gestionar esta clase.")
 
 
-def generar_qrs_de_asistencia(clase_id):
-	clase, alumnos = _obtener_alumnos_inscriptos_a_clase(clase_id)
-	_validar_permiso_docente_sobre_clase(clase)
+# ──────────────────────────────────────────────
+# Escaneo de QR
+# ──────────────────────────────────────────────
 
-	if not alumnos:
-		raise ValidationError("No hay alumnos inscriptos en el curso de la clase.")
-
-	expiracion = datetime.now() + timedelta(hours=EXPIRACION_QR_HORAS)
-	qrs = []
-	notificaciones = []
-
-	for alumno in alumnos:
-		token = str(uuid4())
-		qrs.append((clase_id, alumno["alumno_id"], token, expiracion))
-		notificaciones.append(
-			{
-				"email": alumno["email"],
-				"nombre": alumno["nombre"],
-				"apellido": alumno["apellido"],
-				"clase": clase["nombre"],
-				"expiracion": expiracion,
-				"token": token,
-			}
-		)
-
-	db.guardar_qrs(clase_id, qrs)
-
-	for notificacion in notificaciones:
-		print(
-			f"[ASISTENCIA] QR generado para {notificacion['nombre']} {notificacion['apellido']} ({notificacion['email']}) en la clase {notificacion['clase']}. token: {token}",
-			flush=True,
-		)
-
-		enviar_email_qr(
-			to="nibefa9655@herojp.com",
-			subject=f"QR de Asistencia - {notificacion['clase']}",
-			nombre_alumno=notificacion["nombre"],
-			apellido_alumno=notificacion["apellido"],
-			clase_nombre=notificacion["clase"],
-			token=notificacion["token"],
-			expiracion=notificacion["expiracion"],
-		)
-
-	return 
-
-
-def escanear_qr(token):
+def escanear_qr(token, clase_id):
 	if not isinstance(token, str) or not token.strip():
 		raise ValidationError("El campo 'token' es obligatorio.")
+	if not isinstance(clase_id, int) or clase_id <= 0:
+		raise ValidationError("El campo 'clase_id' debe ser un entero positivo.")
 
-	qr = db.consumir_qr_por_token(token.strip())
-	if not qr:
-		raise ValidationError("Token inválido o expirado.")
+	inscripcion = db.obtener_inscripcion_por_token_qr(token.strip())
+	if not inscripcion:
+		raise ValidationError("Token inválido o alumno no inscripto.")
 
-	if qr.get("ya_consumido"):
-		raise ValidationError("El token ya fue escaneado.")
+	clase = _validar_clase_existe(clase_id)
 
-	if qr.get("expirado"):
-		raise ValidationError("Token inválido o expirado.")
-	
-	estado_asistencia = ""
-	if datetime.now() > qr["fecha_hora_inicio"] + timedelta(minutes=MINUTOS_TOLERANCIA_TARDE):
-		estado_asistencia = "tarde"
-	else:
-		estado_asistencia = "presente"
-		
+	if inscripcion["curso_id"] != clase["curso_id"]:
+		raise ValidationError("El token no corresponde al curso de esta clase.")
 
-	db.upsert_asistencia(qr["clase_id"], qr["alumno_id"], estado_asistencia)
+	estado = (
+		"tarde"
+		if datetime.now() > clase["fecha_hora_inicio"] + timedelta(minutes=MINUTOS_TOLERANCIA_TARDE)
+		else "presente"
+	)
+
+	db.upsert_asistencia(clase_id, inscripcion["estudiante_id"], estado)
 
 	return {
-		"asistencia": _serializar_valor(
-			{
-				"alumno_id": qr["alumno_id"],
-				"nombre": qr["nombre"],
-				"apellido": qr["apellido"],
-				"padron": qr["padron"],
-				"clase_id": qr["clase_id"],
-				"estado": estado_asistencia,
-				"fecha_registro": datetime.now(),
-			}
-		)
+		"asistencia": _serializar_valor({
+			"alumno_id": inscripcion["estudiante_id"],
+			"nombre": inscripcion["nombre"],
+			"apellido": inscripcion["apellido"],
+			"padron": inscripcion["padron"],
+			"clase_id": clase_id,
+			"estado": estado,
+			"fecha_registro": datetime.now(),
+		})
 	}
 
+
+# ──────────────────────────────────────────────
+# Listado y edición de asistencias (docente/admin)
+# ──────────────────────────────────────────────
 
 def obtener_asistencias_por_clase(clase_id):
 	clase = _validar_clase_existe(clase_id)
 	_validar_permiso_docente_sobre_clase(clase)
+
 	asistencias = db.obtener_asistencias_de_clase(clase_id)
 
 	return {
 		"total": len(asistencias),
 		"asistencias": [
-			_serializar_valor(
-				{
-					"alumno_id": asistencia["alumno_id"],
-					"nombre": asistencia["nombre"],
-					"apellido": asistencia["apellido"],
-					"padron": asistencia["padron"],
-					"estado": asistencia["estado"],
-					"fecha_registro": asistencia["fecha_registro"],
-				}
-			)
-			for asistencia in asistencias
+			_serializar_valor({
+				"alumno_id": a["alumno_id"],
+				"nombre": a["nombre"],
+				"apellido": a["apellido"],
+				"padron": a["padron"],
+				"estado": a["estado"],
+				"fecha_registro": a["fecha_registro"],
+			})
+			for a in asistencias
 		],
 	}
 
@@ -215,14 +167,28 @@ def actualizar_asistencias_manualmente(clase_id, asistencias):
 	db.bulk_upsert_asistencias(clase_id, payload)
 
 
+# ──────────────────────────────────────────────
+# Vista del alumno
+# ──────────────────────────────────────────────
+
 def obtener_asistencias_de_alumno_en_curso(curso_id, alumno_id):
 	if not isinstance(curso_id, int) or curso_id <= 0:
 		raise ValidationError("El ID del curso debe ser un entero positivo.")
 
 	curso = cursos_repository.obtener_curso_por_id(curso_id)
 	if not curso:
-		raise NotFoundError("Curso no encontrado")
+		raise NotFoundError("Curso no encontrado.")
 
+	usuario_id = auth.obtener_usuario_id()
+	estudiante = _obtener_estudiante_por_usuario_id(usuario_id)
+
+	inscripcion = estudiante_curso_db.obtener_estudiante_curso_por_estudiante_curso(
+		estudiante["id"], curso_id
+	)
+	if not inscripcion or inscripcion.get("estado") != "activo":
+		raise ValidationError("El alumno no está inscripto activamente en este curso.")
+
+	asistencias = db.obtener_asistencias_del_alumno_en_curso(curso_id, estudiante["id"])
 	asistencias = db.obtener_asistencias_del_alumno_en_curso(curso_id, alumno_id)
 	total_clases = len(asistencias)
 
@@ -232,15 +198,13 @@ def obtener_asistencias_de_alumno_en_curso(curso_id, alumno_id):
 	for asistencia in asistencias:
 		estado = asistencia["estado"] or "ausente"
 		conteo_estados[estado] = conteo_estados.get(estado, 0) + 1
-		detalle.append(
-			{
-				"clase_id": asistencia["clase_id"],
-				"clase_nombre": asistencia["clase_nombre"],
-				"fecha_hora_inicio": asistencia["fecha_hora_inicio"],
-				"estado": estado,
-				"fecha_registro": asistencia["fecha_registro"],
-			}
-		)
+		detalle.append({
+			"clase_id": asistencia["clase_id"],
+			"clase_nombre": asistencia["clase_nombre"],
+			"fecha_hora_inicio": asistencia["fecha_hora_inicio"],
+			"estado": estado,
+			"fecha_registro": asistencia["fecha_registro"],
+		})
 
 	presentes = conteo_estados.get("presente", 0)
 	tarde = conteo_estados.get("tarde", 0)
@@ -256,8 +220,7 @@ def obtener_asistencias_de_alumno_en_curso(curso_id, alumno_id):
 			"porcentaje_asistencia": porcentaje_asistencia,
 			"curso": curso["nombre"],
 			"detalle": _serializar_valor(detalle),
-
-		},
+		}
 	}
 
 
@@ -272,3 +235,19 @@ def obtener_mis_asistencias(curso_id):
 	return obtener_asistencias_de_alumno_en_curso(curso_id, estudiante["id"])
 
 
+def obtener_mi_qr(curso_id):
+	if not isinstance(curso_id, int) or curso_id <= 0:
+		raise ValidationError("El ID del curso debe ser un entero positivo.")
+
+	usuario_id = auth.obtener_usuario_id()
+	estudiante = _obtener_estudiante_por_usuario_id(usuario_id)
+
+	inscripcion = estudiante_curso_db.obtener_estudiante_curso_por_estudiante_curso(estudiante["id"], curso_id)
+	
+	if not inscripcion or inscripcion.get("estado") != "activo":
+		raise ValidationError("No estás inscripto activamente en este curso.")
+
+	if not inscripcion.get("token_qr"):
+		raise NotFoundError("No tenés un QR asignado aún.")
+
+	return {"token_qr": inscripcion["token_qr"]}
