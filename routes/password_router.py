@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request
 from services import password_reset_service as logic
 from utils import auth_validator as auth
 from utils.error_handlers import ValidationError
+from config import FRONTEND_URL
 
 # Público: solicitar/confirmar reset (sin sesión).
 password_bp = Blueprint("password", __name__)
@@ -19,8 +20,7 @@ def solicitar():
     if not email:
         raise ValidationError("El email es obligatorio.")
 
-    url_base = request.host_url.rstrip("/").replace(":5000", ":5001")
-    logic.solicitar_reset(email, url_base)
+    logic.solicitar_reset(email, FRONTEND_URL)
 
     return jsonify({
         "message": "Si el email está registrado, recibirás un enlace para restablecer tu contraseña."

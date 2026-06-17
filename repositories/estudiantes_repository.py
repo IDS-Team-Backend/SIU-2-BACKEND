@@ -80,6 +80,7 @@ def obtener_estudiante_por_id(id):
             e.carrera,
             e.anio_ingreso,
             e.created_at,
+            e.token_qr,
             u.nombre,
             u.apellido,
             u.email,

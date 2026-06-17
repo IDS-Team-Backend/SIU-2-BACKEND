@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 import services.materias_service as logic
-from constants import ADMIN, DOCENTE, ALUMNO
+from constants import ADMIN, DOCENTE, ALUMNO, ROLES_STAFF
 from utils.error_handlers import created_response, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion
@@ -31,7 +31,7 @@ def obtener_materias():
     }), 200
 
 @materias_bp.route("/", methods=["POST"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_materias():
     parametros = request.get_json(silent=True)
 
@@ -51,7 +51,7 @@ def obtener_materia_por_id(materia_id):
     return jsonify(materia), 200
 
 @materias_bp.route("/<int:materia_id>", methods=["PUT"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def reemplazar_materia(materia_id):
     parametros = request.get_json(silent=True)
 
@@ -66,7 +66,7 @@ def reemplazar_materia(materia_id):
     }), 200
 
 @materias_bp.route("/<int:materia_id>", methods=["DELETE"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar_materia(materia_id: int):
     param_hard = request.args.get("hard", "false").lower() == "true"
     

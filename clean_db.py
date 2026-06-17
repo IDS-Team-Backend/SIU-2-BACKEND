@@ -4,7 +4,6 @@ TABLAS = [
     "logs",
     "materiales",
     "asistencias",
-    "qr_asistencia",
     "clases",
     "equipo_integrantes",
     "notas",

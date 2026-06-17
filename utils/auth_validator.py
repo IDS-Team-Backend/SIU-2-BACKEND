@@ -1,6 +1,7 @@
 from functools import wraps
 
 from flask import g, request
+from constants import ROLES_STAFF
 from utils import JWT_handler
 from utils.error_handlers import ForbiddenError, UnauthorizedError
 
@@ -44,6 +45,11 @@ def requiere_roles(*roles_permitidos):
 def usuario_es(rol):
     usuario = getattr(g, "usuario", None)
     return rol in ((usuario or {}).get("perfiles") or [])
+
+
+def usuario_es_staff():
+    perfiles = set(((getattr(g, "usuario", None) or {}).get("perfiles")) or [])
+    return bool(perfiles.intersection(ROLES_STAFF))
 
 
 def obtener_usuario_id():

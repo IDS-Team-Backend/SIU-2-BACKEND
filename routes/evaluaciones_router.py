@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 import services.evaluaciones_service as logic
-from constants import ADMIN, DOCENTE, AYUDANTE, ALUMNO
+from constants import ADMIN, DOCENTE, AYUDANTE, ALUMNO, ROLES_STAFF
 from utils.error_handlers import (
     created_response,
     ValidationError
@@ -14,7 +14,7 @@ def health_check():
     return jsonify({"resource": "evaluaciones", "status": "ok"})
 
 @evaluaciones_bp.route("/", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
+@auth.requiere_roles(*ROLES_STAFF, ALUMNO)
 def obtener_evaluaciones():
 
     curso_id = request.args.get("curso_id")
@@ -39,7 +39,7 @@ def obtener_evaluaciones():
 
 
 @evaluaciones_bp.route("/", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_evaluacion():
 
     parametros = request.get_json()
@@ -55,14 +55,14 @@ def crear_evaluacion():
 
 
 @evaluaciones_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE, ALUMNO)
+@auth.requiere_roles(*ROLES_STAFF, ALUMNO)
 def obtener_evaluacion_por_id(id):
     evaluacion = logic.obtener_evaluacion_por_id(id)
     return jsonify(evaluacion), 200
 
 
 @evaluaciones_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def reemplazar_evaluacion(id):
     parametros = request.get_json()
     actualizado = logic.reemplazar_evaluacion(id, parametros)
@@ -73,7 +73,7 @@ def reemplazar_evaluacion(id):
 
 
 @evaluaciones_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar_evaluacion(id):
     param_hard = request.args.get("hard", "false").lower() == "true"
     

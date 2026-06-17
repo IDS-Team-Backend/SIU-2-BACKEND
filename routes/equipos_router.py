@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 import services.equipos_service as logic
-from constants import ADMIN, ALUMNO, AYUDANTE, DOCENTE
+from constants import ADMIN, ALUMNO, AYUDANTE, DOCENTE, ROLES_STAFF
 from utils.error_handlers import (
     created_response,
     ValidationError
@@ -14,7 +14,7 @@ def health_check():
     return jsonify({"resource": "equipos", "status": "ok"})
 
 @equipos_bp.route("/", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_equipos():
     curso_id = request.args.get("curso_id")
     evaluacion_id = request.args.get("evaluacion_id")
@@ -37,7 +37,7 @@ def obtener_equipos():
 
 
 @equipos_bp.route("/", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_equipo():
     parametros = request.get_json()
     nuevo_equipo = logic.crear_equipo(parametros)
@@ -52,7 +52,7 @@ def crear_equipo():
 
 
 @equipos_bp.route("/bulk", methods=["POST"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_equipos_bulk():
     if 'archivo' not in request.files:
         return jsonify({"error": "No se encontró la parte del archivo en la petición con la clave 'archivo'"}), 400
@@ -73,14 +73,14 @@ def crear_equipos_bulk():
 
 
 @equipos_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_equipo_por_id(id):
     equipo = logic.obtener_equipo_por_id(id)
     return jsonify(equipo), 200
 
 
 @equipos_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def reemplazar_equipo(id):
     parametros = request.get_json()
     actualizado = logic.reemplazar_equipo(id, parametros)
@@ -92,7 +92,7 @@ def reemplazar_equipo(id):
 
 
 @equipos_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar_equipo(id):
     param_hard = request.args.get("hard", "false").lower() == "true"
     logic.eliminar_equipo(id, hard_delete=param_hard)

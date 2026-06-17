@@ -20,6 +20,9 @@ DOCENTE = "docente"
 ALUMNO = "alumno"
 AYUDANTE = "ayudante"
 
+# Set canónico de roles del staff (mismos permisos en endpoints de gestión).
+ROLES_STAFF = (ADMIN, DOCENTE, AYUDANTE)
+
 TITULAR          = "titular"
 JEFE_TP          = "jefe_tp"
 AYUDANTE_CATEDRA = "ayudante"
@@ -53,6 +56,10 @@ DOMINIOS_EMAIL_PERMITIDOS = [
     for dominio in os.getenv("DOMINIOS_EMAIL_PERMITIDOS", "fi.uba.ar,gmail.com").split(",")
     if dominio.strip()
 ]
+
+# URL pública del frontend, para armar los enlaces de los emails (registro, reset).
+# En Docker se inyecta por entorno; el default es para dev local sin Docker.
+FRONTEND_URL = _get_env("FRONTEND_URL", required=False, default="http://localhost:5001").rstrip("/")
 
 DB_CONFIG: dict[str, str | int] = {
     "host": os.getenv("DB_HOST", "localhost"),

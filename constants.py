@@ -11,6 +11,11 @@ DOCENTE  = "docente"
 ALUMNO   = "alumno"
 AYUDANTE = "ayudante"
 
+# Set canónico de roles del staff. Se usa para que todos los perfiles del staff
+# (admin/docente y los roles de cátedra, que entran por docente) tengan los
+# mismos permisos en los endpoints de gestión.
+ROLES_STAFF = (ADMIN, DOCENTE, AYUDANTE)
+
 # ── Dominio de clases ─────────────────────────────────────────────────────────
 # ATENCIÓN: cualquier cambio aquí debe reflejarse en schema.sql también.
 

@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, send_file
 import io
 import services.reportes_service as logic
-from config import ADMIN, DOCENTE, AYUDANTE
+from config import ADMIN, DOCENTE, AYUDANTE, ROLES_STAFF
 from utils import auth_validator as auth, paginacion
 import math
 
@@ -9,7 +9,7 @@ import math
 reportes_bp = Blueprint("reportes", __name__)
 
 @reportes_bp.route("/alumnos", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_reporte_alumnos():
     curso_id = request.args.get("curso_id")
     carrera = request.args.get("carrera")
@@ -73,7 +73,7 @@ def obtener_reporte_alumnos():
 
 
 @reportes_bp.route("/estadisticas", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_reporte_estadisticas():
     curso_id = request.args.get("curso_id")
     exportar_pdf = request.args.get("export", "").lower() == "pdf"
@@ -90,7 +90,7 @@ def obtener_reporte_estadisticas():
 
 
 @reportes_bp.route("/equipos", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE, AYUDANTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_reporte_equipos():
     curso_id = request.args.get("curso_id")
     exportar_pdf = request.args.get("export", "").lower() == "pdf"

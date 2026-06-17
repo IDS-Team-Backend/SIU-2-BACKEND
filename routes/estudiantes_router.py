@@ -4,7 +4,7 @@ from flask import request, jsonify, Blueprint
 
 import services.estudiantes_service as logic
 import services.carga_masiva_alumnos_service as carga_masiva
-from constants import ADMIN, ALUMNO, DOCENTE
+from constants import ADMIN, ALUMNO, DOCENTE, AYUDANTE, ROLES_STAFF
 from utils.error_handlers import created_response, NotFoundError, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion
@@ -57,7 +57,7 @@ def obtener_estudiantes():
 
 
 @estudiantes_bp.route("/", methods=["POST"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def crear_estudiante():
     parametros = estudiantes_validator.validar_body_crear_estudiante(request.get_json())
     nuevo_estudiante = logic.crear_estudiante(parametros)
@@ -74,21 +74,21 @@ def obtener_mi_estudiante():
 
 
 @estudiantes_bp.route("/<int:id>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_estudiante_por_id(id):
     estudiante = logic.obtener_estudiante_por_id(id)
     return jsonify(estudiante), 200
 
 
 @estudiantes_bp.route("/padron/<int:padron>", methods=["GET"])
-@auth.requiere_roles(ADMIN, DOCENTE)
+@auth.requiere_roles(*ROLES_STAFF)
 def obtener_estudiante_por_padron(padron):
     estudiante = logic.obtener_estudiante_por_padron(padron)
     return jsonify(estudiante), 200
 
 
 @estudiantes_bp.route("/<int:id>", methods=["PUT"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def reemplazar_estudiante(id):
     parametros = estudiantes_validator.validar_body_reemplazar_estudiante(request.get_json())
     if not logic.reemplazar_estudiante(id, parametros):
@@ -97,7 +97,7 @@ def reemplazar_estudiante(id):
 
 
 @estudiantes_bp.route("/<int:id>", methods=["PATCH"])
-@auth.requiere_roles(ADMIN, DOCENTE, ALUMNO)
+@auth.requiere_roles(*ROLES_STAFF, ALUMNO)
 def modificar_estudiante_parcial(id):
     parametros = estudiantes_validator.validar_body_modificar_estudiante(request.get_json())
     estudiante = logic.modificar_estudiante_parcial(id, parametros)
@@ -108,7 +108,7 @@ def modificar_estudiante_parcial(id):
 
 
 @estudiantes_bp.route("/<int:id>", methods=["DELETE"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def eliminar_estudiante(id: int):
     param_hard = request.args.get("hard", "false").lower() == "true"
     logic.eliminar_estudiante(id, hard_delete=param_hard)
@@ -116,7 +116,7 @@ def eliminar_estudiante(id: int):
 
 
 @estudiantes_bp.route("/importar-lote", methods=["POST"])
-@auth.requiere_roles(ADMIN)
+@auth.requiere_roles(*ROLES_STAFF)
 def importar_lote_estudiantes():
     if 'archivo' not in request.files:
         return jsonify({"error": "No se encontró la parte del archivo en la petición con la clave 'archivo'"}), 400
