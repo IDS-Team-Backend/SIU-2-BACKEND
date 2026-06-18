@@ -31,10 +31,10 @@ def obtener_estudiante_cursos(
     estudiante_id=None,
     curso_id=None,
     estado=None,
+    q=None,
     page_size=paginacion.PAGE_SIZE_DEFAULT,
-    offset=0
+    offset=0,
 ):
-
     query = _SELECT_ESTUDIANTE_CURSO + " WHERE 1=1 "
     params = []
 
@@ -49,6 +49,23 @@ def obtener_estudiante_cursos(
     if estado is not None:
         query += " AND ec.estado = %s"
         params.append(estado)
+
+    if q:
+        patron = f"%{q.strip()}%"
+
+        query += """
+            AND (
+                CAST(e.padron AS CHAR) LIKE %s
+                OR u.nombre LIKE %s
+                OR u.apellido LIKE %s
+                OR CONCAT_WS(' ', u.nombre, u.apellido) LIKE %s
+                OR CONCAT_WS(' ', u.apellido, u.nombre) LIKE %s
+                OR u.email LIKE %s
+                OR CAST(u.dni AS CHAR) LIKE %s
+            )
+        """
+
+        params.extend([patron] * 7)
 
     return paginacion.ejecutar(
         query,

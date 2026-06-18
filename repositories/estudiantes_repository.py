@@ -8,8 +8,9 @@ def obtener_estudiantes(
     carrera=None,
     anio_ingreso=None,
     usuario_id=None,
+    q=None,
     page_size=paginacion.PAGE_SIZE_DEFAULT,
-    offset=0
+    offset=0,
 ):
     query = """
         SELECT
@@ -27,6 +28,7 @@ def obtener_estudiantes(
         INNER JOIN usuarios u ON u.id = e.usuario_id
         WHERE e.deleted_at IS NULL
     """
+
     params = []
 
     if carrera:
@@ -40,7 +42,23 @@ def obtener_estudiantes(
     if usuario_id:
         query += " AND e.usuario_id = %s"
         params.append(usuario_id)
-        
+
+    if q:
+        patron = f"%{q.strip()}%"
+
+        query += """
+            AND (
+                CAST(e.padron AS CHAR) LIKE %s
+                OR u.nombre LIKE %s
+                OR u.apellido LIKE %s
+                OR CONCAT_WS(' ', u.nombre, u.apellido) LIKE %s
+                OR CONCAT_WS(' ', u.apellido, u.nombre) LIKE %s
+                OR u.email LIKE %s
+                OR CAST(u.dni AS CHAR) LIKE %s
+            )
+        """
+
+        params.extend([patron] * 7)
 
     return paginacion.ejecutar(
         query,

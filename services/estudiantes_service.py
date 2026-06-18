@@ -16,12 +16,15 @@ def _es_propio_estudiante(estudiante):
 
 
 def obtener_estudiantes(carrera=None, anio_ingreso=None,
-                        usuario_id=None, page_size=20, offset=0):
+                        usuario_id=None, q=None, page_size=20, offset=0):
     return db.obtener_estudiantes(
-        carrera, anio_ingreso, usuario_id,
-        page_size=page_size, offset=offset
+        carrera=carrera,
+        anio_ingreso=anio_ingreso,
+        usuario_id=usuario_id,
+        q=q,
+        page_size=page_size,
+        offset=offset,
     )
-
 
 def crear_estudiante(parametros):
     usuario_id = parametros["usuario_id"]

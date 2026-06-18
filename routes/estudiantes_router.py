@@ -13,7 +13,7 @@ from validators import estudiantes_validator
 
 estudiantes_bp = Blueprint("estudiantes", __name__)
 
-FILTROS_PERMITIDOS = ("carrera", "anio_ingreso", "usuario_id")
+FILTROS_PERMITIDOS = ("carrera", "anio_ingreso", "usuario_id", "q")
 
 
 def _parsear_filtros():
@@ -28,6 +28,7 @@ def _parsear_filtros():
         "carrera": request.args.get("carrera"),
         "anio_ingreso": request.args.get("anio_ingreso", type=int),
         "usuario_id": request.args.get("usuario_id", type=int),
+        "q": (request.args.get("q") or "").strip() or None,
     }
 
 
