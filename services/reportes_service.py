@@ -104,11 +104,22 @@ def obtener_reporte_estadisticas(curso_id, exportar_pdf=False):
     return resultado
 
 
-def obtener_reporte_equipos(curso_id, exportar_pdf=False):
+def obtener_reporte_equipos(
+    curso_id,
+    evaluacion_id=None,
+    exportar_pdf=False
+):
     validar_entero(curso_id, "curso_id")
-    equipos = db.obtener_equipos_reporte(curso_id)
+
+    if evaluacion_id:
+        validar_entero(evaluacion_id, "evaluacion_id")
+
+    equipos = db.obtener_equipos_reporte(
+        curso_id,
+        evaluacion_id
+    )
+
     if exportar_pdf:
         return crear_pdf_equipos(equipos)
         
     return equipos
-

@@ -284,24 +284,42 @@ def obtener_rendimiento_por_asistencia(curso_id):
     )
 
 
-def obtener_equipos_reporte(curso_id):
-    # consulta los equipos, y de ahi une en un formato especial los integrantes de ese equipo
-    # Agrupa todos los registros por cada equipo
+def obtener_equipos_reporte(curso_id, evaluacion_id=None):
     query = """
         SELECT 
             eq.id AS equipo_id,
             eq.nombre AS equipo_nombre,
             ev.titulo AS evaluacion_contexto,
-            GROUP_CONCAT(CONCAT(u.apellido, ', ', u.nombre, ' (Padrón: ', e.padron, ')') SEPARATOR ' | ') AS integrantes
+            GROUP_CONCAT(
+                CONCAT(
+                    u.apellido,
+                    ', ',
+                    u.nombre,
+                    ' (Padrón: ',
+                    e.padron,
+                    ')'
+                )
+                SEPARATOR ' | '
+            ) AS integrantes
         FROM equipos eq
         JOIN evaluaciones ev ON eq.evaluacion_id = ev.id
         LEFT JOIN equipo_integrantes ei ON eq.id = ei.equipo_id
         LEFT JOIN estudiantes e ON ei.alumno_id = e.id
         LEFT JOIN usuarios u ON e.usuario_id = u.id
-        WHERE eq.curso_id = %s 
+        WHERE eq.curso_id = %s
           AND eq.deleted_at IS NULL
           AND ev.deleted_at IS NULL
+    """
+
+    params = [curso_id]
+
+    if evaluacion_id:
+        query += " AND eq.evaluacion_id = %s"
+        params.append(evaluacion_id)
+
+    query += """
         GROUP BY eq.id, eq.nombre, ev.titulo
         ORDER BY eq.nombre ASC
     """
-    return db.execute_query(query, (curso_id,))
+
+    return db.execute_query(query, tuple(params))
