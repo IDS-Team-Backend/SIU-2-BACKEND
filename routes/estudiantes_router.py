@@ -2,9 +2,11 @@ import math
 
 from flask import request, jsonify, Blueprint
 
+from config import FRONTEND_URL
 import services.estudiantes_service as logic
 import services.carga_masiva_alumnos_service as carga_masiva
 from constants import ADMIN, ALUMNO, DOCENTE, AYUDANTE, ROLES_STAFF
+import services.registro_profesor_service as registro_logic
 from utils.error_handlers import created_response, NotFoundError, ValidationError
 from utils import auth_validator as auth
 from utils import paginacion
@@ -86,6 +88,19 @@ def obtener_estudiante_por_id(id):
 def obtener_estudiante_por_padron(padron):
     estudiante = logic.obtener_estudiante_por_padron(padron)
     return jsonify(estudiante), 200
+
+@estudiantes_bp.route("/registro", methods=["POST"])
+@auth.requiere_roles(*ROLES_STAFF)
+def registrar_alumno():
+    parametros = estudiantes_validator.validar_body_registrar_alumno(request.get_json())
+    alumno = registro_logic.registrar_alumno(parametros, FRONTEND_URL)
+    return created_response(
+        {
+            "message": "Alumno y usuario creado. Se envió un email para finalizar la registración.",
+            "alumno": alumno,
+        },
+        f"/estudiantes/{alumno['id']}"
+    )
 
 
 @estudiantes_bp.route("/<int:id>", methods=["PUT"])

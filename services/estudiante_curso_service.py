@@ -8,7 +8,6 @@ import repositories.estudiantes_repository as estudiantes_repo
 import repositories.cursos_repository as cursos_repo
 from utils.csv_handler import leer_csv
 from utils.error_handlers import NotFoundError, DuplicateError, ValidationError
-import clients.email_client as EmailClient
 
 
 def _validar_estudiante_y_curso(estudiante_id, curso_id):
@@ -46,24 +45,8 @@ def crear_estudiante_curso(parametros):
         raise DuplicateError("El estudiante ya está inscripto en este curso.")
 
     try:
-        estudiante_curso = db.crear_estudiante_curso(estudiante_id, curso_id, estado)
-        print(f"Inscripción creada con ID {estudiante_curso['id']} para estudiante_id {estudiante_id} en curso_id {curso_id}", flush=True)
-
-        estudiante = estudiantes_repo.obtener_estudiante_por_id(estudiante_id)
-        curso = cursos_repo.obtener_curso_por_id(curso_id)
-        token = estudiante["token_qr"]  # QR único por estudiante (no por inscripción)
-
-        print(f"Enviando email de bienvenida al estudiante {estudiante['nombre']} {estudiante['apellido']} ({estudiante['email']}) para el curso {curso['nombre']} con token {token}", flush=True)
-        EmailClient.enviar_email_bienvenida_qr(
-            to=estudiante["email"],
-            nombre_alumno=estudiante["nombre"],
-            apellido_alumno=estudiante["apellido"],
-            curso_nombre=curso["nombre"],
-            token=token,
-        )
-
-        print(f"Email de bienvenida enviado al estudiante {estudiante['nombre']} {estudiante['apellido']} ({estudiante['email']}) para el curso {curso['nombre']}", flush=True)
-        return estudiante_curso
+        new_estudiante_curso = db.crear_estudiante_curso(estudiante_id, curso_id, estado)
+        return new_estudiante_curso
 
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("El estudiante ya está inscripto en este curso.")

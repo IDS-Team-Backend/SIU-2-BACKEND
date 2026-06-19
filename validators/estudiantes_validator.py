@@ -11,6 +11,27 @@ CAMPOS_PATCH_PERMITIDOS = ("padron", "carrera", "anio_ingreso")
 def _anio_ingreso_max():
     return datetime.now().year + 1
 
+def _validar_carrera(body, errores, resultado, requerido=True):
+    if "carrera" not in body and not requerido:
+        return
+    try:
+        carrera = validaciones.validar_string_no_vacio(body.get("carrera"), "carrera")
+        carrera = validaciones.validar_largo_string(carrera, 1, 150, "carrera")
+        resultado["carrera"] = carrera
+    except ValueError as e:
+        errores.extend(e.args[0]["errors"])
+
+
+def _validar_anio_ingreso(body, errores, resultado, requerido=True):
+    if "anio_ingreso" not in body and not requerido:
+        return
+    try:
+        anio_ingreso = validaciones.validar_entero(body.get("anio_ingreso"), "anio_ingreso")
+        if anio_ingreso < ANIO_INGRESO_MIN or len(str(anio_ingreso)) != 4 or anio_ingreso > _anio_ingreso_max():
+            raise ValueError("Año de ingreso inválido")
+        resultado["anio_ingreso"] = anio_ingreso
+    except ValueError as e:
+        errores.extend(e.args)
 
 def validar_body_crear_estudiante(body):
     validaciones.validar_body_presente(body)
@@ -56,6 +77,37 @@ def validar_body_crear_estudiante(body):
         "anio_ingreso": anio_ingreso,
     }
 
+def validar_body_registrar_alumno(body):
+    validaciones.validar_body_presente(body)
+
+    errores = []
+    resultado = {}
+
+    for campo in ("nombre", "apellido", "email"):
+        try:
+            resultado[campo] = validaciones.validar_string_no_vacio(body.get(campo), campo)
+        except ValueError as e:
+            errores.extend(e.args[0]["errors"])
+
+    try:
+        dni = validaciones.validar_entero(body.get("dni"), "dni")
+        resultado["dni"] = validaciones.validar_minimo(dni, 1, "dni")
+    except ValueError as e:
+        errores.extend(e.args[0]["errors"])
+
+    try:
+        padron = validaciones.validar_entero(body.get("padron"), "padron")
+        resultado["padron"] = validaciones.validar_minimo(padron, 1, "padron")
+    except ValueError as e:
+        errores.extend(e.args[0]["errors"])
+
+    _validar_carrera(body, errores, resultado)
+    _validar_anio_ingreso(body, errores, resultado)
+
+    if errores:
+        raise ValueError({"errors": errores})
+
+    return resultado
 
 def validar_body_reemplazar_estudiante(body):
     validaciones.validar_body_presente(body)

@@ -5,7 +5,7 @@ from utils import auth_validator as auth
 from constants import ADMIN, DOCENTE, ALUMNO
 from utils.error_handlers import NotFoundError, ValidationError, DuplicateError, ForbiddenError
 from .auth_service import validar_datos_usuario
-
+import clients.email_client as EmailClient
 
 usuario_params = ["nombre", "apellido", "dni", "email", "password"]
 usuario_update_params = ["nombre", "apellido", "dni", "email"]
@@ -32,6 +32,7 @@ def crear_usuario(parametros):
     dni = parametros["dni"]
     password = parametros["password"]
     es_admin = bool(parametros.get("es_admin", False))
+    email_verificado = bool(parametros.get("email_verificado", False))
 
     if es_admin and not auth.usuario_es(ADMIN):
         raise ForbiddenError("Solo un admin puede crear otro admin.")
@@ -44,7 +45,8 @@ def crear_usuario(parametros):
         raise DuplicateError("Ya existe un usuario con ese DNI.")
 
     try:
-        return db.crear_usuario(nombre, apellido, email, dni, password, es_admin)
+        usuario_nuevo = db.crear_usuario(nombre, apellido, email, dni, password, es_admin, email_verificado)
+        return usuario_nuevo
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe un usuario con ese email.")
 
