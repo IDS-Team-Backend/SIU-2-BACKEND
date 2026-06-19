@@ -42,7 +42,9 @@ def crear_estudiante(parametros):
         raise DuplicateError("Ya existe un estudiante con ese padrón.")
 
     try:
-        return db.crear_estudiante(usuario_id, padron, carrera, anio_ingreso)
+        estudiante_nuevo = db.crear_estudiante(usuario_id, padron, carrera, anio_ingreso)
+        return estudiante_nuevo
+
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe un estudiante con esos datos.")
 
