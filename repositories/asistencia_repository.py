@@ -122,7 +122,7 @@ def bulk_upsert_asistencias(clase_id, asistencias):
 			conn.close()
 
 
-def obtener_asistencias_del_alumno_en_curso(curso_id, alumno_id):
+def obtener_asistencias_del_alumno_en_curso(curso_id, alumno_id, fecha_incripcion):
 	query = """
 		SELECT
 			c.id AS clase_id,
@@ -134,9 +134,9 @@ def obtener_asistencias_del_alumno_en_curso(curso_id, alumno_id):
 		LEFT JOIN asistencias a
 			ON a.clase_id = c.id
 		   AND a.alumno_id = %s
-		WHERE c.curso_id = %s
+		WHERE c.curso_id = %s AND c.fecha_hora_inicio >= %s
 		  AND c.deleted_at IS NULL
 		  AND (c.status = 'finalizada' OR c.status = 'en curso')
 		ORDER BY c.fecha_hora_inicio ASC
 	"""
-	return db.execute_query(query, (alumno_id, curso_id)) or []
+	return db.execute_query(query, (alumno_id, curso_id, fecha_incripcion)) or []

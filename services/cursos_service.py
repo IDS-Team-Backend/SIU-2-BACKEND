@@ -1,3 +1,4 @@
+from config import ADMIN
 import repositories.cursos_repository as db
 import repositories.profesores_repository as profesores_db
 import repositories.curso_docentes_repository as curso_docentes_db
@@ -5,18 +6,24 @@ from constants import ALUMNO, DOCENTE, ESTADOS_CURSO
 import services.clases_service as clases_service
 from utils.error_handlers import NotFoundError, ValidationError, DuplicateError, ForbiddenError
 import mysql.connector
+import repositories.estudiantes_repository as estudiantes_db
+from utils import auth_validator as auth
+import repositories.estudiante_curso_repository as curso_estudiantes_db
 
 curso_params = ["materia_id", "nombre", "anio", "cuatrimestre"]
 curso_update_params = ["materia_id", "nombre", "anio", "cuatrimestre"]
 
 def obtener_cursos_del_usuario_actual(usuario_id, rol):
     if rol == ALUMNO:
-        cursos = db.obtener_cursos_del_alumno(usuario_id)
+        estudiante = estudiantes_db.obtener_estudiante_por_usuario_id(usuario_id)
+        cursos = db.obtener_cursos_del_alumno(estudiante["id"])
     elif rol == DOCENTE:
         profesor = profesores_db.obtener_profesor_por_usuario_id(usuario_id)
         if not profesor:
             raise NotFoundError("El usuario no tiene un perfil docente activo.")
         cursos = db.obtener_cursos_del_docente(profesor["id"])
+    elif rol == ADMIN:
+        cursos = db.obtener_todos_los_cursos()
     else:
         raise ForbiddenError("No tenés permisos para acceder a este recurso.")
 
@@ -178,10 +185,30 @@ def crear_cursos(parametros):
     except mysql.connector.errors.IntegrityError:
         raise DuplicateError("Ya existe un curso con esos datos.")
 
+def validar_usuario_tiene_acceso_a_curso(curso_id):
+    if auth.usuario_es(ALUMNO):
+        estudiante = estudiantes_db.obtener_estudiante_por_usuario_id(auth.obtener_usuario_id())
+        if not estudiante:
+            raise NotFoundError("El usuario no tiene un perfil estudiante asociado.")
+        if not curso_estudiantes_db.obtener_estudiante_curso_por_estudiante_curso(estudiante["id"], curso_id):
+            raise ForbiddenError("No formas parte del curso.")
+        return
+    
+    if auth.usuario_es(DOCENTE):
+        profesor = profesores_db.obtener_profesor_por_usuario_id(auth.obtener_usuario_id())
+        if not profesor:
+            raise NotFoundError("El usuario no tiene un perfil docente activo.")
+        if not curso_docentes_db.docente_pertenece_activamente_a_curso(profesor["id"], curso_id):
+            raise ForbiddenError("No formas parte del curso.")
+        return
+
 def obtener_curso(id):
-    curso = db.obtener_curso_por_id(id)
+    curso = db.obtener_curso_detalle(id)
     if not curso:
         raise NotFoundError("No se encontró el curso")
+    
+    validar_usuario_tiene_acceso_a_curso(id)
+
     return curso
 
 

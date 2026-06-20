@@ -39,7 +39,7 @@ def _obtener_estudiante_por_usuario_id(usuario_id):
 	from repositories import estudiantes_repository
 	estudiante = estudiantes_repository.obtener_estudiante_por_usuario_id(usuario_id)
 	if not estudiante:
-		raise NotFoundError("El usuario no tiene un perfil estudiante activo.")
+		raise NotFoundError(".")
 	return estudiante
 
 
@@ -184,7 +184,8 @@ def obtener_asistencias_de_alumno_en_curso(curso_id, alumno_id):
 	if not curso:
 		raise NotFoundError("Curso no encontrado")
 
-	asistencias = db.obtener_asistencias_del_alumno_en_curso(curso_id, alumno_id)
+	estudiante_curso = estudiante_curso_db.obtener_estudiante_curso_por_estudiante_curso(alumno_id, curso_id)
+	asistencias = db.obtener_asistencias_del_alumno_en_curso(curso_id, alumno_id, estudiante_curso["fecha_inscripcion"])
 	total_clases = len(asistencias)
 
 	conteo_estados = {estado: 0 for estado in ASISTENCIA_ESTADOS_VALIDOS}

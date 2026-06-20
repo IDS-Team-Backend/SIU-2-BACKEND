@@ -4,9 +4,10 @@ from utils import paginacion
 
 def obtener_cursos_del_alumno(estudiante_id):
     query = """
-        SELECT c.id, c.nombre, c.anio, c.cuatrimestre
+        SELECT c.id, c.nombre, c.estado, m.nombre AS materia_nombre
         FROM estudiante_curso ec
         INNER JOIN cursos c ON c.id = ec.curso_id
+        INNER JOIN materias m ON m.id = c.materia_id
         WHERE ec.estudiante_id = %s
           AND ec.estado = 'activo'
           AND c.deleted_at IS NULL
@@ -17,18 +18,29 @@ def obtener_cursos_del_alumno(estudiante_id):
 
 def obtener_cursos_del_docente(docente_id):
     query = """
-        SELECT c.id, c.nombre, c.anio, c.cuatrimestre
+        SELECT c.id, c.nombre, c.estado, m.nombre AS materia_nombre
         FROM curso_docentes cd
         INNER JOIN cursos c ON c.id = cd.curso_id
+        INNER JOIN materias m ON m.id = c.materia_id
         WHERE cd.docente_id = %s AND c.deleted_at IS NULL
         ORDER BY c.id ASC
     """
     return db.execute_query(query, (docente_id,)) or []
 
+def obtener_todos_los_cursos():
+    query = """
+        SELECT c.id, c.nombre, c.estado, m.nombre AS materia_nombre
+        FROM cursos c
+        INNER JOIN materias m ON m.id = c.materia_id
+        WHERE c.deleted_at IS NULL
+        ORDER BY c.id ASC
+    """
+    return db.execute_query(query) or []
+
 def obtener_cursos(materia_id=None, nombre=None, anio=None, cuatrimestre=None, docente_id=None, page_size=20, offset=0):
     query = """
         SELECT c.id, c.materia_id, c.nombre, c.anio, c.cuatrimestre,
-               c.estado, c.activa, m.nombre AS materia_nombre
+            c.estado, c.activa, m.nombre AS materia_nombre
         FROM cursos c
         INNER JOIN materias m ON m.id = c.materia_id
     """
