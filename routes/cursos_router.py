@@ -9,14 +9,15 @@ cursos_bp = Blueprint("cursos", __name__)
 
 
 @cursos_bp.get("/me")
-@auth.requiere_roles(ALUMNO, DOCENTE)
 def get_mis_cursos():
     usuario_id = auth.obtener_usuario_id()
 
     if auth.usuario_es(DOCENTE):
         rol = DOCENTE
-    else:
+    elif auth.usuario_es(ALUMNO):
         rol = ALUMNO
+    elif auth.usuario_es(ADMIN):
+        rol = ADMIN
 
     cursos = logic.obtener_cursos_del_usuario_actual(usuario_id, rol)
     return jsonify({"cursos": cursos, "total": len(cursos)}), 200
