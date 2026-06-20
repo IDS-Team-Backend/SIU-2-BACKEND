@@ -60,16 +60,6 @@ def solicitar_reset(email, url_base_frontend):
     if not usuario:
         return  # silencioso
 
-    # Solo admin y docentes pueden resetear password — estudiantes no reciben email ni revelamos el motivo
-    es_admin   = usuario.get("es_admin", False)
-    es_docente = db.execute_query(
-        "SELECT id FROM profesores WHERE usuario_id = %s AND deleted_at IS NULL",
-        (usuario["id"],),
-        un_solo_valor=True,
-    )
-
-    if not es_admin and not es_docente:
-        return  # silencioso — estudiante, no enviamos email ni revelamos el motivo
 
     token = _crear_token_reset(usuario)
     url_reset = f"{url_base_frontend}/recuperar/confirmar?token={token}"
