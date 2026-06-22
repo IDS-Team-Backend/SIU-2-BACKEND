@@ -1,62 +1,54 @@
-from .materias_router import materias_bp
-from .asistencia_router import asistencia_bp
-from .auth_router import auth_public_bp, auth_private_bp
-from .cursos_router import cursos_bp
-from .cursos_public_router import cursos_public_bp
-from .email_router import email_bp
-from .equipos_router import equipos_bp
-from .estudiantes_router import estudiantes_bp
-from .profesores_router import profesores_bp
-from .evaluaciones_router import evaluaciones_bp
-from .logs_router import logs_bp
-from .materiales_router import materiales_bp, materiales_public_bp
-from .reportes_router import reportes_bp
-from .usuarios_router import usuarios_bp
-from .estudiante_curso_router import estudiante_curso_bp
-from .curso_docentes_router import curso_docentes_bp
+from modules.asistencia.asistencia_route import asistencia_bp
+from modules.auth.auth_route import auth_public_bp, auth_private_bp, password_bp, password_private_bp
+from modules.clases.clases_route import clases_bp
+from modules.curso_docentes.curso_docentes_route import curso_docentes_bp
+from modules.cursos.cursos_route import cursos_bp, cursos_public_bp
+from modules.email.email_route import email_bp
+from modules.entregas.entregas_route import entregas_bp
+from modules.equipo_integrantes.equipo_integrantes_route import equipo_integrantes_bp
+from modules.equipos.equipos_route import equipos_bp
+from modules.estudiante_curso.estudiante_curso_route import estudiante_curso_bp
+from modules.estudiantes.estudiantes_route import estudiantes_bp
+from modules.evaluaciones.evaluaciones_route import evaluaciones_bp
+from modules.logs.logs_route import logs_bp
+from modules.materiales.materiales_route import materiales_bp, materiales_public_bp
+from modules.materias.materias_route import materias_bp
+from modules.notas.notas_route import notas_bp
+from modules.profesores.profesores_route import profesores_bp
+from modules.reportes.reportes_route import reportes_bp
+from modules.tipos_evaluacion.tipos_evaluacion_route import tipos_evaluacion_bp
+from modules.usuarios.usuarios_route import usuarios_bp
 
 from utils import auth_validator as auth
-from .equipo_integrantes_router import equipo_integrantes_bp
-from .notas_router import notas_bp
-from .entregas_router import entregas_bp
-from .clases_router import clases_bp
-from .tipo_evaluaciones import tipos_evaluacion_bp
-from .password_router import password_bp, password_private_bp
 
-
-# Convención: un blueprint es O totalmente público (sin token) O totalmente
-# protegido (register_routes le agrega before_request(validar_token)). Ningún
-# route se autovalida ni usa before_request selectivo. Si un recurso necesita
-# lecturas públicas y escrituras protegidas, se parte en dos blueprints
-# (público + privado) sobre el mismo prefijo, como auth/materiales/password.
 BLUEPRINTS_PUBLICOS = [
-    ("/auth",       auth_public_bp),
-    ("/materiales", materiales_public_bp),
-    ("/password",          password_bp),
-    ("/cursos-publico", cursos_public_bp),
+    ("/auth",            auth_public_bp),
+    ("/materiales",      materiales_public_bp),
+    ("/password",        password_bp),
+    ("/cursos-publico",  cursos_public_bp),
 ]
 
 BLUEPRINTS_PRIVADOS = [
-    ("/auth",              auth_private_bp),
-    ("/password",          password_private_bp),
-    ("/materiales",        materiales_bp),
-    ("/email",             email_bp),
-    ("/cursos",            cursos_bp),
-    ("/logs",              logs_bp),
-    ("/usuarios",          usuarios_bp),
-    ("/estudiantes",       estudiantes_bp),
-    ("/profesores",        profesores_bp),
-    ("/evaluaciones",      evaluaciones_bp),
-    ("/equipos",           equipos_bp),
-    ("/asistencia",        asistencia_bp),
-    ("/reportes",          reportes_bp),
-    ("/materias",          materias_bp),
-    ("/estudiante_curso",  estudiante_curso_bp),
-    ("/curso_docentes",    curso_docentes_bp),
+    ("/auth",               auth_private_bp),
+    ("/password",           password_private_bp),
+    ("/materiales",         materiales_bp),
+    ("/email",              email_bp),
+    ("/cursos",             cursos_bp),
+    ("/logs",               logs_bp),
+    ("/usuarios",           usuarios_bp),
+    ("/estudiantes",        estudiantes_bp),
+    ("/profesores",         profesores_bp),
+    ("/evaluaciones",       evaluaciones_bp),
+    ("/equipos",            equipos_bp),
+    ("/asistencia",         asistencia_bp),
+    ("/reportes",           reportes_bp),
+    ("/materias",           materias_bp),
+    ("/estudiante_curso",   estudiante_curso_bp),
+    ("/curso_docentes",     curso_docentes_bp),
     ("/equipo_integrantes", equipo_integrantes_bp),
-    ("/notas",             notas_bp),
-    ("/entregas",          entregas_bp),
-    ("/clases",            clases_bp),
+    ("/notas",              notas_bp),
+    ("/entregas",           entregas_bp),
+    ("/clases",             clases_bp),
     ("/tipos_evaluacion",   tipos_evaluacion_bp),
 ]
 
