@@ -30,7 +30,16 @@ def validar_permisos_para_clase(curso_id):
     if not perfil or perfil["id"] not in equipo_docente_ids:
         raise ValidationError("Los docentes solo pueden influir en clases de cursos donde son docentes.")
     
-
+def _validar_disponiblidad_curso(curso_id, fecha_hora_inicio, fecha_hora_fin, clase_id=None):
+    clase_superpuesta = db.buscar_clase_superpuesta_curso(
+            curso_id, 
+            fecha_hora_inicio, 
+            fecha_hora_fin, 
+            clase_id
+        )
+    
+    if clase_superpuesta:
+        raise ValidationError(f"El curso tiene una clase superpuesta (clase ID: {clase_superpuesta['id']}) que va desde {clase_superpuesta['fecha_hora_inicio']} hasta {clase_superpuesta['fecha_hora_fin']}.")
     
 def validar_disponibilidad_profesor(profesor_id, fecha_hora_inicio, fecha_hora_fin, clase_id=None):
     """Comprueba si el profesor está libre en el rango horario indicado."""
@@ -78,7 +87,12 @@ def validar_clase(parametros, parametros_obligatorios, clase_por_actualizarse=No
             clase_por_actualizarse
         )
 
-
+        _validar_disponiblidad_curso(
+            parametros["curso_id"],
+            parametros["fecha_hora_inicio"],
+            parametros["fecha_hora_fin"],
+            clase_por_actualizarse
+        )
 
     validar_campos_cronograma(parametros)
 
