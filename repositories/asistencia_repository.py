@@ -14,7 +14,6 @@ def obtener_clase_por_id(clase_id):
 			c.fecha_hora_inicio,
 			c.fecha_hora_fin,
 			c.tema,
-			c.status,
 			c.deleted_at,
 			c.created_at,
 			cu.nombre AS curso_nombre
@@ -133,10 +132,12 @@ def obtener_asistencias_del_alumno_en_curso(curso_id, alumno_id, fecha_incripcio
 		FROM clases c
 		LEFT JOIN asistencias a
 			ON a.clase_id = c.id
-		   AND a.alumno_id = %s
-		WHERE c.curso_id = %s AND c.fecha_hora_inicio >= %s
-		  AND c.deleted_at IS NULL
-		  AND (c.status = 'finalizada' OR c.status = 'en curso')
+		AND a.alumno_id = %s
+		WHERE c.curso_id = %s 
+		AND c.fecha_hora_inicio >= %s
+		AND c.deleted_at IS NULL
+		AND c.suspendida = FALSE        
+		AND c.fecha_hora_inicio <= NOW()  
 		ORDER BY c.fecha_hora_inicio ASC
 	"""
 	return db.execute_query(query, (alumno_id, curso_id, fecha_incripcion)) or []
