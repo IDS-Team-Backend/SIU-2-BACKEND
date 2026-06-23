@@ -2,7 +2,7 @@ import json
 
 import repositories.clases_repository as db
 import repositories.profesores_repository as profesores_db
-from services import cursos_service
+from services import curso_docentes_service, cursos_service
 from constants import ADMIN, ESTADOS_CLASE, TIPOS_CLASE, MODALIDADES_CLASE
 from services.profesores_service import obtener_profesor_me
 from utils.error_handlers import NotFoundError, ValidationError
@@ -20,12 +20,15 @@ def validar_profesor_asignado(profesor_id):
         raise NotFoundError("Profesor no existe")
 
 
-def validar_permisos_para_crear_clase(profesor_id):
+def validar_permisos_para_clase(curso_id):
     if auth.usuario_es(ADMIN):
         return
     perfil = profesores_db.obtener_profesor_por_usuario_id(auth.obtener_usuario_id())
-    if not perfil or perfil["id"] != profesor_id:
-        raise ValidationError("Los docentes solo pueden asignarse a sí mismos como profesor de una clase.")
+    equipo_docente = curso_docentes_service.obtener_equipo_docente(curso_id)
+    equipo_docente_ids = [docente["docente_id"] for docente in equipo_docente]
+   
+    if not perfil or perfil["id"] not in equipo_docente_ids:
+        raise ValidationError("Los docentes solo pueden influir en clases de cursos donde son docentes.")
     
 def validar_disponibilidad_profesor(profesor_id, fecha_hora_inicio, fecha_hora_fin, clase_id=None):
     """Comprueba si el profesor está libre en el rango horario indicado."""
@@ -69,7 +72,7 @@ def validar_clase(parametros, parametros_obligatorios, estado_default=ESTADOS_CL
 
     cursos_service.obtener_curso(curso_id)
 
-    validar_permisos_para_crear_clase(profesor_id)
+    validar_permisos_para_clase(curso_id)
 
     validar_profesor_asignado(profesor_id)
 
@@ -160,11 +163,6 @@ def actualizar_clase(clase_id, parametros):
     if clase_por_actualizarse["deleted_at"] is not None:
         raise ValidationError("No se puede modificar una clase eliminada.")
     
-    docente_logueado = obtener_profesor_me()
-
-    if not auth.usuario_es(ADMIN) and docente_logueado["id"] != clase_por_actualizarse["profesor_id"]:
-        raise ValidationError("Los docentes solo pueden modificar sus propias clases.")
-    
     # if clase_por_actualizarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
     #     raise ValidationError("No se pueden modificar ni eliminar clases que ya finalizaron.")
     
@@ -195,11 +193,6 @@ def actualizar_clase_parcial(clase_id, parametros):
             parametros[key] = value.strip()
 
     clase_por_actualizarse = get_clase_by_id(clase_id)
-
-    docente_logueado = obtener_profesor_me()
-
-    if not auth.usuario_es(ADMIN) and docente_logueado["id"] != clase_por_actualizarse["profesor_id"]:
-        raise ValidationError("Los docentes solo pueden modificar sus propias clases.")
     
     if clase_por_actualizarse["deleted_at"] is not None:
         raise ValidationError("No se puede modificar una clase eliminada.")
