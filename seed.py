@@ -414,6 +414,51 @@ def seed_entregas():
     for entrega in entregas:
         execute_query(query, entrega, modifica_db=True)
 
+    # ── Entregas individuales: toda nota individual debe tener su entrega ───────
+    # El modelo es entrega→nota; sin esto quedan "notas sin entrega" (estado
+    # inconsistente). Como seed_notas() ya corrió, creamos una entrega "entregado"
+    # por cada nota individual (alumno_id no nulo), con la fecha de su evaluación.
+    fechas_eval = {
+        r["id"]: r["fecha"]
+        for r in execute_query("SELECT id, fecha FROM evaluaciones")
+    }
+
+    notas_individuales = execute_query(
+        "SELECT evaluacion_id, alumno_id FROM notas WHERE alumno_id IS NOT NULL"
+    )
+
+    query_individual = """
+    INSERT IGNORE INTO entregas(
+        evaluacion_id,
+        alumno_id,
+        fecha_entrega,
+        estado
+    )
+    VALUES (%s, %s, %s, %s)
+    """
+
+    # Variedad realista de estados (determinista por alumno): la mayoría entrega
+    # a tiempo, algunos tarde, pocos "rehacer".
+    def _estado_entrega(alumno_id):
+        r = alumno_id % 10
+        if r == 0:
+            return "rehacer"
+        if r in (1, 2):
+            return "tarde"
+        return "entregado"
+
+    for nota in notas_individuales:
+        fecha = fechas_eval.get(nota["evaluacion_id"])
+        estado = _estado_entrega(nota["alumno_id"])
+        # Las entregas "tarde" se registran un día después de la evaluación.
+        hora = "10:00:00" if estado != "tarde" else "23:30:00"
+        fecha_entrega = f"{fecha} {hora}" if fecha else None
+        execute_query(
+            query_individual,
+            (nota["evaluacion_id"], nota["alumno_id"], fecha_entrega, estado),
+            modifica_db=True,
+        )
+
 
 import json
 

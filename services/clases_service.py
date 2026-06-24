@@ -245,11 +245,14 @@ def eliminar_clase(clase_id):
     if clase_por_eliminarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
         raise ValidationError("No se pueden modificar ni eliminar clases que ya finalizaron.")
 
-    docente_logueado = obtener_profesor_me()
+    # El admin puede eliminar cualquier clase. Solo resolvemos el profesor
+    # logueado para los docentes (un admin no tiene perfil profesor y
+    # obtener_profesor_me() lanzaría "no tiene perfil profesor asociado").
+    if not auth.usuario_es(ADMIN):
+        docente_logueado = obtener_profesor_me()
+        if docente_logueado["id"] != clase_por_eliminarse["profesor_id"]:
+            raise ValidationError("Los docentes solo pueden eliminar sus propias clases.")
 
-    if not auth.usuario_es(ADMIN) and docente_logueado["id"] != clase_por_eliminarse["profesor_id"]:
-        raise ValidationError("Los docentes solo pueden eliminar sus propias clases.")
-    
     db.eliminar_clase(clase_id)
 
     return
