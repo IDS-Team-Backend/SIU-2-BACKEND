@@ -1,0 +1,127 @@
+import db
+
+def obtener_integrantes(equipo_id=None,alumno_id=None):
+    query = """
+        FROM equipo_integrantes ei
+        INNER JOIN estudiantes e
+            ON e.id = ei.alumno_id
+        INNER JOIN usuarios u
+            ON u.id = e.usuario_id
+        WHERE 1=1
+    """
+    params = []
+    if equipo_id:
+        query += " AND ei.equipo_id = %s"
+        params.append(equipo_id)
+    if alumno_id:
+        query += " AND ei.alumno_id = %s"
+        params.append(alumno_id)
+    count_query = """
+        SELECT COUNT(*) as total
+    """ + query
+    count_integrantes = db.execute_query(
+        count_query,
+        tuple(params),
+        un_solo_valor=True
+    )
+    total = (
+        count_integrantes["total"]
+        if count_integrantes
+        else 0
+    )
+    select_query = """
+        SELECT
+            ei.equipo_id,
+            ei.alumno_id,
+            e.padron,
+            u.nombre,
+            u.apellido,
+            u.email
+    """ + query
+    integrantes = db.execute_query(
+        select_query,
+        tuple(params)
+    )
+
+    return integrantes, total
+
+def agregar_integrante(equipo_id,alumno_id):
+    query = """
+        INSERT INTO equipo_integrantes
+        (
+            equipo_id,
+            alumno_id
+        )
+        VALUES (%s, %s)
+    """
+    params = (
+        equipo_id,
+        alumno_id
+    )
+    db.execute_query(
+        query,
+        params,
+        modifica_db=True
+    )
+    return {
+        "equipo_id": equipo_id,
+        "alumno_id": alumno_id
+    }
+
+def agregar_integrantes(equipo_id, alumno_ids):
+    """Inserta varios integrantes de un equipo en una sola ida a la DB (executemany).
+    Sigue el patrón de asistencia_repository.bulk_upsert_asistencias."""
+    if not alumno_ids:
+        return 0
+    conn = db.get_connection()
+    cursor = None
+    try:
+        cursor = conn.cursor(dictionary=True)
+        query = """
+            INSERT INTO equipo_integrantes
+            (
+                equipo_id,
+                alumno_id
+            )
+            VALUES (%s, %s)
+        """
+        data = [(equipo_id, alumno_id) for alumno_id in alumno_ids]
+        cursor.executemany(query, data)
+        conn.commit()
+        return cursor.rowcount
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise Exception(f"Error al agregar integrantes: {e}") from e
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def eliminar_integrante(equipo_id,alumno_id):
+    query = """
+        DELETE FROM equipo_integrantes
+        WHERE equipo_id = %s
+        AND alumno_id = %s
+    """
+    filas = db.execute_query(
+        query,
+        (equipo_id, alumno_id),
+        modifica_db=True
+    )
+    return filas > 0
+
+def existe_integrante(equipo_id,alumno_id):
+    query = """
+        SELECT COUNT(*) as total
+        FROM equipo_integrantes
+        WHERE equipo_id = %s
+        AND alumno_id = %s
+    """
+    result = db.execute_query(
+        query,
+        (equipo_id, alumno_id),
+        un_solo_valor=True
+    )
+    return result["total"] > 0 if result else False

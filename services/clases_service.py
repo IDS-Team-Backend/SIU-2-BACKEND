@@ -1,0 +1,324 @@
+import json
+
+import repositories.clases_repository as db
+import repositories.profesores_repository as profesores_db
+from services import curso_docentes_service, cursos_service
+from constants import ADMIN, ESTADOS_CLASE, TIPOS_CLASE, MODALIDADES_CLASE
+from services.profesores_service import obtener_profesor_me
+from utils.error_handlers import NotFoundError, ValidationError
+import utils.validators as validator
+import utils.auth_validator as auth
+
+CLASE_PARAMS_OBLIGATORIOS = ["nombre", "profesor_id", "curso_id", "fecha_hora_inicio", "fecha_hora_fin"]
+CLASE_PARAMS_OPCIONALES = ["tema", "suspendida", "tipo", "modalidad", "tags"]
+CLASE_FILTROS_PERMITIDOS = ["status", "profesor_id", "curso_id", "fecha", "activa"]
+
+
+def validar_profesor_asignado(profesor_id):
+    profesor = profesores_db.obtener_profesor_por_id(profesor_id)
+    if not profesor:
+        raise NotFoundError("Profesor no existe")
+
+
+def validar_permisos_para_clase(curso_id):
+    if auth.usuario_es(ADMIN):
+        return
+    perfil = profesores_db.obtener_profesor_por_usuario_id(auth.obtener_usuario_id())
+    equipo_docente = curso_docentes_service.obtener_equipo_docente(curso_id)
+    equipo_docente_ids = [docente["docente_id"] for docente in equipo_docente]
+   
+    if not perfil or perfil["id"] not in equipo_docente_ids:
+        raise ValidationError("Los docentes solo pueden influir en clases de cursos donde son docentes.")
+    
+def _validar_disponiblidad_curso(curso_id, fecha_hora_inicio, fecha_hora_fin, clase_id=None):
+    clase_superpuesta = db.buscar_clase_superpuesta_curso(
+            curso_id, 
+            fecha_hora_inicio, 
+            fecha_hora_fin, 
+            clase_id
+        )
+    
+    if clase_superpuesta:
+        raise ValidationError(f"El curso tiene una clase superpuesta (clase ID: {clase_superpuesta['id']}) que va desde {clase_superpuesta['fecha_hora_inicio']} hasta {clase_superpuesta['fecha_hora_fin']}.")
+    
+def validar_disponibilidad_profesor(profesor_id, fecha_hora_inicio, fecha_hora_fin, clase_id=None):
+    """Comprueba si el profesor está libre en el rango horario indicado."""
+    clase_superpuesta = db.buscar_clase_superpuesta_profesor(
+            profesor_id, 
+            fecha_hora_inicio, 
+            fecha_hora_fin, 
+            clase_id
+        )
+    
+    if clase_superpuesta:
+        raise ValidationError(f"El profesor tiene una clase superpuesta en el curso : {clase_superpuesta['curso_id']} (clase ID: {clase_superpuesta['id']}) que va desde {clase_superpuesta['fecha_hora_inicio']} hasta {clase_superpuesta['fecha_hora_fin']}.")
+
+def validar_clase(parametros, parametros_obligatorios, clase_por_actualizarse=None):
+    # limpiar los espacios de los argumentos
+    for key, value in parametros.items():
+        if isinstance(value, str):
+            parametros[key] = value.strip()
+
+    # validar que esten todos los campos obligatorios
+    for campo in parametros_obligatorios:
+        if (campo not in parametros) or (not parametros[campo]):
+            raise ValidationError(f"El campo '{campo}' es obligatorio.")
+        
+    # validar que no vengan campos que no existen o estan prohibidos (como deleted_at o id )
+    for campo in parametros.keys():
+        if campo not in CLASE_PARAMS_OBLIGATORIOS + CLASE_PARAMS_OPCIONALES:
+            raise ValidationError(f"El campo '{campo}' no es válido para una clase.")
+
+    validator.validar_fecha_hora(parametros["fecha_hora_inicio"])
+    validator.validar_fecha_hora(parametros["fecha_hora_fin"])
+    validator.validar_rango_fecha(parametros["fecha_hora_inicio"], parametros["fecha_hora_fin"])
+
+    cursos_service.obtener_curso(parametros["curso_id"])
+    validar_permisos_para_clase(parametros["curso_id"])
+    validar_profesor_asignado(parametros["profesor_id"])
+
+    suspendida = parametros.get("suspendida", False)
+    if not suspendida: 
+        # que no tenga ninguna clase superpuesta en ese rango horario
+        validar_disponibilidad_profesor(
+            parametros["profesor_id"],
+            parametros["fecha_hora_inicio"],
+            parametros["fecha_hora_fin"],
+            clase_por_actualizarse
+        )
+
+        _validar_disponiblidad_curso(
+            parametros["curso_id"],
+            parametros["fecha_hora_inicio"],
+            parametros["fecha_hora_fin"],
+            clase_por_actualizarse
+        )
+
+    validar_campos_cronograma(parametros)
+
+
+def validar_campos_cronograma(parametros):
+    """Valida los campos opcionales que alimentan el cronograma: tipo, modalidad y tags."""
+    tipo = parametros.get("tipo")
+    if tipo and tipo not in TIPOS_CLASE:
+        raise ValidationError(f"Tipo de clase inválido. Tipos válidos: {', '.join(TIPOS_CLASE)}")
+
+    modalidad = parametros.get("modalidad")
+    if modalidad and modalidad not in MODALIDADES_CLASE:
+        raise ValidationError(f"Modalidad inválida. Modalidades válidas: {', '.join(MODALIDADES_CLASE)}")
+
+    tags = parametros.get("tags")
+    if tags is not None:
+        if not isinstance(tags, list) or any(not isinstance(t, str) for t in tags):
+            raise ValidationError("El campo 'tags' debe ser una lista de strings.")
+
+# ─── GET /clases ───────────────────────────────────────────────────────────────
+def get_clases(filtros):
+    # valida que los filtros enviados son correctos 
+    for filtro in filtros.keys():
+        if filtro not in CLASE_FILTROS_PERMITIDOS:
+            raise ValidationError(f"Filtro '{filtro}' no permitido. Filtros permitidos: {', '.join(CLASE_FILTROS_PERMITIDOS)}")
+        
+    # parseo de 'true' o 'false' a booleanos de python
+    if 'activa' in filtros:
+        if filtros['activa'].lower() == 'true':
+            filtros['activa'] = True
+        elif filtros['activa'].lower() == 'false':
+            filtros['activa'] = False
+            if not auth.usuario_es(ADMIN):
+                raise ValidationError("El filtro 'activa=false' solo puede ser utilizado por administradores.")
+        else:
+            raise ValidationError("El filtro 'activa' debe ser un valor booleano (true o false).")
+
+    if 'status' in filtros and not validator.es_estado_clase_valido(filtros['status']):
+        raise ValidationError(f"Estado de clase inválido en filtro. Estados válidos: {', '.join(ESTADOS_CLASE)}")
+
+    if 'fecha' in filtros:
+        validator.validar_fecha(filtros['fecha'])
+
+    clases, total = db.get_clases(filtros)
+    
+    return clases, total
+
+# ─── GET /clases/{id} ──────────────────────────────────────────────────────────
+def get_clase_by_id(clase_id):
+    clase = db.get_clase_by_id(clase_id)
+
+    if auth.usuario_es(ADMIN):
+        # los admin pueden ver las clases eliminadas
+        clase = db.get_clase_by_id(clase_id, incluir_eliminadas=True)
+
+    if not clase:
+        raise NotFoundError("Clase no encontrada")
+
+    return clase
+
+# ─── POST /clases ──────────────────────────────────────────────────────────────
+def crear_clase(parametros):
+    validar_clase(parametros, CLASE_PARAMS_OBLIGATORIOS)
+
+    return db.crear_clase(
+        parametros["nombre"], parametros["profesor_id"], parametros["curso_id"],
+        parametros["fecha_hora_inicio"], parametros["fecha_hora_fin"],
+        parametros.get("tema"), parametros.get("suspendida", False),
+        parametros.get("tipo"), parametros.get("modalidad"),
+        _serializar_tags(parametros.get("tags")),
+    )
+
+# ─── PUT /clases/{id} ──────────────────────────────────────────────────────────────
+def actualizar_clase(clase_id, parametros):
+    clase_por_actualizarse = get_clase_by_id(clase_id)
+
+    if clase_por_actualizarse["deleted_at"] is not None:
+        raise ValidationError("No se puede modificar una clase eliminada.")
+    
+    # if clase_por_actualizarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
+    #     raise ValidationError("No se pueden modificar ni eliminar clases que ya finalizaron.")
+
+    validar_clase(parametros, CLASE_PARAMS_OBLIGATORIOS, clase_por_actualizarse=clase_id)
+
+    return db.actualizar_clase(
+        clase_id,
+        parametros["nombre"], parametros["profesor_id"], parametros["curso_id"],
+        parametros["fecha_hora_inicio"], parametros["fecha_hora_fin"],
+        parametros.get("tema"), parametros.get("suspendida", False),
+        parametros.get("tipo"), parametros.get("modalidad"),
+        _serializar_tags(parametros.get("tags")),
+    )
+
+
+# ─── PATCH /clases/{id} ──────────────────────────────────────────────────────────────
+def actualizar_clase_parcial(clase_id, parametros):
+    # le sacamos los espacios al diccionario original
+    for key, value in parametros.items():
+        if isinstance(value, str):
+            parametros[key] = value.strip()
+
+    clase_por_actualizarse = get_clase_by_id(clase_id)
+    if clase_por_actualizarse["deleted_at"] is not None:
+        raise ValidationError("No se puede modificar una clase eliminada.")
+    
+    # if clase_por_actualizarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
+    #     raise ValidationError("No se pueden modificar ni eliminar clases que ya finalizaron.")
+
+    # validar que no vengan campos que no existen o estan prohibidos (como deleted_at o id )
+    for campo in parametros.keys():
+        if campo not in CLASE_PARAMS_OBLIGATORIOS + CLASE_PARAMS_OPCIONALES:
+            raise ValidationError(f"El campo '{campo}' no es válido para una clase.")
+
+    # me devuelve como se veria la clase final, asi la puedo validar
+    clase_actualizada_temporalmente = {
+        "nombre": parametros.get("nombre", clase_por_actualizarse["nombre"]),
+        "profesor_id": parametros.get("profesor_id", clase_por_actualizarse["profesor_id"]),
+        "curso_id": parametros.get("curso_id", clase_por_actualizarse["curso_id"]),
+        "fecha_hora_inicio": parametros.get("fecha_hora_inicio", str(clase_por_actualizarse["fecha_hora_inicio"])),
+        "fecha_hora_fin": parametros.get("fecha_hora_fin", str(clase_por_actualizarse["fecha_hora_fin"])),
+        "tema": parametros.get("tema", clase_por_actualizarse["tema"]),
+        "suspendida": parametros.get("suspendida", clase_por_actualizarse.get("suspendida", False)),
+    }
+
+    # los campos del cronograma se validan solo si vienen en el PATCH (el valor guardado
+    # en la BD ya es válido y 'tags' se almacena como JSON, no como lista de Python)
+    for campo in ("tipo", "modalidad", "tags"):
+        if campo in parametros:
+            clase_actualizada_temporalmente[campo] = parametros[campo]
+
+    # En PATCH validamos solo el payload final combinado, no campos obligatorios.
+    validar_clase(clase_actualizada_temporalmente, [], clase_por_actualizarse=clase_id)
+
+    # tags viaja como JSON a la columna (el connector no acepta una lista cruda)
+    if "tags" in parametros:
+        parametros["tags"] = _serializar_tags(parametros["tags"])
+
+    return db.actualizar_clase_parcial(clase_id, parametros)
+ 
+# ─── DELETE /clases/{id} ──────────────────────────────────────────────────────────────
+def eliminar_clase(clase_id):
+    clase_por_eliminarse = get_clase_by_id(clase_id)
+
+    if not clase_por_eliminarse:
+        raise NotFoundError("Clase no encontrada")
+    
+    if clase_por_eliminarse["deleted_at"] is not None:
+        raise ValidationError("La clase ya ha sido eliminada.")
+    
+    if clase_por_eliminarse["status"] == "finalizada" and not auth.usuario_es(ADMIN):
+        raise ValidationError("No se pueden modificar ni eliminar clases que ya finalizaron.")
+
+    docente_logueado = obtener_profesor_me()
+
+    if not auth.usuario_es(ADMIN) and docente_logueado["id"] != clase_por_eliminarse["profesor_id"]:
+        raise ValidationError("Los docentes solo pueden eliminar sus propias clases.")
+    
+    db.eliminar_clase(clase_id)
+
+    return
+
+# ─── (de)serialización de la columna JSON `tags` ────────────────────────────────
+def _serializar_tags(tags):
+    """El connector no convierte una lista de Python a la columna JSON: hay que pasar
+    texto JSON. None se respeta; un str ya serializado (ej. el valor de la BD) pasa igual."""
+    if tags is None:
+        return None
+    if isinstance(tags, str):
+        return tags
+    return json.dumps(tags)
+
+
+def _parsear_tags(raw):
+    """Las columnas JSON pueden llegar como lista ya parseada, como str/bytes JSON o None."""
+    if not raw:
+        return []
+    if isinstance(raw, (bytes, bytearray)):
+        raw = raw.decode("utf-8")
+    if isinstance(raw, str):
+        try:
+            valor = json.loads(raw)
+            return valor if isinstance(valor, list) else []
+        except (ValueError, TypeError):
+            return []
+    if isinstance(raw, list):
+        return raw
+    return []
+
+
+def _celda_desde_clase(clase):
+    tema = clase.get("tema") or ""
+    # los temas se almacenan unidos por " | " para permitir múltiples bullets con una sola columna
+    temas = [t.strip() for t in tema.split(" | ") if t.strip()] if tema else []
+    return {
+        "fecha": clase["fecha_hora_inicio"].strftime("%d/%m"),
+        "modalidad": clase.get("modalidad") or "",
+        "temas": temas,
+        "tags": _parsear_tags(clase.get("tags")),
+    }
+
+
+def get_cronograma(curso_id):
+    """Construye la grilla semanal (Teórica/Práctica) del cronograma a partir de la tabla clases."""
+    if not curso_id:
+        raise ValidationError("El parámetro 'curso_id' es obligatorio.")
+
+    clases, _ = db.get_clases({"curso_id": curso_id})
+    if not clases:
+        return []
+
+    # el inicio del cuatrimestre es la clase más temprana del curso; las semanas se cuentan desde ahí
+    inicio = min(c["fecha_hora_inicio"] for c in clases)
+
+    semanas = {}  # numero -> {"semana": n, "teorica": {...}, "practica": {...}}
+    for clase in sorted(clases, key=lambda c: c["fecha_hora_inicio"]):
+        numero = (clase["fecha_hora_inicio"] - inicio).days // 7 + 1
+        semana = semanas.setdefault(numero, {"semana": numero, "teorica": {}, "practica": {}})
+
+        tipo = clase.get("tipo") or "teorica"  # fallback si la clase no tiene tipo cargado
+        celda = _celda_desde_clase(clase)
+
+        if semana[tipo]:
+            # ya hay una clase de este tipo en la semana: se fusionan temas y tags
+            semana[tipo]["temas"].extend(celda["temas"])
+            semana[tipo]["tags"].extend(t for t in celda["tags"] if t not in semana[tipo]["tags"])
+        else:
+            semana[tipo] = celda
+
+    return [semanas[n] for n in sorted(semanas)]

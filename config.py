@@ -1,0 +1,70 @@
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+
+def _get_env(nombre, required=True, default=None):
+    valor = os.getenv(nombre)
+    if not valor:
+        if default is not None:
+            return default
+        if required:
+            raise RuntimeError(f"Falta la variable de entorno: {nombre}")
+        return None
+    return valor
+
+ADMIN = "admin"
+DOCENTE = "docente"
+ALUMNO = "alumno"
+AYUDANTE = "ayudante"
+
+# Set canónico de roles del staff (mismos permisos en endpoints de gestión).
+ROLES_STAFF = (ADMIN, DOCENTE, AYUDANTE)
+
+TITULAR          = "titular"
+JEFE_TP          = "jefe_tp"
+AYUDANTE_CATEDRA = "ayudante"
+COLABORADOR      = "colaborador"
+
+ROLES_DOCENTE_CATEDRA = [
+    TITULAR,
+    JEFE_TP,
+    AYUDANTE_CATEDRA,
+    COLABORADOR,
+]
+
+ESTADOS_CLASE = [ # caso default: ESTADOS_CLASE[0]
+    "pendiente",
+    "suspendida",
+    "en curso",
+    "finalizada"
+] # CUALQUIER CAMBIO EN LOS ESTADOS, SE DEBE CAMBIAR EN EL SCHEMA.SQL TAMBIEN
+
+EMAIL_CONFIG = {
+    "HOST": _get_env("SMTP_HOST", required=False, default=""),
+    "PORT": int(_get_env("SMTP_PORT", required=False) or 587),
+    "USERNAME": _get_env("SMTP_USERNAME", required=False, default=""),
+    "PASSWORD": _get_env("SMTP_PASSWORD", required=False, default=""),
+    "SENDER": _get_env("SMTP_SENDER", required=False, default=""),
+    "USE_TLS": (_get_env("SMTP_USE_TLS", required=False) or "false").lower() == "true"
+}
+
+DOMINIOS_EMAIL_PERMITIDOS = [
+    dominio.strip()
+    for dominio in os.getenv("DOMINIOS_EMAIL_PERMITIDOS", "fi.uba.ar,gmail.com").split(",")
+    if dominio.strip()
+]
+
+# URL pública del frontend, para armar los enlaces de los emails (registro, reset).
+# En Docker se inyecta por entorno; el default es para dev local sin Docker.
+FRONTEND_URL = _get_env("FRONTEND_URL", required=False, default="http://localhost:5001").rstrip("/")
+
+DB_CONFIG: dict[str, str | int] = {
+    "host": os.getenv("DB_HOST", "localhost"),
+    "user": os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", ""),
+    "database": os.getenv("DB_NAME", "siu2_db"),
+    "port": int(os.getenv("DB_PORT", "3306"))
+}

@@ -1,27 +1,22 @@
+from typing import Any
 import mysql.connector
-import os
+from config import DB_CONFIG
 
-global PASSWORD
-PASSWORD = "fiuba" # Asegurate que sea tu password de MySQL
 
-def get_connection(database_name="siu2_db"):
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password=PASSWORD,
-        database=database_name
-    )
+def get_connection():
+    return mysql.connector.connect(**DB_CONFIG)
 
 def get_server_connection():
-    # Conexión al servidor sin base de datos específica (para el CREATE DATABASE)
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password=PASSWORD
-    )
+    db_config = DB_CONFIG.copy()
+    db_config.pop("database", None)  # elimina la clave 'database' si existe que no hace falta para crear la DB desde init_db.py
+    return mysql.connector.connect(**db_config)
 
-
-def execute_query(query, params=None, modifica_db=False, un_solo_valor=False):
+def execute_query(
+        query: str, 
+        params: tuple = (), 
+        modifica_db: bool = False, 
+        un_solo_valor: bool =False
+        ) -> Any: # Any porque puede devolver un dict, lista de dicts, un int o None
     """
         Ejecuta una query SQL.
 
@@ -72,8 +67,8 @@ def execute_query(query, params=None, modifica_db=False, un_solo_valor=False):
     except Exception as e:
         if conn: 
             conn.rollback() # si hay un error en un post o put hay que revertir los cambios hecho a la DB para evitar datos corruptos 
-        e.message = f"Error al ejecutar la query: {str(e)}. Query: {query}, Params: {params}"
-        raise e
+        error_msg = f"Error al ejecutar la query: {str(e)}. Query: {query}, Params: {params}"
+        raise Exception(error_msg) from e
     finally:
         if cur:
             cur.close()

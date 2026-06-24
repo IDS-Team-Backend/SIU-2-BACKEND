@@ -1,404 +1,3309 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
-  title: API - Sistema de Gestión Universitaria
-  description: Endpoints para el proyecto integrador. Filtrado por curso_id y soporte para Soft Delete.
-  version: 1.2.0
+  title: SIU-2 Backend API
+  version: 1.0.0
+  description: Documentación OpenAPI 3.0 generada exclusivamente a partir de los routers definidos en routes/.
 servers:
   - url: http://localhost:5000/api
-    description: Servidor de Desarrollo (Flask)
+    description: Servidor local
+
+tags:
+  - name: Auth
+  - name: Usuarios
+  - name: Estudiantes
+  - name: Profesores
+  - name: Materias
+  - name: Cursos
+  - name: Evaluaciones
+  - name: Equipos
+  - name: EquipoIntegrantes
+  - name: EstudianteCurso
+  - name: Notas
+  - name: Clases
+  - name: Logs
+  - name: Asistencia
+  - name: Reportes
+  - name: Materiales
+  - name: Email
+
+security:
+  - CookieAuth: []
 
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token_cookie
+      description: Cookie con el JWT de sesión.
 
-security:
-  - bearerAuth: []
+  schemas:
+    ErrorItem:
+      type: object
+      required:
+        - code
+        - message
+        - level
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        level:
+          type: string
+        description:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorItem'
+
+    HealthResponse:
+      type: object
+      required:
+        - resource
+        - status
+      properties:
+        resource:
+          type: string
+        status:
+          type: string
+
+    AuthLoginRequest:
+      type: object
+      required:
+        - dni
+        - password
+      properties:
+        dni:
+          type: integer
+        password:
+          type: string
+
+    AuthLoginResponse:
+      type: object
+      required:
+        - mensaje
+        - token
+      properties:
+        mensaje:
+          type: string
+        token:
+          type: string
+
+    AuthSignupRequest:
+      type: object
+      required:
+        - nombre
+        - apellido
+        - dni
+        - email
+        - password
+      properties:
+        nombre:
+          type: string
+        apellido:
+          type: string
+        dni:
+          type: integer
+        email:
+          type: string
+        password:
+          type: string
+
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        apellido:
+          type: string
+        email:
+          type: string
+        dni:
+          type: integer
+        es_admin:
+          type: boolean
+        activo:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    UsuarioCreateRequest:
+      type: object
+      required:
+        - nombre
+        - apellido
+        - dni
+        - email
+        - password
+      properties:
+        nombre:
+          type: string
+        apellido:
+          type: string
+        dni:
+          type: integer
+        email:
+          type: string
+        password:
+          type: string
+        es_admin:
+          type: boolean
+
+    UsuarioUpdateRequest:
+      type: object
+      required:
+        - nombre
+        - apellido
+        - dni
+        - email
+        - activo
+      properties:
+        nombre:
+          type: string
+        apellido:
+          type: string
+        dni:
+          type: integer
+        email:
+          type: string
+        activo:
+          type: boolean
+        es_admin:
+          type: boolean
+
+    PerfilesResponse:
+      type: object
+      required:
+        - perfiles
+      properties:
+        perfiles:
+          type: array
+          items:
+            type: string
+            enum: [admin, docente, alumno]
+
+    Materia:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        codigo:
+          type: string
+          nullable: true
+
+    MateriaCreateRequest:
+      type: object
+      required:
+        - nombre
+      properties:
+        nombre:
+          type: string
+        codigo:
+          type: string
+          nullable: true
+
+    MateriaUpdateRequest:
+      type: object
+      required:
+        - nombre
+        - codigo
+      properties:
+        nombre:
+          type: string
+        codigo:
+          type: string
+          nullable: true
+
+    Curso:
+      type: object
+      properties:
+        id:
+          type: integer
+        materia_id:
+          type: integer
+        nombre:
+          type: string
+        anio:
+          type: integer
+        cuatrimestre:
+          type: integer
+
+    CursoCreateRequest:
+      type: object
+      required:
+        - materia_id
+        - nombre
+        - anio
+        - cuatrimestre
+      properties:
+        materia_id:
+          type: integer
+        nombre:
+          type: string
+        anio:
+          type: integer
+        cuatrimestre:
+          type: integer
+
+    CursoUpdateRequest:
+      type: object
+      required:
+        - materia_id
+        - nombre
+        - anio
+        - cuatrimestre
+      properties:
+        materia_id:
+          type: integer
+        nombre:
+          type: string
+        anio:
+          type: integer
+        cuatrimestre:
+          type: integer
+
+    Estudiante:
+      type: object
+      properties:
+        id:
+          type: integer
+        usuario_id:
+          type: integer
+        padron:
+          type: integer
+        carrera:
+          type: string
+        anio_ingreso:
+          type: integer
+        activo:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        nombre:
+          type: string
+        apellido:
+          type: string
+        email:
+          type: string
+        dni:
+          type: integer
+
+    EstudianteCreateRequest:
+      type: object
+      required:
+        - usuario_id
+        - padron
+        - carrera
+        - anio_ingreso
+      properties:
+        usuario_id:
+          type: integer
+        padron:
+          type: integer
+        carrera:
+          type: string
+        anio_ingreso:
+          type: integer
+
+    EstudianteUpdateRequest:
+      type: object
+      required:
+        - padron
+        - carrera
+        - anio_ingreso
+        - activo
+      properties:
+        padron:
+          type: integer
+        carrera:
+          type: string
+        anio_ingreso:
+          type: integer
+        activo:
+          type: boolean
+
+    EstudiantePatchRequest:
+      type: object
+      minProperties: 1
+      properties:
+        padron:
+          type: integer
+        carrera:
+          type: string
+        anio_ingreso:
+          type: integer
+        activo:
+          type: boolean
+
+    Profesor:
+      type: object
+      properties:
+        id:
+          type: integer
+        usuario_id:
+          type: integer
+        legajo:
+          type: integer
+        titulo:
+          type: string
+        departamento:
+          type: string
+        fecha_ingreso:
+          type: string
+          format: date
+        activo:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        nombre:
+          type: string
+        apellido:
+          type: string
+        email:
+          type: string
+        dni:
+          type: integer
+
+    ProfesorCreateRequest:
+      type: object
+      required:
+        - usuario_id
+        - legajo
+        - titulo
+        - departamento
+        - fecha_ingreso
+      properties:
+        usuario_id:
+          type: integer
+        legajo:
+          type: integer
+        titulo:
+          type: string
+        departamento:
+          type: string
+        fecha_ingreso:
+          type: string
+          format: date
+
+    ProfesorUpdateRequest:
+      type: object
+      required:
+        - legajo
+        - titulo
+        - departamento
+        - fecha_ingreso
+        - activo
+      properties:
+        legajo:
+          type: integer
+        titulo:
+          type: string
+        departamento:
+          type: string
+        fecha_ingreso:
+          type: string
+          format: date
+        activo:
+          type: boolean
+
+    ProfesorPatchRequest:
+      type: object
+      minProperties: 1
+      properties:
+        legajo:
+          type: integer
+        titulo:
+          type: string
+        departamento:
+          type: string
+        fecha_ingreso:
+          type: string
+          format: date
+        activo:
+          type: boolean
+
+    Clase:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        profesor_id:
+          type: integer
+        curso_id:
+          type: integer
+        fecha_hora_inicio:
+          type: string
+          format: date-time
+        fecha_hora_fin:
+          type: string
+          format: date-time
+        tema:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pendiente, suspendida, en curso, finalizada]
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ClaseCreateRequest:
+      type: object
+      required:
+        - nombre
+        - profesor_id
+        - curso_id
+        - fecha_hora_inicio
+        - fecha_hora_fin
+      properties:
+        nombre:
+          type: string
+        profesor_id:
+          type: integer
+        curso_id:
+          type: integer
+        fecha_hora_inicio:
+          type: string
+          format: date-time
+        fecha_hora_fin:
+          type: string
+          format: date-time
+        tema:
+          type: string
+        status:
+          type: string
+          enum: [pendiente, suspendida, en curso, finalizada]
+
+    ClaseUpdateRequest:
+      type: object
+      required:
+        - nombre
+        - profesor_id
+        - curso_id
+        - fecha_hora_inicio
+        - fecha_hora_fin
+      properties:
+        nombre:
+          type: string
+        profesor_id:
+          type: integer
+        curso_id:
+          type: integer
+        fecha_hora_inicio:
+          type: string
+          format: date-time
+        fecha_hora_fin:
+          type: string
+          format: date-time
+        tema:
+          type: string
+        status:
+          type: string
+          enum: [pendiente, suspendida, en curso, finalizada]
+
+    ClasePatchRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+        profesor_id:
+          type: integer
+        curso_id:
+          type: integer
+        fecha_hora_inicio:
+          type: string
+          format: date-time
+        fecha_hora_fin:
+          type: string
+          format: date-time
+        tema:
+          type: string
+        status:
+          type: string
+          enum: [pendiente, suspendida, en curso, finalizada]
+
+    ClaseEstadoItem:
+      type: object
+      required:
+        - id
+        - nombre
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+
+    Evaluacion:
+      type: object
+      properties:
+        id:
+          type: integer
+        curso_id:
+          type: integer
+        tipo_evaluacion_id:
+          type: integer
+        titulo:
+          type: string
+        descripcion:
+          type: string
+          nullable: true
+        fecha:
+          type: string
+          format: date
+        activo:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        es_grupal:
+          type: boolean
+        tipo_evaluacion:
+          type: string
+
+    EvaluacionCreateRequest:
+      type: object
+      required:
+        - curso_id
+        - tipo_evaluacion_id
+        - titulo
+        - fecha
+      properties:
+        curso_id:
+          type: integer
+        tipo_evaluacion_id:
+          type: integer
+        titulo:
+          type: string
+        descripcion:
+          type: string
+          nullable: true
+        fecha:
+          type: string
+          format: date
+
+    EvaluacionUpdateRequest:
+      type: object
+      required:
+        - curso_id
+        - tipo_evaluacion_id
+        - titulo
+        - fecha
+        - activo
+      properties:
+        curso_id:
+          type: integer
+        tipo_evaluacion_id:
+          type: integer
+        titulo:
+          type: string
+        descripcion:
+          type: string
+          nullable: true
+        fecha:
+          type: string
+          format: date
+        activo:
+          type: boolean
+
+    Equipo:
+      type: object
+      properties:
+        id:
+          type: integer
+        curso_id:
+          type: integer
+        evaluacion_id:
+          type: integer
+        nombre:
+          type: string
+        activo:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    EquipoCreateRequest:
+      type: object
+      required:
+        - curso_id
+        - evaluacion_id
+        - nombre
+      properties:
+        curso_id:
+          type: integer
+        evaluacion_id:
+          type: integer
+        nombre:
+          type: string
+
+    EquipoUpdateRequest:
+      type: object
+      required:
+        - curso_id
+        - evaluacion_id
+        - nombre
+        - activo
+      properties:
+        curso_id:
+          type: integer
+        evaluacion_id:
+          type: integer
+        nombre:
+          type: string
+        activo:
+          type: boolean
+
+    EstudianteCurso:
+      type: object
+      properties:
+        id:
+          type: integer
+        estudiante_id:
+          type: integer
+        curso_id:
+          type: integer
+        estado:
+          type: string
+          enum: [activo, abandono]
+        fecha_inscripcion:
+          type: string
+          format: date-time
+        padron:
+          type: integer
+        nombre:
+          type: string
+        apellido:
+          type: string
+        curso_nombre:
+          type: string
+
+    EstudianteCursoCreateRequest:
+      type: object
+      required:
+        - estudiante_id
+        - curso_id
+      properties:
+        estudiante_id:
+          type: integer
+        curso_id:
+          type: integer
+        estado:
+          type: string
+          enum: [activo, abandono]
+          default: activo
+
+    EstudianteCursoUpdateRequest:
+      type: object
+      required:
+        - estudiante_id
+        - curso_id
+        - estado
+      properties:
+        estudiante_id:
+          type: integer
+        curso_id:
+          type: integer
+        estado:
+          type: string
+          enum: [activo, abandono]
+
+    EstudianteCursoPatchRequest:
+      type: object
+      minProperties: 1
+      properties:
+        estudiante_id:
+          type: integer
+        curso_id:
+          type: integer
+        estado:
+          type: string
+          enum: [activo, abandono]
+
+    EquipoIntegrante:
+      type: object
+      properties:
+        equipo_id:
+          type: integer
+        alumno_id:
+          type: integer
+        nombre:
+          type: string
+        apellido:
+          type: string
+        email:
+          type: string
+        activo:
+          type: boolean
+
+    EquipoIntegranteCreateRequest:
+      type: object
+      required:
+        - equipo_id
+        - alumno_id
+      properties:
+        equipo_id:
+          type: integer
+        alumno_id:
+          type: integer
+
+    Nota:
+      type: object
+      properties:
+        id:
+          type: integer
+        evaluacion_id:
+          type: integer
+        alumno_id:
+          type: integer
+          nullable: true
+        equipo_id:
+          type: integer
+          nullable: true
+        nota:
+          type: number
+        observaciones:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    NotaIndividualCreateRequest:
+      type: object
+      required:
+        - evaluacion_id
+        - alumno_id
+        - nota
+      properties:
+        evaluacion_id:
+          type: integer
+        alumno_id:
+          type: integer
+        nota:
+          type: number
+        observaciones:
+          type: string
+          nullable: true
+
+    NotaGrupalCreateRequest:
+      type: object
+      required:
+        - evaluacion_id
+        - equipo_id
+        - nota
+      properties:
+        evaluacion_id:
+          type: integer
+        equipo_id:
+          type: integer
+        nota:
+          type: number
+        observaciones:
+          type: string
+          nullable: true
+
+    NotaCreateRequest:
+      oneOf:
+        - $ref: '#/components/schemas/NotaIndividualCreateRequest'
+        - $ref: '#/components/schemas/NotaGrupalCreateRequest'
+
+    NotaUpdateRequest:
+      type: object
+      required:
+        - nota
+      properties:
+        nota:
+          type: number
+
+  responses:
+    BadRequest:
+      description: Solicitud inválida o datos de entrada no válidos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Falta la cookie de autenticación, el token es inválido o expiró.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: El usuario autenticado no posee el rol requerido.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: El recurso solicitado no existe.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: El recurso ya existe o viola una restricción de unicidad.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Error inesperado del servidor.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
 
 paths:
-  # ================= AUTH & LOGS =================
   /auth/login:
     post:
-      summary: Iniciar sesión
       tags: [Auth]
-      security: [] 
+      summary: Iniciar sesión
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                dni: { type: integer }
-                password: { type: string }
+              $ref: '#/components/schemas/AuthLoginRequest'
       responses:
         '200':
-          description: Login exitoso devuelve token
+          description: Sesión iniciada correctamente.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /auth/signup:
     post:
-      summary: Registrar un nuevo usuario
       tags: [Auth]
-      security: [] 
+      summary: Registrar un nuevo usuario
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthSignupRequest'
+      responses:
+        '200':
+          description: Usuario registrado correctamente.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [usuario]
+                properties:
+                  usuario:
+                    $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/me/perfiles:
+    get:
+      tags: [Auth]
+      summary: Obtener los perfiles activos del usuario autenticado
+      responses:
+        '200':
+          description: Perfiles recalculados desde la base de datos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerfilesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /usuarios:
+    get:
+      tags: [Usuarios]
+      summary: Listar usuarios
+      parameters:
+        - name: nombre
+          in: query
+          schema:
+            type: string
+        - name: apellido
+          in: query
+          schema:
+            type: string
+        - name: dni
+          in: query
+          schema:
+            type: integer
+        - name: email
+          in: query
+          schema:
+            type: string
+        - name: rol
+          in: query
+          schema:
+            type: string
+            enum: [admin, alumno, docente, pendiente]
+      responses:
+        '200':
+          description: Lista de usuarios.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [usuarios, total]
+                properties:
+                  usuarios:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Usuario'
+                  total:
+                    type: integer
+        '204':
+          description: Sin resultados.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Usuarios]
+      summary: Crear un usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioCreateRequest'
+      responses:
+        '201':
+          description: Usuario creado exitosamente.
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, usuario]
+                properties:
+                  message:
+                    type: string
+                  usuario:
+                    $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /usuarios/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Usuarios]
+      summary: Obtener un usuario por ID
+      responses:
+        '200':
+          description: Usuario encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Usuarios]
+      summary: Reemplazar un usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioUpdateRequest'
+      responses:
+        '204':
+          description: Usuario actualizado correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Usuarios]
+      summary: Eliminar lógicamente un usuario
+      responses:
+        '204':
+          description: Usuario eliminado correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /estudiantes:
+    get:
+      tags: [Estudiantes]
+      summary: Listar estudiantes
+      parameters:
+        - name: carrera
+          in: query
+          schema:
+            type: string
+        - name: anio_ingreso
+          in: query
+          schema:
+            type: integer
+        - name: activo
+          in: query
+          schema:
+            type: boolean
+        - name: usuario_id
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Lista paginada de estudiantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [estudiantes, total, page, page_size, total_paginas]
+                properties:
+                  estudiantes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Estudiante'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+                  total_paginas:
+                    type: integer
+        '204':
+          description: Sin resultados.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Estudiantes]
+      summary: Crear un estudiante
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstudianteCreateRequest'
+      responses:
+        '201':
+          description: Estudiante creado correctamente.
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, estudiante]
+                properties:
+                  message:
+                    type: string
+                  estudiante:
+                    $ref: '#/components/schemas/Estudiante'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /estudiantes/me:
+    get:
+      tags: [Estudiantes]
+      summary: Obtener el estudiante autenticado
+      responses:
+        '200':
+          description: Perfil de estudiante asociado al usuario autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estudiante'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /estudiantes/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Estudiantes]
+      summary: Obtener un estudiante por ID
+      responses:
+        '200':
+          description: Estudiante encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estudiante'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Estudiantes]
+      summary: Reemplazar un estudiante
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstudianteUpdateRequest'
+      responses:
+        '204':
+          description: Estudiante actualizado correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Estudiantes]
+      summary: Actualizar parcialmente un estudiante
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstudiantePatchRequest'
+      responses:
+        '200':
+          description: Estudiante actualizado exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, estudiante]
+                properties:
+                  message:
+                    type: string
+                  estudiante:
+                    $ref: '#/components/schemas/Estudiante'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Estudiantes]
+      summary: Eliminar lógicamente un estudiante
+      responses:
+        '204':
+          description: Estudiante eliminado correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /profesores:
+    get:
+      tags: [Profesores]
+      summary: Listar profesores
+      parameters:
+        - name: departamento
+          in: query
+          schema:
+            type: string
+        - name: titulo
+          in: query
+          schema:
+            type: string
+        - name: activo
+          in: query
+          schema:
+            type: boolean
+        - name: usuario_id
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Lista paginada de profesores.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profesores, total, page, page_size, total_paginas]
+                properties:
+                  profesores:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Profesor'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+                  total_paginas:
+                    type: integer
+        '204':
+          description: Sin resultados.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Profesores]
+      summary: Crear un profesor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfesorCreateRequest'
+      responses:
+        '201':
+          description: Profesor creado correctamente.
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, profesor]
+                properties:
+                  message:
+                    type: string
+                  profesor:
+                    $ref: '#/components/schemas/Profesor'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /profesores/me:
+    get:
+      tags: [Profesores]
+      summary: Obtener el profesor autenticado
+      responses:
+        '200':
+          description: Perfil de profesor asociado al usuario autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profesor'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /profesores/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Profesores]
+      summary: Obtener un profesor por ID
+      responses:
+        '200':
+          description: Profesor encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profesor'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Profesores]
+      summary: Reemplazar un profesor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfesorUpdateRequest'
+      responses:
+        '204':
+          description: Profesor actualizado correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Profesores]
+      summary: Actualizar parcialmente un profesor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfesorPatchRequest'
+      responses:
+        '200':
+          description: Profesor actualizado exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, profesor]
+                properties:
+                  message:
+                    type: string
+                  profesor:
+                    $ref: '#/components/schemas/Profesor'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Profesores]
+      summary: Eliminar lógicamente un profesor
+      responses:
+        '204':
+          description: Profesor eliminado correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /materias/health:
+    get:
+      tags: [Materias]
+      summary: Health check de materias
+      responses:
+        '200':
+          description: Servicio saludable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /materias:
+    get:
+      tags: [Materias]
+      summary: Listar materias
+      parameters:
+        - name: nombre
+          in: query
+          schema:
+            type: string
+        - name: codigo
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Lista paginada de materias.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [materias, total, page, page_size]
+                properties:
+                  materias:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Materia'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+        '204':
+          description: Sin resultados.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Materias]
+      summary: Crear una materia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MateriaCreateRequest'
+      responses:
+        '201':
+          description: Materia creada correctamente.
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, materia]
+                properties:
+                  message:
+                    type: string
+                  materia:
+                    $ref: '#/components/schemas/Materia'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /materias/{materia_id}:
+    parameters:
+      - name: materia_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Materias]
+      summary: Obtener una materia por ID
+      responses:
+        '200':
+          description: Materia encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Materia'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Materias]
+      summary: Reemplazar una materia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MateriaUpdateRequest'
+      responses:
+        '200':
+          description: Materia actualizada correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, materia]
+                properties:
+                  message:
+                    type: string
+                  materia:
+                    $ref: '#/components/schemas/Materia'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Materias]
+      summary: Eliminar una materia
+      responses:
+        '204':
+          description: Materia eliminada correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /materias/{materia_id}/cursos:
+    get:
+      tags: [Materias]
+      summary: Listar cursos de una materia
+      parameters:
+        - name: materia_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Lista paginada de cursos asociados a la materia.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cursos, total, page, page_size]
+                properties:
+                  cursos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Curso'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+        '204':
+          description: Sin resultados.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /cursos/health:
+    get:
+      tags: [Cursos]
+      summary: Health check de cursos
+      responses:
+        '200':
+          description: Servicio saludable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /cursos:
+    get:
+      tags: [Cursos]
+      summary: Listar cursos
+      parameters:
+        - name: materia_id
+          in: query
+          schema:
+            type: integer
+        - name: nombre
+          in: query
+          schema:
+            type: string
+        - name: anio
+          in: query
+          schema:
+            type: integer
+        - name: cuatrimestre
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Lista paginada de cursos.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cursos, total, page, page_size]
+                properties:
+                  cursos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Curso'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+        '204':
+          description: Sin resultados.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Cursos]
+      summary: Crear un curso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CursoCreateRequest'
+      responses:
+        '201':
+          description: Curso creado correctamente.
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, curso]
+                properties:
+                  message:
+                    type: string
+                  curso:
+                    $ref: '#/components/schemas/Curso'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /cursos/{curso_id}:
+    parameters:
+      - name: curso_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Cursos]
+      summary: Obtener un curso por ID
+      responses:
+        '200':
+          description: Curso encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Curso'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Cursos]
+      summary: Reemplazar un curso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CursoUpdateRequest'
+      responses:
+        '200':
+          description: Curso actualizado correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, curso]
+                properties:
+                  message:
+                    type: string
+                  curso:
+                    $ref: '#/components/schemas/Curso'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Cursos]
+      summary: Eliminar un curso
+      responses:
+        '204':
+          description: Curso eliminado correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /evaluaciones/health:
+    get:
+      tags: [Evaluaciones]
+      summary: Health check de evaluaciones
+      responses:
+        '200':
+          description: Servicio saludable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /evaluaciones:
+    get:
+      tags: [Evaluaciones]
+      summary: Listar evaluaciones
+      parameters:
+        - name: curso_id
+          in: query
+          schema:
+            type: integer
+        - name: tipo_evaluacion_id
+          in: query
+          schema:
+            type: integer
+        - name: titulo
+          in: query
+          schema:
+            type: string
+        - name: fecha
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: activo
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Lista de evaluaciones.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [evaluaciones, total]
+                properties:
+                  evaluaciones:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Evaluacion'
+                  total:
+                    type: integer
+        '204':
+          description: Sin resultados.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Evaluaciones]
+      summary: Crear una evaluación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluacionCreateRequest'
+      responses:
+        '201':
+          description: Evaluación creada correctamente.
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, evaluacion]
+                properties:
+                  message:
+                    type: string
+                  evaluacion:
+                    $ref: '#/components/schemas/Evaluacion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /evaluaciones/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Evaluaciones]
+      summary: Obtener una evaluación por ID
+      responses:
+        '200':
+          description: Evaluación encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluacion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Evaluaciones]
+      summary: Reemplazar una evaluación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluacionUpdateRequest'
+      responses:
+        '204':
+          description: Evaluación actualizada correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Evaluaciones]
+      summary: Eliminar una evaluación
+      responses:
+        '204':
+          description: Evaluación eliminada correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /equipos/health:
+    get:
+      tags: [Equipos]
+      summary: Health check de equipos
+      responses:
+        '200':
+          description: Servicio saludable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /equipos:
+    get:
+      tags: [Equipos]
+      summary: Listar equipos
+      parameters:
+        - name: curso_id
+          in: query
+          schema:
+            type: integer
+        - name: evaluacion_id
+          in: query
+          schema:
+            type: integer
+        - name: nombre
+          in: query
+          schema:
+            type: string
+        - name: activo
+          in: query
+          schema:
+            type: string
+            description: El código lo lee como texto y compara true/false.
+      responses:
+        '200':
+          description: Lista de equipos.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [equipos, total]
+                properties:
+                  equipos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Equipo'
+                  total:
+                    type: integer
+        '204':
+          description: Sin resultados.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Equipos]
+      summary: Crear un equipo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquipoCreateRequest'
+      responses:
+        '201':
+          description: Equipo creado correctamente.
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, equipo]
+                properties:
+                  message:
+                    type: string
+                  equipo:
+                    $ref: '#/components/schemas/Equipo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /equipos/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Equipos]
+      summary: Obtener un equipo por ID
+      responses:
+        '200':
+          description: Equipo encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Equipos]
+      summary: Reemplazar un equipo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquipoUpdateRequest'
+      responses:
+        '204':
+          description: Equipo actualizado correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: El equipo no existe.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error:
+                    type: string
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Equipos]
+      summary: Eliminar un equipo
+      responses:
+        '204':
+          description: Equipo eliminado correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /estudiante_curso:
+    get:
+      tags: [EstudianteCurso]
+      summary: Listar inscripciones estudiante-curso
+      parameters:
+        - name: estudiante_id
+          in: query
+          schema:
+            type: integer
+        - name: curso_id
+          in: query
+          schema:
+            type: integer
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [activo, abandono]
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de inscripciones.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [estudiante_cursos, total]
+                properties:
+                  estudiante_cursos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EstudianteCurso'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+                  total_paginas:
+                    type: integer
+        '204':
+          description: Sin resultados.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [EstudianteCurso]
+      summary: Crear una inscripción estudiante-curso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstudianteCursoCreateRequest'
+      responses:
+        '201':
+          description: Inscripción creada correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, estudiante_curso]
+                properties:
+                  message:
+                    type: string
+                  estudiante_curso:
+                    $ref: '#/components/schemas/EstudianteCurso'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /estudiante_curso/importar-lote:
+    post:
+      tags: [EstudianteCurso]
+      summary: Importar inscripciones por lote desde un CSV
+      description: >-
+        El CSV debe contener las columnas `padron` y `curso_id`. Cada padrón se
+        resuelve al estudiante correspondiente y se inscribe en el curso.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [archivo]
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Procesamiento de lote finalizado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  resultado:
+                    type: object
+                    properties:
+                      procesados_exito:
+                        type: integer
+                      ignorados_duplicados:
+                        type: integer
+                      errores_encontrados:
+                        type: integer
+                      detalles_errores:
+                        type: array
+                        items:
+                          type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /estudiante_curso/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [EstudianteCurso]
+      summary: Obtener una inscripción estudiante-curso por ID
+      responses:
+        '200':
+          description: Inscripción encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstudianteCurso'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [EstudianteCurso]
+      summary: Reemplazar una inscripción estudiante-curso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstudianteCursoUpdateRequest'
+      responses:
+        '204':
+          description: Inscripción actualizada correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [EstudianteCurso]
+      summary: Modificar parcialmente una inscripción estudiante-curso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstudianteCursoPatchRequest'
+      responses:
+        '200':
+          description: Inscripción actualizada correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, estudiante_curso]
+                properties:
+                  message:
+                    type: string
+                  estudiante_curso:
+                    $ref: '#/components/schemas/EstudianteCurso'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [EstudianteCurso]
+      summary: Eliminar (baja) una inscripción estudiante-curso
+      responses:
+        '204':
+          description: Inscripción dada de baja correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /equipo_integrantes:
+    get:
+      tags: [EquipoIntegrantes]
+      summary: Listar integrantes de equipos
+      parameters:
+        - name: equipo_id
+          in: query
+          schema:
+            type: integer
+        - name: alumno_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de integrantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [integrantes, total]
+                properties:
+                  integrantes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EquipoIntegrante'
+                  total:
+                    type: integer
+        '204':
+          description: Sin resultados.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [EquipoIntegrantes]
+      summary: Agregar integrante a un equipo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquipoIntegranteCreateRequest'
+      responses:
+        '201':
+          description: Integrante agregado correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, integrante]
+                properties:
+                  message:
+                    type: string
+                  integrante:
+                    $ref: '#/components/schemas/EquipoIntegrante'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /equipo_integrantes/{equipo_id}/{alumno_id}:
+    parameters:
+      - name: equipo_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: alumno_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    delete:
+      tags: [EquipoIntegrantes]
+      summary: Eliminar integrante de un equipo
+      responses:
+        '204':
+          description: Integrante eliminado correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /notas:
+    get:
+      tags: [Notas]
+      summary: Listar notas
+      parameters:
+        - name: evaluacion_id
+          in: query
+          schema:
+            type: integer
+        - name: alumno_id
+          in: query
+          schema:
+            type: integer
+        - name: equipo_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de notas.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [notas, total]
+                properties:
+                  notas:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Nota'
+                  total:
+                    type: integer
+        '204':
+          description: Sin resultados.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Notas]
+      summary: Crear una nota
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotaCreateRequest'
+      responses:
+        '201':
+          description: Nota creada correctamente.
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, nota]
+                properties:
+                  message:
+                    type: string
+                  nota:
+                    $ref: '#/components/schemas/Nota'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /notas/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Notas]
+      summary: Obtener una nota por ID
+      responses:
+        '200':
+          description: Nota encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Nota'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Notas]
+      summary: Actualizar parcialmente una nota
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotaUpdateRequest'
+      responses:
+        '204':
+          description: Nota actualizada correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: La nota no existe.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error:
+                    type: string
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Notas]
+      summary: Eliminar una nota
+      responses:
+        '204':
+          description: Nota eliminada correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /clases:
+    get:
+      tags: [Clases]
+      summary: Listar clases
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pendiente, suspendida, en curso, finalizada]
+        - name: profesor_id
+          in: query
+          schema:
+            type: integer
+        - name: curso_id
+          in: query
+          schema:
+            type: integer
+        - name: fecha
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: activa
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Lista de clases.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [clases, total]
+                properties:
+                  clases:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Clase'
+                  total:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Clases]
+      summary: Crear una clase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaseCreateRequest'
+      responses:
+        '201':
+          description: Clase creada correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [clase]
+                properties:
+                  clase:
+                    $ref: '#/components/schemas/Clase'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /clases/estados:
+    get:
+      tags: [Clases]
+      summary: Listar estados de clase
+      responses:
+        '200':
+          description: Catálogo de estados de clase.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [estados]
+                properties:
+                  estados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ClaseEstadoItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /clases/{clase_id}:
+    parameters:
+      - name: clase_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Clases]
+      summary: Obtener una clase por ID
+      responses:
+        '200':
+          description: Clase encontrada.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [clase]
+                properties:
+                  clase:
+                    $ref: '#/components/schemas/Clase'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Clases]
+      summary: Reemplazar una clase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaseUpdateRequest'
+      responses:
+        '200':
+          description: Clase actualizada correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [clase]
+                properties:
+                  clase:
+                    $ref: '#/components/schemas/Clase'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Clases]
+      summary: Actualizar parcialmente una clase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClasePatchRequest'
+      responses:
+        '200':
+          description: Clase actualizada correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [clase]
+                properties:
+                  clase:
+                    $ref: '#/components/schemas/Clase'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Clases]
+      summary: Eliminar una clase
+      responses:
+        '204':
+          description: Clase eliminada correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /logs/health:
+    get:
+      tags: [Logs]
+      summary: Health check de logs
+      responses:
+        '200':
+          description: Servicio saludable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /asistencia/clases/{clase_id}/generar-qrs:
+      post:
+        tags: [Asistencias]
+        summary: Generar y enviar QRs dinámicos para una clase
+        parameters:
+          - name: clase_id
+            in: path
+            required: true
+            schema:
+              type: integer
+        requestBody:
+          required: false
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  expiracion_horas:
+                    type: integer
+                    default: 4
+        responses:
+          '201':
+            description: QRs generados y enviados exitosamente.
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+
+  /asistencia/escanear:
+    post:
+      tags: [Asistencias]
+      summary: Registrar asistencia escaneando el token del QR del alumno
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [token]
               properties:
-                nombre: { type: string }
-                apellido: { type: string }
-                
-                email: { type: string }
-                password: { type: string }
-                rol: { type: string, example: "profesor" } #esto tiene que ser un select  | ayudante de catedra = alumno con permisos especiales
+                token:
+                  type: string
       responses:
-        '201':
-          description: Usuario registrado
+        '200':
+          description: Asistencia registrada correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [mensaje, asistencia]
+                properties:
+                  mensaje:
+                    type: string
+                  asistencia:
+                    type: object
+                    properties:
+                      alumno_id:
+                        type: integer
+                      clase_id:
+                        type: integer
+                      estado:
+                        type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /auth/tipos_usuario:
+  /asistencia/clases/{clase_id}:
     get:
-      summary: Obtener todos los tipos de usuario (alumno, docente, ayudante de catedra) para el select del register
-      tags: [Auth]
+      tags: [Asistencias]
+      summary: Obtener planilla completa de asistencia de una clase
+      parameters:
+        - name: clase_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Planilla de asistencia obtenida correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [clase_id, total_alumnos, asistencias]
+                properties:
+                  clase_id:
+                    type: integer
+                  total_alumnos:
+                    type: integer
+                  asistencias:
+                    type: array
+                    items:
+                      type: object
+                      required: [alumno_id, nombre, estado]
+                      properties:
+                        alumno_id:
+                          type: integer
+                        nombre:
+                          type: string
+                        estado:
+                          type: string
+                          enum: [presente, ausente, tarde, justificada]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Asistencias]
+      summary: Modificar manualmente la planilla de asistencia (Bulk Update)
+      parameters:
+        - name: clase_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asistencias]
+              properties:
+                asistencias:
+                  type: array
+                  items:
+                    type: object
+                    required: [alumno_id, estado]
+                    properties:
+                      alumno_id:
+                        type: integer
+                      estado:
+                        type: string
+                        enum: [presente, ausente, tarde, justificada]
+      responses:
+        '204':
+          description: Planilla actualizada correctamente.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /asistencia/cursos/{curso_id}/me:
+    get:
+      tags: [Asistencias]
+      summary: Ver el porcentaje y detalle de asistencias propio del alumno logueado
+      parameters:
+        - name: curso_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Historial y métricas de asistencia devueltas correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [curso_id, clases_totales_dictadas, presentes, ausentes, tardes, porcentaje_asistencia, condicion_asistencia, detalle]
+                properties:
+                  curso_id:
+                    type: integer
+                  clases_totales_dictadas:
+                    type: integer
+                  presentes:
+                    type: integer
+                  ausentes:
+                    type: integer
+                  tardes:
+                    type: integer
+                  porcentaje_asistencia:
+                    type: number
+                    format: float
+                  condicion_asistencia:
+                    type: string
+                  detalle:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        clase_id:
+                          type: integer
+                        fecha:
+
+  /reportes/health:
+    get:
+      tags: [Reportes]
+      summary: Health check de reportes
+      responses:
+        '200':
+          description: Servicio saludable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /materiales/health:
+    get:
+      tags: [Materiales]
+      summary: Health check de materiales
       security: []
       responses:
         '200':
-          description: Lista de tipos de usuario 
-
-  /logs:
-    get:
-      summary: Obtener registro de actividad
-      tags: [Logs]
-      parameters:
-        - name: usuario_id
-          in: query
-          schema: { type: integer }
-          description: Filtrar por ID de usuario
-        - name: accion
-          in: query
-          schema: { type: string }
-          description: Filtrar por tipo de acción (POST, DELETE, etc)
-        - name: fecha_desde
-          in: query
-          schema: { type: string, format: date }
-      responses:
-        '200':
-          description: Lista de logs filtrada
-
-  # ================= ABM ALUMNOS =================
-  /alumnos:
-    get:
-      summary: Listar todos los alumnos
-      tags: [Alumnos]
-      parameters:
-        - name: materia_id
-          in: query
-          schema: { type: integer }
-          description: Filtrar alumnos pertenecientes a una materia específica
-        - name: curso_id
-          in: query
-          schema: { type: integer }
-          description: Filtrar alumnos pertenecientes a un curso específico
-        - name: estado
-          in: query
-          schema: { type: string, enum: [activos, baja, todos] }
-          description: Filtrar por estado de cursada (baja representa abandono)
-      responses:
-        '200':
-          description: Lista de alumnos
-    post:
-      summary: Crear un nuevo alumno manualmente
-      tags: [Alumnos]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                usuario_id: { type: integer }
-                curso_id: { type: integer }
-      responses:
-        '201':
-          description: Alumno creado
-
-  /alumnos/{id}:
-    put:
-      summary: Actualizar datos de un alumno
-      tags: [Alumnos]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                nombre: { type: string }
-                apellido: { type: string }
-                email: { type: string }
-      responses:
-        '200':
-          description: Alumno actualizado
-    delete:
-      summary: Dar de baja un alumno (no lo elimina de la DB)
-      description: Cambia el atributo interno a 'abandonó' sin eliminar la fila de MySQL.
-      tags: [Alumnos]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Alumno dado de baja exitosamente en el sistema
-
-  /alumnos/csv:
-    post:
-      summary: Importar alumnos masivamente desde archivo CSV (quiza se puede ahorrar esta ruta y tener un solo post /alumnos)
-      tags: [Alumnos]
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                archivo: { type: string, format: binary }
-                curso_id: { type: integer, description: "Curso al que se van a incorporar" }
-      responses:
-        '200':
-          description: CSV procesado e importado con éxito
-
-  # ================= ABM EVALUACIONES =================
-  /evaluaciones:
-    get:
-      summary: Listar evaluaciones (Notas)
-      tags: [Evaluaciones]
-      parameters:
-        - name: curso_id
-          in: query
-          required: true
-          schema: { type: integer }
-        - name: tipo_id
-          in: query
-          schema: { type: integer }
-          description: Filtrar por ID de tipo de evaluación (Parcial, TP, etc.)
-        - name: alumno_id
-          in: query
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Listado de notas obtenido
-
-  /evaluaciones/tipos:
-    get:
-      summary: Listar tipos de evaluación disponibles
-      description: Utilizado por el frontend para poblar selectores de formularios.
-      tags: [Evaluaciones]
-      responses:
-        '200':
-          description: Tipos de evaluación obtenidos
-
-  /evaluaciones/notas:
-    post:
-      summary: Cargar nota a un alumno
-      tags: [Evaluaciones]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                alumno_id: { type: integer }
-                tipo_evaluacion_id: { type: integer }
-                curso_id: { type: integer }
-                nota: { type: number }
-                fecha: { type: string, format: date }
-      responses:
-        '201':
-          description: Nota cargada correctamente
-
-  # ================= ABM EQUIPOS =================
-  /equipos:
-    get:
-      summary: Listar equipos
-      tags: [Equipos]
-      parameters:
-        - name: curso_id
-          in: query
-          required: true
-          schema: { type: integer }
-        - name: alumno_id
-          in: query
-          schema: { type: integer }
-        - name: evaluacion_id
-          in: query
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Lista de equipos del curso
-    post:
-      summary: Crear equipo asociado a un TP y asignar integrantes
-      tags: [Equipos]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                nombre: { type: string }
-                curso_id: { type: integer }
-                tp_id: { type: integer, description: "ID de la evaluación tipo TP vinculada" }
-                alumno_ids: 
-                  type: array
-                  items: { type: integer }
-      responses:
-        '201':
-          description: Equipo e integrantes configurados con éxito
-
-  # ================= ASISTENCIA Y QR =================
-  /asistencia/generar-qr:
-    post:
-      summary: Generar parámetro para código dinámico o enviar por email
-      tags: [Asistencia]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                clase_id: { type: integer }
-                fecha: { type: string, format: date } # creo que no es necesario porque estaria en registro 'clase'
-      responses:
-        '200':
-          description: Token de asistencia generado con éxito
-
-  /asistencia/registrar:
-    post:
-      summary: Registrar asistencia en el sistema
-      tags: [Asistencia]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                qr_token: { type: string, description: "Token dinámico o estático recuperado" }
-                curso_id: { type: integer } # esto no seria necesario, el qr token podria tener la clase_id encripdata y que la pueda pasar directamente
-                alumno_id: { type: integer }
-      responses:
-        '200':
-          description: Presente registrado en la base de datos
-
-  # ================= REPORTES (PDF) =================
-  /reportes/alumnos:
-    get:
-      summary: Descargar PDF con listado de alumnos de un curso
-      tags: [Reportes]
-      parameters:
-        - name: materia_id
-          in: query
-          schema: { type: integer }
-        - name: curso_id
-          in: query
-          schema: { type: integer }
-        - name: tipo_id
-          in: query
-          description: (profesor, alumno, ayudante de catedra, etc)
-          schema: { type: integer }
-        - name: estado
-          in: query
-          schema: { type: string, enum: [activos, baja] }
-      responses:
-        '200':
-          description: Documento binario PDF listo para descarga
+          description: Servicio saludable.
           content:
-            application/pdf:
+            application/json:
               schema:
-                type: string
-                format: binary
+                $ref: '#/components/schemas/HealthResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /reportes/estadisticas:
+  /email/health:
     get:
-      summary: Descargar PDF con estadísticas de aprobación de un curso
-      description: Es obligatorio enviar 'curso_id' o 'materia_id'. Si se envían ambos, predomina 'curso_id'.
-      tags: [Reportes]
-      parameters:
-        - name: curso_id
-          in: query
-          schema: { type: integer }
-        - name: materia_id
-          in: query
-          schema: { type: integer }
+      tags: [Email]
+      summary: Health check de email
       responses:
         '200':
-          description: Estadísticas en PDF generadas
+          description: Servicio saludable.
           content:
-            application/pdf:
+            application/json:
               schema:
-                type: string
-                format: binary
-
-  /reportes/equipos:
-    get:
-      summary: Descargar PDF con listado de equipos de un curso
-      description: Es obligatorio enviar 'curso_id' o 'evaluacion_id'. Si se envían ambos, predomina 'evaluacion_id'.
-      tags: [Reportes]
-      parameters:
-        - name: curso_id
-          in: query
-          schema: { type: integer }
-        - name: evaluacion_id
-          in: query
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Estructura de equipos en PDF generada
-          content:
-            application/pdf:
-              schema:
-                type: string
-                format: binary
-
-  # ================= MATERIALES =================
-  /materiales:
-    get:
-      summary: Ver material didáctico público de un curso
-      tags: [Materiales]
-      security: [] 
-      parameters:
-        - name: curso_id
-          in: query
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Listado de recursos públicos obtenido
-    post:
-      summary: Subir nuevo archivo de material de estudio
-      tags: [Materiales]
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                titulo: { type: string }
-                curso_id: { type: integer }
-                archivo: { type: string, format: binary }
-      responses:
-        '201':
-          description: Archivo cargado y asociado al curso
+                $ref: '#/components/schemas/HealthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'

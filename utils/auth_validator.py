@@ -1,0 +1,61 @@
+from functools import wraps
+
+from flask import g, request
+from constants import ROLES_STAFF
+from utils import JWT_handler
+from utils.error_handlers import ForbiddenError, UnauthorizedError
+
+# esta funcion se tiene que ejecutar en @before_request
+def validar_token():
+    try:
+        # 'g' es una variable global temporal de FLASK
+        # existe desde que se recibe la request (entra al router) y hasta que se devuelve la response (return del router)
+
+        token = request.cookies.get("access_token_cookie")
+
+        if not token:
+            raise UnauthorizedError("No se encontró un token de autenticación en la cookie.")
+
+        # valida si el token es correcto y devuelve el payload del mismo (id, nombre, apellido, perfiles)
+        g.usuario = JWT_handler.decode_token(token)
+
+    except Exception as e:
+        raise UnauthorizedError(str(e))
+
+
+def requiere_roles(*roles_permitidos):
+    def decorador(f):
+        @wraps(f)
+        def funcion_decorada(*args, **kwargs):
+            usuario = getattr(g, "usuario", None)
+
+            if usuario is None:
+                raise UnauthorizedError("No se encontró un token de autenticación en la cookie.")
+
+            perfiles = set(usuario.get("perfiles") or [])
+
+            if not perfiles.intersection(roles_permitidos):
+                raise ForbiddenError("Acceso denegado. No tenés los permisos necesarios.")
+
+            return f(*args, **kwargs)
+        return funcion_decorada
+    return decorador
+
+
+def usuario_es(rol):
+    usuario = getattr(g, "usuario", None)
+    return rol in ((usuario or {}).get("perfiles") or [])
+
+
+def usuario_es_staff():
+    perfiles = set(((getattr(g, "usuario", None) or {}).get("perfiles")) or [])
+    return bool(perfiles.intersection(ROLES_STAFF))
+
+
+def obtener_usuario_id():
+    usuario = getattr(g, "usuario", None)
+
+    if usuario is None:
+        raise UnauthorizedError("No se encontró un token de autenticación en la cookie.")
+
+    return usuario.get("id")
