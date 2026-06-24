@@ -174,9 +174,12 @@ def modificar_profesor_parcial(id, parametros):
 
 
 def eliminar_profesor(id: int, hard=False):
+    # `id` es el id de profesor. El soft-delete debe marcar profesores.deleted_at
+    # (que es por lo que filtran el listado y los getters), no usuarios.deleted_at
+    # con el id equivocado.
     if hard:
-        query = "DELETE FROM usuarios WHERE id = %s"
+        query = "DELETE FROM profesores WHERE id = %s"
     else:
-        query = "UPDATE usuarios SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s"
+        query = "UPDATE profesores SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s"
     filas_afectadas = db.execute_query(query, (id,), modifica_db=True)
     return filas_afectadas > 0
