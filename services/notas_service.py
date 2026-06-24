@@ -20,6 +20,22 @@ nota_update_params = [
     "nota"
 ]
 
+NOTA_MIN = 0
+NOTA_MAX = 10
+
+
+def _validar_nota(valor):
+    """La nota debe ser un número entre 0 y 10 (la validación HTML5 del front es
+    solo client-side; acá la hacemos cumplir en el backend)."""
+    try:
+        n = float(valor)
+    except (TypeError, ValueError):
+        raise ValidationError("La nota debe ser un número.")
+    if not (NOTA_MIN <= n <= NOTA_MAX):
+        raise ValidationError(f"La nota debe estar entre {NOTA_MIN} y {NOTA_MAX}.")
+    return n
+
+
 def obtener_notas(evaluacion_id=None,alumno_id=None,equipo_id=None):
     return db.obtener_notas(
         evaluacion_id,
@@ -40,7 +56,8 @@ def crear_nota(parametros):
         "evaluacion_id"
     )
     nota = parametros["nota"]
-    observaciones = parametros.get("observaciones") 
+    _validar_nota(nota)
+    observaciones = parametros.get("observaciones")
     
     evaluacion = evaluaciones_db.obtener_evaluacion_por_id(evaluacion_id)
     if not evaluacion:
@@ -95,6 +112,7 @@ def reemplazar_nota(id, parametros):
             "El campo 'nota' es requerido."
         )
 
+    _validar_nota(parametros["nota"])
     campos = {"nota": parametros["nota"]}
     if "observaciones" in parametros:
         campos["observaciones"] = parametros.get("observaciones")
